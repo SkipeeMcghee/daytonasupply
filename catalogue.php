@@ -1,54 +1,63 @@
 <?php
-require_once __DIR__ . '/includes/db.php';
-require_once __DIR__ . '/includes/functions.php';
-require_once __DIR__ . '/includes/header.php';
+// Product catalogue page with search capability.
+session_start();
+require __DIR__ . '/includes/db.php';
+require __DIR__ . '/includes/functions.php';
 
-$title = 'Catalogue';
-$message = '';
+$title = 'Product Catalogue';
 
-// Handle add to cart
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['product_id'])) {
-    $productId = (int)($_POST['product_id']);
-    $qty = isset($_POST['quantity']) ? (int)$_POST['quantity'] : 1;
-    if ($qty < 1) {
-        $qty = 1;
-    }
-    // Validate product exists
-    $product = getProductById($productId);
-    if ($product) {
-        if (!isset($_SESSION['cart'])) {
-            $_SESSION['cart'] = [];
-        }
-        if (!isset($_SESSION['cart'][$productId])) {
-            $_SESSION['cart'][$productId] = 0;
-        }
-        $_SESSION['cart'][$productId] += $qty;
-        $message = 'Added ' . htmlspecialchars($product['name']) . ' to cart.';
+// Retrieve search term from the query string
+$search = trim($_GET['search'] ?? '');
+
+// Determine which products to show
+if ($search !== '') {
+    // Use searchProducts() if available; fall back to manual query otherwise
+    if (function_exists('searchProducts')) {
+        $products = searchProducts($search);
     } else {
-        $message = 'Invalid product selected.';
+        $db = getDb();
+        $stmt = $db->prepare('SELECT * FROM products WHERE name LIKE :term OR description LIKE :term ORDER BY id ASC');
+        $stmt->execute([':term' => '%' . $search . '%']);
+        $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+} else {
+    $products = getAllProducts();
 }
 
-$products = getAllProducts();
+include __DIR__ . '/includes/header.php';
 ?>
-
-<h2>Product Catalogue</h2>
-<?php if ($message): ?>
-    <div class="message"><?php echo $message; ?></div>
-<?php endif; ?>
-<div class="products">
-    <?php foreach ($products as $product): ?>
-        <div class="product-item">
-            <h3><?php echo htmlspecialchars($product['name']); ?></h3>
-            <p><?php echo htmlspecialchars($product['description']); ?></p>
-            <p class="price">$<?php echo number_format($product['price'], 2); ?></p>
-            <form method="post" action="">
-                <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
-                <label>Qty: <input type="number" name="quantity" value="1" min="1" style="width:60px"></label>
-                <button type="submit">Add to Cart</button>
-            </form>
-        </div>
+<h1>Product Catalogue</h1>
+<form method="get" action="catalogue.php" style="margin-bottom:1em;">
+    <input type="text" name="search" value="<?= htmlspecialchars($search) ?>" placeholder="Search products...">
+    <button type="submit">Search</button>
+    <?php if ($search !== ''): ?>
+        <a href="catalogue.php">Clear</a>
+    <?php endif; ?>
+</form>
+<?php if (empty($products)): ?>
+    <p>No products found.</p>
+<?php else: ?>
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Price</th>
+        <th>Add to Cart</th>
+    </tr>
+    <?php foreach ($products as $p): ?>
+        <tr>
+            <td><?= htmlspecialchars($p['name']) ?></td>
+            <td><?= htmlspecialchars($p['description']) ?></td>
+            <td>$<?= number_format($p['price'], 2) ?></td>
+            <td>
+                <form method="post" action="cart.php" style="margin:0;">
+                    <input type="hidden" name="product_id" value="<?= (int)$p['id'] ?>">
+                    <input type="number" name="quantity" value="1" min="1" style="width:3em;">
+                    <button type="submit">Add</button>
+                </form>
+            </td>
+        </tr>
     <?php endforeach; ?>
-</div>
-
+</table>
+<?php endif; ?>
 <?php include __DIR__ . '/includes/footer.php'; ?>
