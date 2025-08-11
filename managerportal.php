@@ -126,6 +126,10 @@ $products = getAllProducts();
 
 <h2>Manager Portal</h2>
 
+<div style="margin-bottom: 20px;">
+    <a href="/admin/update_inventory.php" class="btn" style="display:inline-block;padding:10px 20px;background:#007bff;color:#fff;text-decoration:none;border-radius:4px;font-weight:bold;">Update Inventory</a>
+</div>
+
 <section>
     <h3>Orders</h3>
     <table class="admin-table">
