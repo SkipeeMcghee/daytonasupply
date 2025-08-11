@@ -1,73 +1,66 @@
 <?php
-// Manager Portal for Daytona Supply
-// This page allows administrators to view and manage orders, customers and products.
+require_once __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/header.php';
 
-session_start();
-require __DIR__ . '/includes/db.php';
-require __DIR__ . '/includes/functions.php';
+$title = 'Manager Portal';
 
-// -----------------------------------------------------------------------------
-// Authentication
-// -----------------------------------------------------------------------------
-
-// If the admin is not logged in, show the login form and handle authentication
-if (!isset($_SESSION['admin'])) {
-    $loginError = '';
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $password = trim($_POST['password'] ?? '');
-        $stmt = getDb()->query('SELECT password_hash FROM admin LIMIT 1');
-        $hash = $stmt->fetchColumn();
-        if ($hash && password_verify($password, $hash)) {
-            $_SESSION['admin'] = true;
-            header('Location: managerportal.php');
-            exit;
-        }
-        $loginError = 'Incorrect password.';
-    }
-    $title = 'Office Manager Login';
-    include __DIR__ . '/includes/header.php';
+// Handle admin session
+if (!isset($_SESSION['admin']) && $_SERVER['REQUEST_METHOD'] !== 'POST') {
+    // Not logged in; show login form
     ?>
-    <h1>Office Manager Login</h1>
-    <?php if (!empty($loginError)): ?>
-        <p style="color:red;"><?= htmlspecialchars($loginError) ?></p>
-    <?php endif; ?>
-    <form method="post" action="managerportal.php">
-        <label>Password: <input type="password" name="password" required></label>
-        <button type="submit">Login</button>
+    <h2>Office Manager Login</h2>
+    <form method="post" action="">
+        <p>Password: <input type="password" name="password" required></p>
+        <p><button type="submit">Login</button></p>
     </form>
     <?php
     include __DIR__ . '/includes/footer.php';
     return;
 }
 
-// -----------------------------------------------------------------------------
-// Handle actions and form submissions
-// -----------------------------------------------------------------------------
+// Authenticate admin
+if (!isset($_SESSION['admin']) && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['password'])) {
+    $password = $_POST['password'];
+    $db = getDb();
+    $stmt = $db->query('SELECT password_hash FROM admin LIMIT 1');
+    $hash = $stmt->fetchColumn();
+    if ($hash && password_verify($password, $hash)) {
+        $_SESSION['admin'] = true;
+        header('Location: /managerportal.php');
+        exit;
+    } else {
+        echo '<p class="error">Incorrect password.</p>';
+        include __DIR__ . '/includes/footer.php';
+        return;
+    }
+}
 
-// Approve or reject an order via query params
+// Only reach here if admin logged in
+
+// Handle actions (approve/reject, delete product)
 if (isset($_GET['approve_order'])) {
     $orderId = (int)$_GET['approve_order'];
     updateOrderStatus($orderId, 'Approved');
-    header('Location: managerportal.php');
+    header('Location: /managerportal.php');
     exit;
 }
 if (isset($_GET['reject_order'])) {
     $orderId = (int)$_GET['reject_order'];
     updateOrderStatus($orderId, 'Rejected');
-    header('Location: managerportal.php');
+    header('Location: /managerportal.php');
     exit;
 }
-// Delete a product
 if (isset($_GET['delete_product'])) {
     $prodId = (int)$_GET['delete_product'];
     deleteProduct($prodId);
-    header('Location: managerportal.php');
+    header('Location: /managerportal.php');
     exit;
 }
 
-// Handle POST submissions
+// Handle POST actions for products and customers
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Update existing products
+    // Update products
     if (isset($_POST['save_products'])) {
         $products = getAllProducts();
         foreach ($products as $prod) {
@@ -84,10 +77,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 saveProduct($data, $id);
             }
         }
-        header('Location: managerportal.php');
+        header('Location: /managerportal.php');
         exit;
     }
-    // Add a new product
+    // Add product
     if (isset($_POST['add_product'])) {
         $name = trim($_POST['name'] ?? '');
         $desc = trim($_POST['description'] ?? '');
@@ -95,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($name !== '') {
             saveProduct(['name' => $name, 'description' => $desc, 'price' => $price]);
         }
-        header('Location: managerportal.php');
+        header('Location: /managerportal.php');
         exit;
     }
     // Update customers
@@ -120,117 +113,116 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ]);
             }
         }
-        header('Location: managerportal.php');
+        header('Location: /managerportal.php');
         exit;
     }
 }
 
-// -----------------------------------------------------------------------------
 // Fetch data for display
-// -----------------------------------------------------------------------------
-
 $orders = getAllOrders();
 $customers = getAllCustomers();
 $products = getAllProducts();
-
-// -----------------------------------------------------------------------------
-// Render portal
-// -----------------------------------------------------------------------------
-
-$title = 'Manager Portal';
-include __DIR__ . '/includes/header.php';
 ?>
-<h1>Manager Portal</h1>
 
-<h2>Orders</h2>
-<?php if (empty($orders)): ?>
-    <p>No orders found.</p>
-<?php else: ?>
-    <table border="1" cellpadding="4" cellspacing="0">
-        <tr>
-            <th>ID</th>
-            <th>Date</th>
-            <th>Customer</th>
-            <th>Items</th>
-            <th>Total</th>
-            <th>Status</th>
-            <th>Actions</th>
-        </tr>
+<h2>Manager Portal</h2>
+
+<div style="margin-bottom: 20px;">
+    <a href="/admin/update_inventory.php" class="btn" style="display:inline-block;padding:10px 20px;background:#007bff;color:#fff;text-decoration:none;border-radius:4px;font-weight:bold;">Update Inventory</a>
+</div>
+
+<section>
+    <h3>Orders</h3>
+    <table class="admin-table">
+        <tr><th>ID</th><th>Date</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Actions</th></tr>
         <?php foreach ($orders as $order): ?>
-            <?php $items = getOrderItems($order['id']); ?>
-            <?php $customer = getCustomerById((int)$order['customer_id']); ?>
+            <?php
+                $cust = getCustomerById((int)$order['customer_id']);
+                $items = getOrderItems((int)$order['id']);
+                $descArr = [];
+                foreach ($items as $it) {
+                    $prod = getProductById((int)$it['product_id']);
+                    if ($prod) {
+                        $descArr[] = htmlspecialchars($prod['name']) . ' x' . (int)$it['quantity'];
+                    }
+                }
+            ?>
             <tr>
-                <td><?= (int)$order['id'] ?></td>
-                <td><?= htmlspecialchars($order['created_at']) ?></td>
-                <td><?= htmlspecialchars($customer['name'] ?? 'Unknown') ?></td>
-                <td><?= count($items) ?></td>
-                <td>$<?= number_format($order['total'], 2) ?></td>
-                <td><?= htmlspecialchars($order['status']) ?></td>
+                <td><?php echo $order['id']; ?></td>
+                <td><?php echo htmlspecialchars(date('Y-m-d H:i', strtotime($order['created_at']))); ?></td>
+                <td><?php echo htmlspecialchars($cust['name'] ?? 'Unknown'); ?></td>
+                <td><?php echo implode(', ', $descArr); ?></td>
+                <td>$<?php echo number_format($order['total'], 2); ?></td>
+                <td><?php echo htmlspecialchars($order['status']); ?></td>
                 <td>
                     <?php if ($order['status'] === 'Pending'): ?>
-                        <a href="managerportal.php?approve_order=<?= (int)$order['id'] ?>" onclick="return confirm('Approve this order?');">Approve</a> |
-                        <a href="managerportal.php?reject_order=<?= (int)$order['id'] ?>" onclick="return confirm('Reject this order?');">Reject</a>
+                        <a href="?approve_order=<?php echo $order['id']; ?>">Approve</a> |
+                        <a href="?reject_order=<?php echo $order['id']; ?>">Reject</a>
                     <?php else: ?>
-                        –
+                        &ndash;
                     <?php endif; ?>
                 </td>
             </tr>
         <?php endforeach; ?>
+        <?php if (empty($orders)): ?>
+            <tr><td colspan="7">No orders found.</td></tr>
+        <?php endif; ?>
     </table>
-<?php endif; ?>
+</section>
 
-<h2>Customers</h2>
-<form method="post" action="managerportal.php">
-    <table border="1" cellpadding="4" cellspacing="0">
-        <tr>
-            <th>Name</th>
-            <th>Business</th>
-            <th>Phone</th>
-            <th>Email</th>
-            <th>Billing Address</th>
-            <th>Shipping Address</th>
-        </tr>
-        <?php foreach ($customers as $cust): ?>
-            <tr>
-                <td><input type="text" name="c_name_<?= (int)$cust['id'] ?>" value="<?= htmlspecialchars($cust['name']) ?>"></td>
-                <td><input type="text" name="c_business_<?= (int)$cust['id'] ?>" value="<?= htmlspecialchars($cust['business_name']) ?>"></td>
-                <td><input type="text" name="c_phone_<?= (int)$cust['id'] ?>" value="<?= htmlspecialchars($cust['phone']) ?>"></td>
-                <td><input type="email" name="c_email_<?= (int)$cust['id'] ?>" value="<?= htmlspecialchars($cust['email']) ?>"></td>
-                <td><input type="text" name="c_bill_<?= (int)$cust['id'] ?>" value="<?= htmlspecialchars($cust['billing_address']) ?>"></td>
-                <td><input type="text" name="c_ship_<?= (int)$cust['id'] ?>" value="<?= htmlspecialchars($cust['shipping_address']) ?>"></td>
-            </tr>
-        <?php endforeach; ?>
-    </table>
-    <button type="submit" name="save_customers">Save Customer Changes</button>
-</form>
+<section>
+    <h3>Customers</h3>
+    <form method="post" action="">
+        <input type="hidden" name="save_customers" value="1">
+        <table class="admin-table">
+            <tr><th>ID</th><th>Name</th><th>Business</th><th>Phone</th><th>Email</th><th>Billing</th><th>Shipping</th></tr>
+            <?php foreach ($customers as $cust): ?>
+                <tr>
+                    <td><?php echo $cust['id']; ?></td>
+                    <td><input type="text" name="c_name_<?php echo $cust['id']; ?>" value="<?php echo htmlspecialchars($cust['name']); ?>"></td>
+                    <td><input type="text" name="c_business_<?php echo $cust['id']; ?>" value="<?php echo htmlspecialchars($cust['business_name']); ?>"></td>
+                    <td><input type="text" name="c_phone_<?php echo $cust['id']; ?>" value="<?php echo htmlspecialchars($cust['phone']); ?>"></td>
+                    <td><input type="email" name="c_email_<?php echo $cust['id']; ?>" value="<?php echo htmlspecialchars($cust['email']); ?>"></td>
+                    <td><input type="text" name="c_bill_<?php echo $cust['id']; ?>" value="<?php echo htmlspecialchars($cust['billing_address']); ?>"></td>
+                    <td><input type="text" name="c_ship_<?php echo $cust['id']; ?>" value="<?php echo htmlspecialchars($cust['shipping_address']); ?>"></td>
+                </tr>
+            <?php endforeach; ?>
+            <?php if (empty($customers)): ?>
+                <tr><td colspan="7">No customers found.</td></tr>
+            <?php endif; ?>
+        </table>
+        <p><button type="submit">Save Customer Changes</button></p>
+    </form>
+</section>
 
-<h2>Products</h2>
-<form method="post" action="managerportal.php">
-    <table border="1" cellpadding="4" cellspacing="0">
-        <tr>
-            <th>Name</th>
-            <th>Description</th>
-            <th>Price</th>
-            <th>Delete</th>
-        </tr>
-        <?php foreach ($products as $prod): ?>
-            <tr>
-                <td><input type="text" name="name_<?= (int)$prod['id'] ?>" value="<?= htmlspecialchars($prod['name']) ?>"></td>
-                <td><input type="text" name="desc_<?= (int)$prod['id'] ?>" value="<?= htmlspecialchars($prod['description']) ?>"></td>
-                <td><input type="number" step="0.01" name="price_<?= (int)$prod['id'] ?>" value="<?= number_format($prod['price'], 2, '.', '') ?>"></td>
-                <td><a href="managerportal.php?delete_product=<?= (int)$prod['id'] ?>" onclick="return confirm('Delete this product?');">Delete</a></td>
-            </tr>
-        <?php endforeach; ?>
-    </table>
-    <button type="submit" name="save_products">Save Product Changes</button>
-</form>
-
-<h3>Add New Product</h3>
-<form method="post" action="managerportal.php">
-    <label>Name: <input type="text" name="name" required></label><br>
-    <label>Description: <input type="text" name="description"></label><br>
-    <label>Price: <input type="number" step="0.01" name="price" required></label><br>
-    <button type="submit" name="add_product">Add Product</button>
-</form>
+<section>
+    <h3>Products</h3>
+    <form method="post" action="">
+        <input type="hidden" name="save_products" value="1">
+        <table class="admin-table">
+            <tr><th>ID</th><th>Name</th><th>Description</th><th>Price</th><th>Delete</th></tr>
+            <?php foreach ($products as $prod): ?>
+                <tr>
+                    <td><?php echo $prod['id']; ?></td>
+                    <td><input type="text" name="name_<?php echo $prod['id']; ?>" value="<?php echo htmlspecialchars($prod['name']); ?>"></td>
+                    <td><input type="text" name="desc_<?php echo $prod['id']; ?>" value="<?php echo htmlspecialchars($prod['description']); ?>"></td>
+                    <td><input type="number" step="0.01" min="0" name="price_<?php echo $prod['id']; ?>" value="<?php echo htmlspecialchars($prod['price']); ?>"></td>
+                    <td><a href="?delete_product=<?php echo $prod['id']; ?>" onclick="return confirm('Delete this product?');">Delete</a></td>
+                </tr>
+            <?php endforeach; ?>
+            <?php if (empty($products)): ?>
+                <tr><td colspan="5">No products found.</td></tr>
+            <?php endif; ?>
+        </table>
+        <p><button type="submit">Save Product Changes</button></p>
+    </form>
+    <h4>Add New Product</h4>
+    <form method="post" action="">
+        <input type="hidden" name="add_product" value="1">
+        <p>Name: <input type="text" name="name" required></p>
+        <p>Description: <input type="text" name="description"></p>
+        <p>Price: <input type="number" step="0.01" min="0" name="price" required></p>
+        <p><button type="submit">Add Product</button></p>
+    </form>
+</section>
 
 <?php include __DIR__ . '/includes/footer.php'; ?>
