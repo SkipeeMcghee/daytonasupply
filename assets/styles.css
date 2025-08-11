@@ -1,0 +1,100 @@
+/* Basic styles for Daytona Supply site */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #f7f7f7;
+    color: #333;
+}
+header {
+    background: #004b8d;
+    color: #fff;
+    padding: 10px 20px;
+}
+header .site-title {
+    margin: 0;
+}
+nav ul.nav {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    gap: 1rem;
+}
+nav ul.nav li a {
+    color: #fff;
+    text-decoration: none;
+    font-weight: bold;
+}
+nav ul.nav li a:hover {
+    text-decoration: underline;
+}
+main {
+    padding: 20px;
+    min-height: 70vh;
+}
+footer {
+    background: #f0f0f0;
+    padding: 10px 20px;
+    text-align: center;
+    font-size: 0.8rem;
+}
+.products {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+.product-item {
+    background: #fff;
+    border: 1px solid #ddd;
+    padding: 15px;
+    width: calc(33% - 2rem);
+    box-sizing: border-box;
+}
+.product-item h3 {
+    margin-top: 0;
+}
+.price {
+    font-weight: bold;
+}
+.cart-table, .admin-table, .orders {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+.cart-table th, .cart-table td, .admin-table th, .admin-table td, .orders th, .orders td {
+    border: 1px solid #ccc;
+    padding: 8px;
+}
+.cart-table th, .admin-table th, .orders th {
+    background: #efefef;
+}
+.message {
+    background: #e0ffe0;
+    border: 1px solid #90ee90;
+    padding: 10px;
+    margin-bottom: 15px;
+}
+.error {
+    background: #ffe0e0;
+    border: 1px solid #ff9090;
+    padding: 10px;
+    margin-bottom: 15px;
+}
+.button, button {
+    background: #004b8d;
+    color: #fff;
+    border: none;
+    padding: 8px 12px;
+    cursor: pointer;
+    text-decoration: none;
+}
+.button:hover, button:hover {
+    background: #00315e;
+}
+form input[type="text"], form input[type="email"], form input[type="password"], form input[type="number"] {
+    width: 100%;
+    padding: 5px;
+    box-sizing: border-box;
+    margin-bottom: 5px;
+}

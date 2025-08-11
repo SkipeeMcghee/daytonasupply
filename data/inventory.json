@@ -1,0 +1,17 @@
+[
+  {
+    "name": "Brake Pads",
+    "description": "High quality ceramic brake pads for long‑lasting performance.",
+    "price": 49.99
+  },
+  {
+    "name": "Oil Filter",
+    "description": "Premium oil filter compatible with most vehicles.",
+    "price": 9.99
+  },
+  {
+    "name": "Spark Plug",
+    "description": "Copper core spark plug ensuring optimal combustion.",
+    "price": 4.50
+  }
+]
