@@ -205,14 +205,16 @@ $products = getAllProducts();
         <input type="hidden" name="save_products" value="1">
         <table class="admin-table">
             <tr><th>ID</th><th>Name</th><th>Description</th><th>Price</th><th>Actions</th></tr>
-            <?php foreach ($products as $prod): ?>
+            <?php $rowNum = 1; foreach ($products as $prod): ?>
                 <tr>
-                    <td><?php echo $prod['id']; ?></td>
+                    <!-- Display a sequential row number instead of the raw product ID -->
+                    <td><?php echo $rowNum; ?></td>
                     <td><input type="text" name="name_<?php echo $prod['id']; ?>" value="<?php echo htmlspecialchars($prod['name']); ?>"></td>
                     <td><input type="text" name="desc_<?php echo $prod['id']; ?>" value="<?php echo htmlspecialchars($prod['description']); ?>"></td>
                     <td><input type="number" step="0.01" name="price_<?php echo $prod['id']; ?>" value="<?php echo number_format($prod['price'], 2); ?>"></td>
                     <td><a href="?delete_product=<?php echo $prod['id']; ?>">Delete</a></td>
                 </tr>
+                <?php $rowNum++; ?>
             <?php endforeach; ?>
             <?php if (empty($products)): ?>
                 <tr><td colspan="5">No products found.</td></tr>

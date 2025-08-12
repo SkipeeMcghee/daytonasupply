@@ -17,8 +17,23 @@ if (!isset($_SESSION['admin'])) {
 $db = getDb();
 try {
     $db->beginTransaction();
-    // Remove all existing products to prevent duplicates
+    // Capture mapping of old product IDs to their names before clearing the table.  This
+    // allows us to update existing order_items records when the inventory is
+    // reloaded.  We fetch all current products into an associative array keyed
+    // by the product name for easy lookup.  If there are duplicate names the
+    // last seen product will win; this mirrors typical behaviour of replacing
+    // products by name.
+    $oldProducts = [];
+    $stmtOld = $db->query('SELECT id, name FROM products');
+    while ($row = $stmtOld->fetch(PDO::FETCH_ASSOC)) {
+        $oldProducts[$row['name']] = (int)$row['id'];
+    }
+
+    // Remove all existing products to prevent duplicates.  We'll also reset
+    // the SQLite auto‑increment sequence so that new IDs start from 1 again.
     $db->exec('DELETE FROM products');
+    $db->exec("DELETE FROM sqlite_sequence WHERE name='products'");
+
     // Read inventory from JSON file
     $inventoryPath = __DIR__ . '/../data/inventory.json';
     if (!file_exists($inventoryPath)) {
@@ -34,14 +49,42 @@ try {
         echo '<p>Failed to decode inventory JSON.</p>';
         exit;
     }
+    // Prepare insert statement for products
     $stmt = $db->prepare('INSERT INTO products(name, description, price) VALUES(:name, :description, :price)');
+    // We'll build a mapping from product names to their new IDs so that
+    // we can update order_items rows that refer to old product IDs.  We
+    // cannot rely on the order of the JSON array to match previous IDs.
+    $newProducts = [];
     foreach ($items as $item) {
+        $name = $item['name'] ?? '';
+        $description = $item['description'] ?? '';
+        $price = isset($item['price']) ? (float)$item['price'] : 0;
         $stmt->execute([
-            ':name' => $item['name'] ?? '',
-            ':description' => $item['description'] ?? '',
-            ':price' => isset($item['price']) ? (float)$item['price'] : 0
+            ':name' => $name,
+            ':description' => $description,
+            ':price' => $price
         ]);
+        // Record the new ID keyed by product name
+        $newId = (int)$db->lastInsertId();
+        $newProducts[$name] = $newId;
     }
+
+    // Update order_items to point to the new product IDs.  For each
+    // product name that existed previously and still exists in the JSON,
+    // set the product_id of matching order_items rows to the new ID.  This
+    // preserves the relationship between historical orders and the new
+    // product definitions.  If a name no longer exists in the new
+    // inventory we leave those order_items unchanged.
+    $stmtUpdate = $db->prepare('UPDATE order_items SET product_id = :newId WHERE product_id = :oldId');
+    foreach ($oldProducts as $name => $oldId) {
+        if (isset($newProducts[$name])) {
+            $stmtUpdate->execute([
+                ':newId' => $newProducts[$name],
+                ':oldId' => $oldId
+            ]);
+        }
+    }
+
     $db->commit();
     // Redirect back to the manager portal once done
     header('Location: /managerportal.php');
