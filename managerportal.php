@@ -126,6 +126,11 @@ $products = getAllProducts();
 
 <h2>Manager Portal</h2>
 
+<!-- Toolbar with inventory management -->
+<div style="display:flex; justify-content:flex-end; margin:10px 0 20px 0;">
+    <a href="/admin/update_inventory.php" style="background:#0b5ed7; color:#fff; padding:8px 14px; border-radius:6px; text-decoration:none; font-weight:600;">Update Inventory</a>
+</div>
+
 <div style="margin-bottom: 20px;">
     <!-- Intentionally left blank: update inventory not implemented in this demo -->
 </div>
