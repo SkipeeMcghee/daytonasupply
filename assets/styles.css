@@ -1,100 +1,62 @@
-/* Basic styles for Daytona Supply site */
+/* Minimal styling for Daytona Supply demo */
 body {
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
-    background: #f7f7f7;
-    color: #333;
+    background: #f9f9f9;
 }
 header {
-    background: #004b8d;
-    color: #fff;
-    padding: 10px 20px;
+    background: #004080;
+    color: white;
+    padding: 1em;
 }
-header .site-title {
-    margin: 0;
-}
-nav ul.nav {
+header .nav {
     list-style: none;
     margin: 0;
     padding: 0;
     display: flex;
-    gap: 1rem;
+    gap: 1em;
 }
-nav ul.nav li a {
-    color: #fff;
+header .nav a {
+    color: white;
     text-decoration: none;
-    font-weight: bold;
-}
-nav ul.nav li a:hover {
-    text-decoration: underline;
 }
 main {
-    padding: 20px;
-    min-height: 70vh;
+    padding: 1em;
 }
-footer {
-    background: #f0f0f0;
-    padding: 10px 20px;
-    text-align: center;
-    font-size: 0.8rem;
-}
-.products {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-}
-.product-item {
-    background: #fff;
-    border: 1px solid #ddd;
-    padding: 15px;
-    width: calc(33% - 2rem);
-    box-sizing: border-box;
-}
-.product-item h3 {
-    margin-top: 0;
-}
-.price {
-    font-weight: bold;
-}
-.cart-table, .admin-table, .orders {
+table {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 20px;
 }
-.cart-table th, .cart-table td, .admin-table th, .admin-table td, .orders th, .orders td {
+table th, table td {
     border: 1px solid #ccc;
-    padding: 8px;
+    padding: 0.5em;
 }
-.cart-table th, .admin-table th, .orders th {
-    background: #efefef;
+table th {
+    background: #eee;
+}
+form {
+    display: inline-block;
+}
+button {
+    padding: 0.5em 1em;
+    background: #004080;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+button:hover {
+    background: #003060;
 }
 .message {
-    background: #e0ffe0;
-    border: 1px solid #90ee90;
-    padding: 10px;
-    margin-bottom: 15px;
+    padding: 0.5em;
+    background: #dff0d8;
+    border: 1px solid #d6e9c6;
+    margin-bottom: 1em;
 }
-.error {
-    background: #ffe0e0;
-    border: 1px solid #ff9090;
-    padding: 10px;
-    margin-bottom: 15px;
-}
-.button, button {
-    background: #004b8d;
-    color: #fff;
-    border: none;
-    padding: 8px 12px;
-    cursor: pointer;
-    text-decoration: none;
-}
-.button:hover, button:hover {
-    background: #00315e;
-}
-form input[type="text"], form input[type="email"], form input[type="password"], form input[type="number"] {
-    width: 100%;
-    padding: 5px;
-    box-sizing: border-box;
-    margin-bottom: 5px;
+footer {
+    text-align: center;
+    padding: 1em;
+    background: #eee;
+    margin-top: 2em;
 }

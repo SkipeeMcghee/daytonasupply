@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }, array_keys($cart), $cart)), 2) . "\n\n" .
             "Please review and approve this order in the manager portal.";
     // Send email to company
-    $companyEmail = getenv('COMPANY_EMAIL') ?: '';
+    $companyEmail = getenv('COMPANY_EMAIL') ?: 'brianheise22@gmail.com';
     if ($companyEmail) {
         sendEmail($companyEmail, 'New Purchase Order #' . $orderId, $body);
     }

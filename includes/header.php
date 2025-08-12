@@ -2,9 +2,11 @@
 // Shared header for all pages.  Includes HTML doctype, head section
 // with styles and a navigation bar.  Starts the <main> element.
 
+// Ensure a session is started so cart and user data can persist.
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+
 // Determine the number of items in the cart (stored in session)
 $cartCount = 0;
 if (!empty($_SESSION['cart']) && is_array($_SESSION['cart'])) {

@@ -6,7 +6,29 @@ require_once __DIR__ . '/includes/header.php';
 $title = 'Your Cart';
 $message = '';
 
-// Handle cart update form
+// Handle adding items to cart when posted directly to this page.  This
+// supports backward compatibility with forms that may still post to
+// cart.php.  The Post/Redirect/Get pattern is used to prevent
+// duplicate submissions if the user refreshes the page.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['product_id'])) {
+    $pid = (int)$_POST['product_id'];
+    $qty = (int)($_POST['quantity'] ?? 1);
+    if ($qty < 1) {
+        $qty = 1;
+    }
+    if (!isset($_SESSION['cart']) || !is_array($_SESSION['cart'])) {
+        $_SESSION['cart'] = [];
+    }
+    if (isset($_SESSION['cart'][$pid])) {
+        $_SESSION['cart'][$pid] += $qty;
+    } else {
+        $_SESSION['cart'][$pid] = $qty;
+    }
+    header('Location: /cart.php');
+    exit;
+}
+
+// Handle cart update form (quantity adjustments/removals)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_cart'])) {
     if (isset($_SESSION['cart']) && is_array($_SESSION['cart'])) {
         foreach ($_SESSION['cart'] as $pid => $qty) {
@@ -24,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_cart'])) {
     }
 }
 
-// Build cart details
+// Build cart details for display
 $cartItems = [];
 $total = 0.0;
 if (!empty($_SESSION['cart'])) {
@@ -44,7 +66,6 @@ if (!empty($_SESSION['cart'])) {
     }
 }
 ?>
-
 <h2>Your Cart</h2>
 <?php if ($message): ?>
     <div class="message"><?php echo htmlspecialchars($message); ?></div>
@@ -70,5 +91,4 @@ if (!empty($_SESSION['cart'])) {
     </form>
     <p><a href="/checkout.php" class="button">Proceed to Checkout</a></p>
 <?php endif; ?>
-
 <?php include __DIR__ . '/includes/footer.php'; ?>
