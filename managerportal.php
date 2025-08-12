@@ -127,7 +127,7 @@ $products = getAllProducts();
 <h2>Manager Portal</h2>
 
 <div style="margin-bottom: 20px;">
-    <a href="/admin/update_inventory.php" class="btn" style="display:inline-block;padding:10px 20px;background:#007bff;color:#fff;text-decoration:none;border-radius:4px;font-weight:bold;">Update Inventory</a>
+    <!-- Intentionally left blank: update inventory not implemented in this demo -->
 </div>
 
 <section>
@@ -199,14 +199,14 @@ $products = getAllProducts();
     <form method="post" action="">
         <input type="hidden" name="save_products" value="1">
         <table class="admin-table">
-            <tr><th>ID</th><th>Name</th><th>Description</th><th>Price</th><th>Delete</th></tr>
+            <tr><th>ID</th><th>Name</th><th>Description</th><th>Price</th><th>Actions</th></tr>
             <?php foreach ($products as $prod): ?>
                 <tr>
                     <td><?php echo $prod['id']; ?></td>
                     <td><input type="text" name="name_<?php echo $prod['id']; ?>" value="<?php echo htmlspecialchars($prod['name']); ?>"></td>
                     <td><input type="text" name="desc_<?php echo $prod['id']; ?>" value="<?php echo htmlspecialchars($prod['description']); ?>"></td>
-                    <td><input type="number" step="0.01" min="0" name="price_<?php echo $prod['id']; ?>" value="<?php echo htmlspecialchars($prod['price']); ?>"></td>
-                    <td><a href="?delete_product=<?php echo $prod['id']; ?>" onclick="return confirm('Delete this product?');">Delete</a></td>
+                    <td><input type="number" step="0.01" name="price_<?php echo $prod['id']; ?>" value="<?php echo number_format($prod['price'], 2); ?>"></td>
+                    <td><a href="?delete_product=<?php echo $prod['id']; ?>">Delete</a></td>
                 </tr>
             <?php endforeach; ?>
             <?php if (empty($products)): ?>
@@ -215,14 +215,13 @@ $products = getAllProducts();
         </table>
         <p><button type="submit">Save Product Changes</button></p>
     </form>
-    <h4>Add New Product</h4>
+    <h4>Add Product</h4>
     <form method="post" action="">
         <input type="hidden" name="add_product" value="1">
         <p>Name: <input type="text" name="name" required></p>
         <p>Description: <input type="text" name="description"></p>
-        <p>Price: <input type="number" step="0.01" min="0" name="price" required></p>
+        <p>Price: <input type="number" step="0.01" name="price" required></p>
         <p><button type="submit">Add Product</button></p>
     </form>
 </section>
-
 <?php include __DIR__ . '/includes/footer.php'; ?>

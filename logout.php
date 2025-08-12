@@ -1,12 +1,18 @@
 <?php
-// Log the user out by destroying the session and redirecting to the
-// homepage.
+// Logout script.  Clears the session and redirects the user to the home page.
 
 session_start();
-// Unset all session variables
+// Remove all session variables
 $_SESSION = [];
-// Destroy the session
+// Destroy the session cookie if present
+if (ini_get('session.use_cookies')) {
+    $params = session_get_cookie_params();
+    setcookie(session_name(), '', time() - 42000,
+        $params['path'], $params['domain'],
+        $params['secure'], $params['httponly']
+    );
+}
 session_destroy();
-// Redirect to the homepage
-header('Location: /index.php');
+
+header('Location: index.php');
 exit;

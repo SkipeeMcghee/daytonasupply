@@ -5,40 +5,159 @@
 require_once __DIR__ . '/db.php';
 
 /**
- * Create a new customer record.
- *
- * @param array $data Associative array containing keys: name,
- *                    business_name, phone, email, billing_address,
- *                    shipping_address, password.
- * @return int Newly created customer ID.
- * @throws Exception If email already exists or validation fails.
+ * Ensure the COMPANY_EMAIL environment variable is set.  Many parts of
+ * the application rely on getenv('COMPANY_EMAIL') to determine where
+ * order notification emails should be sent.  If it is not defined
+ * externally (e.g. via the web server configuration) we default
+ * to brianheise22@gmail.com.  Using putenv() here means the
+ * environment variable is available to subsequent code and library
+ * calls without requiring additional configuration.
  */
-function createCustomer(array $data): int
+if (!getenv('COMPANY_EMAIL')) {
+    putenv('COMPANY_EMAIL=brianheise22@gmail.com');
+}
+
+/**
+ * Retrieve all products from the database ordered by ID.
+ *
+ * @return array An array of associative arrays describing products.
+ */
+function getAllProducts(): array
 {
     $db = getDb();
-    // Ensure required fields
-    if (empty($data['name']) || empty($data['email']) || empty($data['password'])) {
-        throw new Exception('Name, email and password are required');
+    $stmt = $db->query('SELECT * FROM products ORDER BY id ASC');
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+/**
+ * Retrieve a single product by its ID.
+ *
+ * @param int $id Product ID
+ * @return array|null Associative array describing the product or null if not found.
+ */
+function getProductById(int $id): ?array
+{
+    $db = getDb();
+    $stmt = $db->prepare('SELECT * FROM products WHERE id = :id');
+    $stmt->execute([':id' => $id]);
+    $prod = $stmt->fetch(PDO::FETCH_ASSOC);
+    return $prod ?: null;
+}
+
+/**
+ * Create a new order record and its associated items.  The cart array
+ * must map product IDs to quantities.  The total is calculated
+ * automatically.
+ *
+ * @param int $customerId ID of the customer placing the order
+ * @param array $cart Map of product IDs to quantities
+ * @return int Newly created order ID
+ */
+function createOrder(int $customerId, array $cart): int
+{
+    $db = getDb();
+    $db->beginTransaction();
+    try {
+        // Calculate order total
+        $total = 0.0;
+        foreach ($cart as $productId => $qty) {
+            $prod = getProductById((int)$productId);
+            if ($prod) {
+                $total += $prod['price'] * $qty;
+            }
+        }
+        // Insert order
+        $insOrder = $db->prepare('INSERT INTO orders(customer_id, status, total, created_at) VALUES(:customer_id, :status, :total, :created_at)');
+        $insOrder->execute([
+            ':customer_id' => $customerId,
+            ':status' => 'Pending',
+            ':total' => $total,
+            ':created_at' => date('c')
+        ]);
+        $orderId = (int)$db->lastInsertId();
+        // Insert order items
+        $insItem = $db->prepare('INSERT INTO order_items(order_id, product_id, quantity) VALUES(:order_id, :product_id, :quantity)');
+        foreach ($cart as $productId => $qty) {
+            $insItem->execute([
+                ':order_id' => $orderId,
+                ':product_id' => (int)$productId,
+                ':quantity' => (int)$qty
+            ]);
+        }
+        $db->commit();
+        return $orderId;
+    } catch (Exception $e) {
+        $db->rollBack();
+        throw $e;
     }
-    // Check if email exists
-    $stmt = $db->prepare('SELECT id FROM customers WHERE email = :email');
-    $stmt->execute([':email' => $data['email']]);
-    if ($stmt->fetch()) {
-        throw new Exception('Email already registered');
+}
+
+/**
+ * Send an email using PHP's mail() function.  A default
+ * From/Reply-To header is derived from COMPANY_EMAIL.  If
+ * mail() is disabled in the environment the @ operator will
+ * suppress warnings.  In a production system consider using
+ * a proper SMTP library instead.
+ *
+ * @param string $to Recipient email address
+ * @param string $subject Email subject
+ * @param string $message Email body
+ */
+function sendEmail(string $to, string $subject, string $message): bool
+{
+    /*
+     * This helper attempts to send email using PHPMailer if it is available.
+     * To enable SMTP delivery via PHPMailer, install the PHPMailer library
+     * (e.g. via Composer) and define SMTP settings via environment
+     * variables: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS and SMTP_AUTH.
+     * If PHPMailer is not installed or sending fails, the function falls
+     * back to PHP's built‑in mail() function.
+     */
+    $from = getenv('COMPANY_EMAIL') ?: 'brianheise22@gmail.com';
+    // Try PHPMailer if the class exists
+    if (class_exists('\\PHPMailer\\PHPMailer\\PHPMailer')) {
+        try {
+            $mailer = new \PHPMailer\PHPMailer\PHPMailer(true);
+            // Use SMTP if host specified, otherwise use PHP mail
+            $smtpHost = getenv('SMTP_HOST');
+            if ($smtpHost) {
+                $mailer->isSMTP();
+                $mailer->Host = $smtpHost;
+                $mailer->Port = getenv('SMTP_PORT') ?: 25;
+                // Enable SMTPAuth only if user/password provided
+                $user = getenv('SMTP_USER');
+                $pass = getenv('SMTP_PASS');
+                if ($user && $pass) {
+                    $mailer->SMTPAuth = true;
+                    $mailer->Username = $user;
+                    $mailer->Password = $pass;
+                }
+                $secure = getenv('SMTP_SECURE');
+                if ($secure) {
+                    $mailer->SMTPSecure = $secure;
+                }
+            }
+            $mailer->setFrom($from, 'Daytona Supply');
+            $mailer->addAddress($to);
+            $mailer->Subject = $subject;
+            $mailer->Body = $message;
+            // Attempt to send
+            $mailer->send();
+            return true;
+        } catch (\PHPMailer\PHPMailer\Exception $e) {
+            error_log('PHPMailer error: ' . $e->getMessage());
+            // Fall through to built‑in mail() fallback
+        }
     }
-    // Hash password using password_hash
-    $hash = password_hash($data['password'], PASSWORD_DEFAULT);
-    $ins = $db->prepare('INSERT INTO customers (name, business_name, phone, email, billing_address, shipping_address, password_hash) VALUES (:name, :business_name, :phone, :email, :billing_address, :shipping_address, :password_hash)');
-    $ins->execute([
-        ':name' => $data['name'],
-        ':business_name' => $data['business_name'] ?? '',
-        ':phone' => $data['phone'] ?? '',
-        ':email' => $data['email'],
-        ':billing_address' => $data['billing_address'] ?? '',
-        ':shipping_address' => $data['shipping_address'] ?? '',
-        ':password_hash' => $hash
-    ]);
-    return (int)$db->lastInsertId();
+    // Fallback to PHP mail()
+    $headers = 'From: ' . $from . "\r\n"
+             . 'Reply-To: ' . $from . "\r\n"
+             . 'X-Mailer: PHP/' . phpversion();
+    $success = @mail($to, $subject, $message, $headers);
+    if (!$success) {
+        error_log('sendEmail: Failed sending to ' . $to . ' subject "' . $subject . '"');
+    }
+    return $success;
 }
 
 /**
@@ -61,6 +180,42 @@ function authenticateCustomer(string $email, string $password): ?array
 }
 
 /**
+ * Create a new customer record.
+ *
+ * @param array $data Associative array containing keys: name, business_name,
+ *                    phone, email, billing_address, shipping_address, password.
+ * @return int Newly created customer ID.
+ * @throws Exception If email already exists or validation fails.
+ */
+function createCustomer(array $data): int
+{
+    $db = getDb();
+    // Validate required fields
+    if (empty($data['name']) || empty($data['email']) || empty($data['password'])) {
+        throw new Exception('Name, email and password are required');
+    }
+    // Check for existing email
+    $stmt = $db->prepare('SELECT id FROM customers WHERE email = :email');
+    $stmt->execute([':email' => $data['email']]);
+    if ($stmt->fetch()) {
+        throw new Exception('Email already registered');
+    }
+    // Hash password and insert
+    $hash = password_hash($data['password'], PASSWORD_DEFAULT);
+    $ins = $db->prepare('INSERT INTO customers (name, business_name, phone, email, billing_address, shipping_address, password_hash) VALUES (:name, :business_name, :phone, :email, :billing_address, :shipping_address, :password_hash)');
+    $ins->execute([
+        ':name' => $data['name'],
+        ':business_name' => $data['business_name'] ?? '',
+        ':phone' => $data['phone'] ?? '',
+        ':email' => $data['email'],
+        ':billing_address' => $data['billing_address'] ?? '',
+        ':shipping_address' => $data['shipping_address'] ?? '',
+        ':password_hash' => $hash
+    ]);
+    return (int)$db->lastInsertId();
+}
+
+/**
  * Retrieve a customer by ID.
  *
  * @param int $id
@@ -76,8 +231,7 @@ function getCustomerById(int $id): ?array
 }
 
 /**
- * Update customer information.  Password will be updated only if
- * provided.
+ * Update customer information. Password will be updated only if provided.
  *
  * @param int $id
  * @param array $data
@@ -106,35 +260,7 @@ function updateCustomer(int $id, array $data): void
 }
 
 /**
- * Get all products.
- *
- * @return array
- */
-function getAllProducts(): array
-{
-    $db = getDb();
-    $stmt = $db->query('SELECT * FROM products ORDER BY id ASC');
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
-}
-
-/**
- * Get product by ID.
- *
- * @param int $id
- * @return array|null
- */
-function getProductById(int $id): ?array
-{
-    $db = getDb();
-    $stmt = $db->prepare('SELECT * FROM products WHERE id = :id');
-    $stmt->execute([':id' => $id]);
-    $prod = $stmt->fetch(PDO::FETCH_ASSOC);
-    return $prod ?: null;
-}
-
-/**
- * Add a product or update existing product details.  If $id is null a
- * new record will be created.
+ * Save or update a product. If $id is null, a new record is created.
  *
  * @param array $data
  * @param int|null $id
@@ -173,50 +299,15 @@ function deleteProduct(int $id): void
 }
 
 /**
- * Create a new order and associated order items.  Expects $cart
- * to be an associative array mapping product IDs to quantities.
+ * Retrieve all customers.
  *
- * @param int $customerId
- * @param array $cart
- * @return int Order ID
+ * @return array
  */
-function createOrder(int $customerId, array $cart): int
+function getAllCustomers(): array
 {
     $db = getDb();
-    $db->beginTransaction();
-    try {
-        // Calculate total
-        $total = 0.0;
-        foreach ($cart as $productId => $qty) {
-            $prod = getProductById((int)$productId);
-            if ($prod) {
-                $total += $prod['price'] * $qty;
-            }
-        }
-        // Insert order
-        $insOrder = $db->prepare('INSERT INTO orders(customer_id, status, total, created_at) VALUES(:customer_id, :status, :total, :created_at)');
-        $insOrder->execute([
-            ':customer_id' => $customerId,
-            ':status' => 'Pending',
-            ':total' => $total,
-            ':created_at' => date('c')
-        ]);
-        $orderId = (int)$db->lastInsertId();
-        // Insert order items
-        $insItem = $db->prepare('INSERT INTO order_items(order_id, product_id, quantity) VALUES(:order_id, :product_id, :quantity)');
-        foreach ($cart as $productId => $qty) {
-            $insItem->execute([
-                ':order_id' => $orderId,
-                ':product_id' => (int)$productId,
-                ':quantity' => (int)$qty
-            ]);
-        }
-        $db->commit();
-        return $orderId;
-    } catch (Exception $e) {
-        $db->rollBack();
-        throw $e;
-    }
+    $stmt = $db->query('SELECT * FROM customers ORDER BY id ASC');
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
 /**
@@ -234,35 +325,35 @@ function getOrdersByCustomer(int $customerId): array
 }
 
 /**
- * Retrieve all orders.
+ * Retrieve all orders (for the manager portal).
  *
  * @return array
  */
 function getAllOrders(): array
 {
     $db = getDb();
-    $stmt = $db->query('SELECT * FROM orders ORDER BY created_at DESC');
+    $stmt = $db->query('SELECT o.*, c.name AS customer_name, c.email AS customer_email FROM orders o JOIN customers c ON o.customer_id = c.id ORDER BY o.created_at DESC');
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
 /**
- * Retrieve items for a given order ID.
+ * Search products by term.  Returns products whose name or description contains the term.
  *
- * @param int $orderId
+ * @param string $term
  * @return array
  */
-function getOrderItems(int $orderId): array
+function searchProducts(string $term): array
 {
     $db = getDb();
-    $stmt = $db->prepare('SELECT * FROM order_items WHERE order_id = :order_id');
-    $stmt->execute([':order_id' => $orderId]);
+    $stmt = $db->prepare('SELECT * FROM products WHERE name LIKE :term OR description LIKE :term ORDER BY id ASC');
+    $stmt->execute([':term' => '%' . $term . '%']);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
 /**
- * Update the status of an order and optionally send an email to the
- * customer notifying them of the change.  Valid statuses: Pending,
- * Approved, Rejected.
+ * Update the status of an order.  Status should be a human‑readable
+ * string such as "Pending", "Approved" or "Rejected".  Manager
+ * actions in the portal call this function.
  *
  * @param int $orderId
  * @param string $status
@@ -275,79 +366,20 @@ function updateOrderStatus(int $orderId, string $status): void
         ':status' => $status,
         ':id' => $orderId
     ]);
-    // Send email notification if order is approved
-    if ($status === 'Approved' || $status === 'Rejected') {
-        // Fetch order and customer
-        $orderStmt = $db->prepare('SELECT * FROM orders WHERE id = :id');
-        $orderStmt->execute([':id' => $orderId]);
-        $order = $orderStmt->fetch(PDO::FETCH_ASSOC);
-        if ($order) {
-            $cust = getCustomerById((int)$order['customer_id']);
-            if ($cust) {
-                $subject = 'Your Purchase Order #' . $orderId . ' has been ' . strtolower($status);
-                $message = "Dear {$cust['name']},\n\n" .
-                    "Your purchase order #{$orderId} has been {$status}.\n" .
-                    "Total amount: $" . number_format($order['total'], 2) . "\n\n" .
-                    "Thank you for shopping with Daytona Supply.";
-                sendEmail($cust['email'], $subject, $message);
-            }
-        }
-    }
 }
 
 /**
- * Retrieve all customers.
+ * Retrieve all items belonging to a specific order.
  *
+ * @param int $orderId
  * @return array
  */
-function getAllCustomers(): array
+function getOrderItems(int $orderId): array
 {
     $db = getDb();
-    $stmt = $db->query('SELECT * FROM customers ORDER BY id ASC');
+    $stmt = $db->prepare('SELECT * FROM order_items WHERE order_id = :order_id');
+    $stmt->execute([':order_id' => $orderId]);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-/**
- * Send an email using PHP's mail() function.  This is a thin wrapper
- * that sets appropriate headers.  When sending to multiple recipients
- * separate addresses with a comma.
- *
- * Note: The mail() function may not work in all environments; on
- * shared hosting or dev machines it may be disabled.  In such cases
- * consider configuring an SMTP library (e.g. PHPMailer) instead.
- *
- * @param string $to
- * @param string $subject
- * @param string $message
- */
-function sendEmail(string $to, string $subject, string $message): void
-{
-    $headers = 'From: ' . (getenv('COMPANY_EMAIL') ?: 'noreply@example.com') . "\r\n" .
-               'Reply-To: ' . (getenv('COMPANY_EMAIL') ?: 'noreply@example.com') . "\r\n" .
-               'X-Mailer: PHP/' . phpversion();
-    // Use @ to suppress warnings if mail() is not configured
-    @mail($to, $subject, $message, $headers);
-}
-
-?>
-/**
- * Send an email using PHP's mail() function.  A default
- * From/Reply-To header is derived from COMPANY_EMAIL.  If
- * mail() is disabled in the environment the @ operator will
- * suppress warnings.  In a production system consider using
- * a proper SMTP library instead.
- *
- * @param string $to Recipient email address
- * @param string $subject Email subject
- * @param string $message Email body
- */
-function sendEmail(string $to, string $subject, string $message): void
-{
-    $from = getenv('COMPANY_EMAIL') ?: 'brianheise22@gmail.com';
-    $headers = 'From: ' . $from . "\r\n" .
-               'Reply-To: ' . $from . "\r\n" .
-               'X-Mailer: PHP/' . phpversion();
-    @mail($to, $subject, $message, $headers);
-}
-
-?>
+// Do not close the PHP tag to prevent accidental output from trailing whitespace.

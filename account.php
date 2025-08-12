@@ -1,85 +1,92 @@
 <?php
+// Customer account page.  Shows a summary of the customer's details and
+// orders, and allows the customer to update certain fields (except
+// email).  If the user is not logged in they are redirected to the
+// login page.
+
+session_start();
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/functions.php';
-require_once __DIR__ . '/includes/header.php';
 
-// Require login
 if (!isset($_SESSION['customer'])) {
-    header('Location: /login.php');
+    header('Location: login.php');
     exit;
 }
 
 $customer = $_SESSION['customer'];
-$title = 'My Account';
 
-// Handle profile update
-$message = '';
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update'])) {
-    $updatedData = [
-        'name' => trim($_POST['name'] ?? ''),
-        'business_name' => trim($_POST['business_name'] ?? ''),
-        'phone' => trim($_POST['phone'] ?? ''),
-        'email' => trim($_POST['email'] ?? ''),
-        'billing_address' => trim($_POST['billing_address'] ?? ''),
-        'shipping_address' => trim($_POST['shipping_address'] ?? ''),
-        'password' => $_POST['password'] ?? ''
+// Handle updates
+$messages = [];
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $id   = (int)$customer['id'];
+    $name = trim($_POST['name'] ?? $customer['name']);
+    $biz  = trim($_POST['business_name'] ?? $customer['business_name']);
+    $phone= trim($_POST['phone'] ?? $customer['phone']);
+    $bill = trim($_POST['billing_address'] ?? $customer['billing_address']);
+    $ship = trim($_POST['shipping_address'] ?? $customer['shipping_address']);
+    $pass = $_POST['password'] ?? '';
+    $data = [
+        'name' => $name,
+        'business_name' => $biz,
+        'phone' => $phone,
+        'billing_address' => $bill,
+        'shipping_address' => $ship
     ];
-    updateCustomer((int)$customer['id'], $updatedData);
-    // Refresh session customer data
-    $customer = getCustomerById((int)$customer['id']);
-    $_SESSION['customer'] = $customer;
-    $message = 'Account details updated successfully.';
+    if ($pass !== '') {
+        $data['password'] = $pass;
+    }
+    updateCustomer($id, $data);
+    // Refresh session data
+    $_SESSION['customer'] = getCustomerById($id);
+    $customer = $_SESSION['customer'];
+    $messages[] = 'Your details have been updated.';
 }
 
-// Retrieve orders
 $orders = getOrdersByCustomer((int)$customer['id']);
+$title = 'My Account';
+include __DIR__ . '/includes/header.php';
 ?>
-
-<h2>My Account</h2>
-<?php if ($message): ?>
-    <div class="message"><?php echo htmlspecialchars($message); ?></div>
-<?php endif; ?>
-<h3>Profile Details</h3>
-<form method="post" action="">
-    <input type="hidden" name="update" value="1">
-    <p>Name: <input type="text" name="name" value="<?php echo htmlspecialchars($customer['name']); ?>" required></p>
-    <p>Business Name: <input type="text" name="business_name" value="<?php echo htmlspecialchars($customer['business_name']); ?>"></p>
-    <p>Phone: <input type="text" name="phone" value="<?php echo htmlspecialchars($customer['phone']); ?>"></p>
-    <p>Email: <input type="email" name="email" value="<?php echo htmlspecialchars($customer['email']); ?>" required></p>
-    <p>Billing Address: <input type="text" name="billing_address" value="<?php echo htmlspecialchars($customer['billing_address']); ?>"></p>
-    <p>Shipping Address: <input type="text" name="shipping_address" value="<?php echo htmlspecialchars($customer['shipping_address']); ?>"></p>
-    <p>New Password (leave blank to keep unchanged): <input type="password" name="password"></p>
+<h1>My Account</h1>
+<?php foreach ($messages as $msg): ?>
+    <p class="success"><?= htmlspecialchars($msg) ?></p>
+<?php endforeach; ?>
+<h2>Your Details</h2>
+<form method="post" action="account.php">
+    <p>Name: <input type="text" name="name" value="<?= htmlspecialchars($customer['name']) ?>" required></p>
+    <p>Business Name: <input type="text" name="business_name" value="<?= htmlspecialchars($customer['business_name']) ?>"></p>
+    <p>Phone: <input type="text" name="phone" value="<?= htmlspecialchars($customer['phone']) ?>"></p>
+    <p>Email: <input type="email" value="<?= htmlspecialchars($customer['email']) ?>" disabled></p>
+    <p>Billing Address: <input type="text" name="billing_address" value="<?= htmlspecialchars($customer['billing_address']) ?>"></p>
+    <p>Shipping Address: <input type="text" name="shipping_address" value="<?= htmlspecialchars($customer['shipping_address']) ?>"></p>
+    <p>New Password (leave blank to keep current): <input type="password" name="password"></p>
     <p><button type="submit">Save Changes</button></p>
 </form>
 
-<h3>Your Orders</h3>
-<?php if (!$orders): ?>
-    <p>You have not placed any orders yet.</p>
-<?php else: ?>
-    <table class="orders">
-        <tr><th>Order ID</th><th>Date</th><th>Status</th><th>Total</th><th>Items</th></tr>
+<h2>Your Orders</h2>
+<?php if (!empty($orders)): ?>
+    <table class="account-table">
+        <tr><th>Order ID</th><th>Date</th><th>Items</th><th>Total</th><th>Status</th></tr>
         <?php foreach ($orders as $order): ?>
-            <tr>
-                <td><?php echo $order['id']; ?></td>
-                <td><?php echo htmlspecialchars(date('Y-m-d H:i', strtotime($order['created_at']))); ?></td>
-                <td><?php echo htmlspecialchars($order['status']); ?></td>
-                <td>$<?php echo number_format($order['total'], 2); ?></td>
-                <td>
-                    <?php
-                    $items = getOrderItems((int)$order['id']);
-                    $descArr = [];
-                    foreach ($items as $it) {
-                        $prod = getProductById((int)$it['product_id']);
-                        if ($prod) {
-                            $descArr[] = htmlspecialchars($prod['name']) . ' x' . (int)$it['quantity'];
-                        }
+            <?php
+                $items = getOrderItems((int)$order['id']);
+                $desc = [];
+                foreach ($items as $item) {
+                    $prod = getProductById((int)$item['product_id']);
+                    if ($prod) {
+                        $desc[] = htmlspecialchars($prod['name']) . ' x' . (int)$item['quantity'];
                     }
-                    echo implode(', ', $descArr);
-                    ?>
-                </td>
+                }
+            ?>
+            <tr>
+                <td><?= $order['id']; ?></td>
+                <td><?= htmlspecialchars(date('Y-m-d H:i', strtotime($order['created_at']))); ?></td>
+                <td><?= implode(', ', $desc); ?></td>
+                <td>$<?= number_format($order['total'], 2); ?></td>
+                <td><?= htmlspecialchars($order['status']); ?></td>
             </tr>
         <?php endforeach; ?>
     </table>
+<?php else: ?>
+    <p>You have not placed any orders.</p>
 <?php endif; ?>
-
 <?php include __DIR__ . '/includes/footer.php'; ?>
