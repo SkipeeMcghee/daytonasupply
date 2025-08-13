@@ -1,15 +1,45 @@
 <?php
+// Manager Portal: allows office managers to manage orders, customers and products.
+// All header() redirects occur before any HTML is sent to avoid "headers already sent" warnings.
+
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/functions.php';
-require_once __DIR__ . '/includes/header.php';
 
+// Start the session if it hasn't been started yet
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Set a default page title; header.php will use this value when included
 $title = 'Manager Portal';
 
-// Handle admin session
-if (!isset($_SESSION['admin']) && $_SERVER['REQUEST_METHOD'] !== 'POST') {
-    // Not logged in; show login form
+// Placeholder for login error messages
+$loginError = '';
+
+// If the admin is not logged in, handle login attempts
+if (!isset($_SESSION['admin'])) {
+    // If a login attempt is being made, validate the password
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['password'])) {
+        $password = $_POST['password'];
+        $db = getDb();
+        $stmt = $db->query('SELECT password_hash FROM admin LIMIT 1');
+        $hash = $stmt->fetchColumn();
+        if ($hash && password_verify($password, $hash)) {
+            // Successful login: set session and redirect to self
+            $_SESSION['admin'] = true;
+            header('Location: /managerportal.php');
+            exit;
+        } else {
+            $loginError = 'Incorrect password.';
+        }
+    }
+    // Not logged in: show login form.  Include header now that no redirects remain.
+    require_once __DIR__ . '/includes/header.php';
     ?>
     <h2>Office Manager Login</h2>
+    <?php if ($loginError): ?>
+        <p class="error"><?php echo htmlspecialchars($loginError); ?></p>
+    <?php endif; ?>
     <form method="post" action="">
         <p>Password: <input type="password" name="password" required></p>
         <p><button type="submit">Login</button></p>
@@ -19,26 +49,9 @@ if (!isset($_SESSION['admin']) && $_SERVER['REQUEST_METHOD'] !== 'POST') {
     return;
 }
 
-// Authenticate admin
-if (!isset($_SESSION['admin']) && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['password'])) {
-    $password = $_POST['password'];
-    $db = getDb();
-    $stmt = $db->query('SELECT password_hash FROM admin LIMIT 1');
-    $hash = $stmt->fetchColumn();
-    if ($hash && password_verify($password, $hash)) {
-        $_SESSION['admin'] = true;
-        header('Location: /managerportal.php');
-        exit;
-    } else {
-        echo '<p class="error">Incorrect password.</p>';
-        include __DIR__ . '/includes/footer.php';
-        return;
-    }
-}
+// Admin is logged in: handle all state-changing actions BEFORE sending any HTML
 
-// Only reach here if admin logged in
-
-// Handle actions (approve/reject, delete product)
+// Approve or reject orders
 if (isset($_GET['approve_order'])) {
     $orderId = (int)$_GET['approve_order'];
     updateOrderStatus($orderId, 'Approved');
@@ -51,6 +64,8 @@ if (isset($_GET['reject_order'])) {
     header('Location: /managerportal.php');
     exit;
 }
+
+// Delete a product
 if (isset($_GET['delete_product'])) {
     $prodId = (int)$_GET['delete_product'];
     deleteProduct($prodId);
@@ -58,9 +73,9 @@ if (isset($_GET['delete_product'])) {
     exit;
 }
 
-// Handle POST actions for products and customers
+// Handle POST actions for saving products, adding products, and saving customers
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Update products
+    // Save products
     if (isset($_POST['save_products'])) {
         $products = getAllProducts();
         foreach ($products as $prod) {
@@ -80,7 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Location: /managerportal.php');
         exit;
     }
-    // Add product
+    // Add a new product
     if (isset($_POST['add_product'])) {
         $name = trim($_POST['name'] ?? '');
         $desc = trim($_POST['description'] ?? '');
@@ -91,7 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Location: /managerportal.php');
         exit;
     }
-    // Update customers
+    // Save customer changes
     if (isset($_POST['save_customers'])) {
         $customers = getAllCustomers();
         foreach ($customers as $cust) {
@@ -118,10 +133,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Fetch data for display
+// At this point all actions are complete.  Fetch data for display.
 $orders = getAllOrders();
 $customers = getAllCustomers();
 $products = getAllProducts();
+
+// Include the header now that no further redirects will occur
+require_once __DIR__ . '/includes/header.php';
 ?>
 
 <h2>Manager Portal</h2>
@@ -129,10 +147,6 @@ $products = getAllProducts();
 <!-- Toolbar with inventory management -->
 <div style="display:flex; justify-content:flex-end; margin:10px 0 20px 0;">
     <a href="/admin/update_inventory.php" style="background:#0b5ed7; color:#fff; padding:8px 14px; border-radius:6px; text-decoration:none; font-weight:600;">Update Inventory</a>
-</div>
-
-<div style="margin-bottom: 20px;">
-    <!-- Intentionally left blank: update inventory not implemented in this demo -->
 </div>
 
 <section>
