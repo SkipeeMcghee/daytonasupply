@@ -65,6 +65,33 @@ if (isset($_GET['reject_order'])) {
     exit;
 }
 
+// Archive or unarchive orders
+if (isset($_GET['archive_order'])) {
+    $orderId = (int)$_GET['archive_order'];
+    archiveOrder($orderId, true);
+    // Preserve the view parameter when redirecting
+    $view = isset($_GET['view']) ? '&view=' . urlencode($_GET['view']) : '';
+    header('Location: /managerportal.php' . ($view ? '?' . ltrim($view, '&') : ''));
+    exit;
+}
+if (isset($_GET['unarchive_order'])) {
+    $orderId = (int)$_GET['unarchive_order'];
+    archiveOrder($orderId, false);
+    $view = isset($_GET['view']) ? '&view=' . urlencode($_GET['view']) : '';
+    header('Location: /managerportal.php' . ($view ? '?' . ltrim($view, '&') : ''));
+    exit;
+}
+
+// Delete a customer
+if (isset($_GET['delete_customer'])) {
+    $custId = (int)$_GET['delete_customer'];
+    deleteCustomer($custId);
+    // After deletion stay on same view
+    $view = isset($_GET['view']) ? '&view=' . urlencode($_GET['view']) : '';
+    header('Location: /managerportal.php' . ($view ? '?' . ltrim($view, '&') : ''));
+    exit;
+}
+
 // Delete a product
 if (isset($_GET['delete_product'])) {
     $prodId = (int)$_GET['delete_product'];
@@ -133,8 +160,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// At this point all actions are complete.  Fetch data for display.
-$orders = getAllOrders();
+// At this point all actions are complete.  Determine which set of orders to display
+$showArchived = (isset($_GET['view']) && $_GET['view'] === 'archived');
+if ($showArchived) {
+    // Show only archived orders
+    $orders = getAllOrders(true, true);
+} else {
+    // Show only active (non-archived) orders
+    $orders = getAllOrders(false, false);
+}
 $customers = getAllCustomers();
 $products = getAllProducts();
 
@@ -151,6 +185,14 @@ require_once __DIR__ . '/includes/header.php';
 
 <section>
     <h3>Orders</h3>
+    <!-- Toggle between active and archived orders -->
+    <p>
+        <?php if ($showArchived): ?>
+            <a href="?view=active">Show Active Orders</a>
+        <?php else: ?>
+            <a href="?view=archived">Show Archived Orders</a>
+        <?php endif; ?>
+    </p>
     <table class="admin-table">
         <tr><th>ID</th><th>Date</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Actions</th></tr>
         <?php foreach ($orders as $order): ?>
@@ -173,11 +215,14 @@ require_once __DIR__ . '/includes/header.php';
                 <td>$<?php echo number_format($order['total'], 2); ?></td>
                 <td><?php echo htmlspecialchars($order['status']); ?></td>
                 <td>
-                    <?php if ($order['status'] === 'Pending'): ?>
-                        <a href="?approve_order=<?php echo $order['id']; ?>">Approve</a> |
-                        <a href="?reject_order=<?php echo $order['id']; ?>">Reject</a>
+                    <a href="?approve_order=<?php echo $order['id']; ?><?php echo $showArchived ? '&view=archived' : ''; ?>">Approve</a>
+                    |
+                    <a href="?reject_order=<?php echo $order['id']; ?><?php echo $showArchived ? '&view=archived' : ''; ?>">Reject</a>
+                    |
+                    <?php if (!empty($order['archived']) && $order['archived'] == 1): ?>
+                        <a href="?unarchive_order=<?php echo $order['id']; ?><?php echo $showArchived ? '&view=archived' : ''; ?>">Unarchive</a>
                     <?php else: ?>
-                        &ndash;
+                        <a href="?archive_order=<?php echo $order['id']; ?><?php echo $showArchived ? '&view=archived' : ''; ?>">Archive</a>
                     <?php endif; ?>
                 </td>
             </tr>
@@ -193,7 +238,7 @@ require_once __DIR__ . '/includes/header.php';
     <form method="post" action="">
         <input type="hidden" name="save_customers" value="1">
         <table class="admin-table">
-            <tr><th>ID</th><th>Name</th><th>Business</th><th>Phone</th><th>Email</th><th>Billing</th><th>Shipping</th></tr>
+            <tr><th>ID</th><th>Name</th><th>Business</th><th>Phone</th><th>Email</th><th>Billing</th><th>Shipping</th><th>Actions</th></tr>
             <?php foreach ($customers as $cust): ?>
                 <tr>
                     <td><?php echo $cust['id']; ?></td>
@@ -203,6 +248,7 @@ require_once __DIR__ . '/includes/header.php';
                     <td><input type="email" name="c_email_<?php echo $cust['id']; ?>" value="<?php echo htmlspecialchars($cust['email']); ?>"></td>
                     <td><input type="text" name="c_bill_<?php echo $cust['id']; ?>" value="<?php echo htmlspecialchars($cust['billing_address']); ?>"></td>
                     <td><input type="text" name="c_ship_<?php echo $cust['id']; ?>" value="<?php echo htmlspecialchars($cust['shipping_address']); ?>"></td>
+                    <td><a href="?delete_customer=<?php echo $cust['id']; ?><?php echo $showArchived ? '&view=archived' : ''; ?>" onclick="return confirm('Are you sure you want to delete this customer? This will remove all of their orders.');">Delete</a></td>
                 </tr>
             <?php endforeach; ?>
             <?php if (empty($customers)): ?>

@@ -43,7 +43,35 @@ function getDb(): PDO
         }
         initDatabase($db);
     }
+
+    // Always run migrations to ensure schema is up to date
+    migrateDatabase($db);
     return $db;
+}
+
+/**
+ * Apply any necessary schema migrations when the database already exists.
+ * Currently ensures the orders table has an 'archived' column so orders
+ * can be archived/unarchived without losing their ID numbers.  If the
+ * column is missing it will be added with a default value of 0.
+ *
+ * @param PDO $db
+ */
+function migrateDatabase(PDO $db): void
+{
+    // Check whether the 'archived' column exists on orders table
+    $info = $db->query("PRAGMA table_info(orders)")->fetchAll(PDO::FETCH_ASSOC);
+    $hasArchived = false;
+    foreach ($info as $col) {
+        if (strcasecmp($col['name'], 'archived') === 0) {
+            $hasArchived = true;
+            break;
+        }
+    }
+    if (!$hasArchived) {
+        // Add the archived column with default 0
+        $db->exec('ALTER TABLE orders ADD COLUMN archived INTEGER DEFAULT 0');
+    }
 }
 
 /**

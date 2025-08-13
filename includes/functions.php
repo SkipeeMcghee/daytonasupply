@@ -325,14 +325,30 @@ function getOrdersByCustomer(int $customerId): array
 }
 
 /**
- * Retrieve all orders (for the manager portal).
+ * Retrieve orders with optional filtering by archived status.  Orders are
+ * returned in reverse chronological order of creation.  Each order row
+ * includes the customer name and email for convenience.  To include
+ * archived orders, set $includeArchived to true.  To show only archived
+ * orders, set $onlyArchived to true.
  *
+ * @param bool $includeArchived If true, include both active and archived orders.
+ * @param bool $onlyArchived If true, return only archived orders.
  * @return array
  */
-function getAllOrders(): array
+function getAllOrders(bool $includeArchived = false, bool $onlyArchived = false): array
 {
     $db = getDb();
-    $stmt = $db->query('SELECT o.*, c.name AS customer_name, c.email AS customer_email FROM orders o JOIN customers c ON o.customer_id = c.id ORDER BY o.created_at DESC');
+    $where = '';
+    if ($onlyArchived) {
+        $where = 'WHERE o.archived = 1';
+    } elseif (!$includeArchived) {
+        $where = 'WHERE o.archived = 0';
+    }
+    $sql = 'SELECT o.*, c.name AS customer_name, c.email AS customer_email FROM orders o ' .
+           'JOIN customers c ON o.customer_id = c.id ' .
+           $where . ' ORDER BY o.created_at DESC';
+    $stmt = $db->prepare($sql);
+    $stmt->execute();
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
@@ -380,6 +396,63 @@ function getOrderItems(int $orderId): array
     $stmt = $db->prepare('SELECT * FROM order_items WHERE order_id = :order_id');
     $stmt->execute([':order_id' => $orderId]);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+/**
+ * Archive or unarchive an order by setting the archived flag.  When an
+ * order is archived it will not appear in the default order list but
+ * remains in the database so that its ID stays consistent.  Passing
+ * false for $archive will unarchive the order.
+ *
+ * @param int $orderId
+ * @param bool $archive
+ */
+function archiveOrder(int $orderId, bool $archive = true): void
+{
+    $db = getDb();
+    $stmt = $db->prepare('UPDATE orders SET archived = :archived WHERE id = :id');
+    $stmt->execute([
+        ':archived' => $archive ? 1 : 0,
+        ':id' => $orderId
+    ]);
+}
+
+/**
+ * Delete a customer along with all of their orders and related order items.
+ * This action will remove the customer record and any associated orders
+ * and order_items.  Order and product ID sequences are not reset so
+ * other orders retain their original IDs.  Use cautiously because this
+ * operation cannot be undone.
+ *
+ * @param int $customerId
+ */
+function deleteCustomer(int $customerId): void
+{
+    $db = getDb();
+    $db->beginTransaction();
+    try {
+        // Find all orders for this customer
+        $stmtOrders = $db->prepare('SELECT id FROM orders WHERE customer_id = :cust');
+        $stmtOrders->execute([':cust' => $customerId]);
+        $orderIds = $stmtOrders->fetchAll(PDO::FETCH_COLUMN, 0);
+        if (!empty($orderIds)) {
+            // Prepare placeholders for IN clause
+            $placeholders = implode(',', array_fill(0, count($orderIds), '?'));
+            // Delete order items referencing these orders
+            $delItems = $db->prepare('DELETE FROM order_items WHERE order_id IN (' . $placeholders . ')');
+            $delItems->execute($orderIds);
+            // Delete the orders themselves
+            $delOrders = $db->prepare('DELETE FROM orders WHERE id IN (' . $placeholders . ')');
+            $delOrders->execute($orderIds);
+        }
+        // Delete customer
+        $delCust = $db->prepare('DELETE FROM customers WHERE id = :id');
+        $delCust->execute([':id' => $customerId]);
+        $db->commit();
+    } catch (Exception $e) {
+        $db->rollBack();
+        throw $e;
+    }
 }
 
 // Do not close the PHP tag to prevent accidental output from trailing whitespace.
