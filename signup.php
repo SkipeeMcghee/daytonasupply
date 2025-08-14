@@ -9,7 +9,10 @@ require_once __DIR__ . '/includes/functions.php';
 
 $title = 'Sign Up';
 
+// Holds validation errors
 $errors = [];
+// Success message when registration completes
+$successMessage = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Gather and sanitize input
     $name    = trim($_POST['name'] ?? '');
@@ -43,10 +46,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'shipping_address' => $ship,
                 'password' => $password
             ]);
-            // Log them in
-            $_SESSION['customer'] = getCustomerById($customerId);
-            header('Location: account.php');
-            exit;
+            // Generate a verification token and associate it with the new customer
+            $token = generateVerificationToken();
+            setCustomerVerification($customerId, $token);
+            // Construct verification URL.  Use current host and directory to build a link
+            $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+            $host = $_SERVER['HTTP_HOST'];
+            // dirname on PHP_SELF gives the current directory (may be subfolder)
+            $dir = rtrim(dirname($_SERVER['PHP_SELF']), '/\\');
+            // Build relative path to verify.php
+            $verifyPath = ($dir === '' ? '' : $dir . '/') . 'verify.php?token=' . urlencode($token);
+            $verificationUrl = $scheme . '://' . $host . $verifyPath;
+            // Send verification email
+            $body = "Hello " . $name . ",\n\n" .
+                    "Thank you for registering an account with Daytona Supply.\n" .
+                    "Please verify your email address by clicking the link below:\n\n" .
+                    $verificationUrl . "\n\n" .
+                    "If you did not sign up for an account, please ignore this message.";
+            sendEmail($email, 'Verify your Daytona Supply account', $body);
+            // Show success message instead of logging the user in
+            $successMessage = 'Registration successful! Please check your email to verify your account.';
         } catch (Exception $e) {
             $errors[] = $e->getMessage();
         }
@@ -56,22 +75,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 include __DIR__ . '/includes/header.php';
 ?>
 <h1>Sign Up</h1>
-<?php if (!empty($errors)): ?>
-    <ul class="error">
-        <?php foreach ($errors as $err): ?>
-            <li><?= htmlspecialchars($err) ?></li>
-        <?php endforeach; ?>
-    </ul>
+<?php if (!empty($successMessage)): ?>
+    <p class="message" style="color:green; font-weight:bold;"><?= htmlspecialchars($successMessage) ?></p>
+<?php else: ?>
+    <?php if (!empty($errors)): ?>
+        <ul class="error">
+            <?php foreach ($errors as $err): ?>
+                <li><?= htmlspecialchars($err) ?></li>
+            <?php endforeach; ?>
+        </ul>
+    <?php endif; ?>
+    <form method="post" action="signup.php">
+        <p>Name: <input type="text" name="name" required value="<?= isset($name) ? htmlspecialchars($name) : '' ?>"></p>
+        <p>Business Name: <input type="text" name="business_name" value="<?= isset($biz) ? htmlspecialchars($biz) : '' ?>"></p>
+        <p>Phone: <input type="text" name="phone" value="<?= isset($phone) ? htmlspecialchars($phone) : '' ?>"></p>
+        <p>Email: <input type="email" name="email" required value="<?= isset($email) ? htmlspecialchars($email) : '' ?>"></p>
+        <p>Billing Address: <input type="text" name="billing_address" value="<?= isset($bill) ? htmlspecialchars($bill) : '' ?>"></p>
+        <p>Shipping Address: <input type="text" name="shipping_address" value="<?= isset($ship) ? htmlspecialchars($ship) : '' ?>"></p>
+        <p>Password: <input type="password" name="password" required></p>
+        <p>Confirm Password: <input type="password" name="confirm" required></p>
+        <p><button type="submit">Create Account</button></p>
+    </form>
 <?php endif; ?>
-<form method="post" action="signup.php">
-    <p>Name: <input type="text" name="name" required value="<?= isset($name) ? htmlspecialchars($name) : '' ?>"></p>
-    <p>Business Name: <input type="text" name="business_name" value="<?= isset($biz) ? htmlspecialchars($biz) : '' ?>"></p>
-    <p>Phone: <input type="text" name="phone" value="<?= isset($phone) ? htmlspecialchars($phone) : '' ?>"></p>
-    <p>Email: <input type="email" name="email" required value="<?= isset($email) ? htmlspecialchars($email) : '' ?>"></p>
-    <p>Billing Address: <input type="text" name="billing_address" value="<?= isset($bill) ? htmlspecialchars($bill) : '' ?>"></p>
-    <p>Shipping Address: <input type="text" name="shipping_address" value="<?= isset($ship) ? htmlspecialchars($ship) : '' ?>"></p>
-    <p>Password: <input type="password" name="password" required></p>
-    <p>Confirm Password: <input type="password" name="confirm" required></p>
-    <p><button type="submit">Create Account</button></p>
-</form>
 <?php include __DIR__ . '/includes/footer.php'; ?>

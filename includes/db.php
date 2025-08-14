@@ -59,18 +59,36 @@ function getDb(): PDO
  */
 function migrateDatabase(PDO $db): void
 {
-    // Check whether the 'archived' column exists on orders table
-    $info = $db->query("PRAGMA table_info(orders)")->fetchAll(PDO::FETCH_ASSOC);
-    $hasArchived = false;
-    foreach ($info as $col) {
-        if (strcasecmp($col['name'], 'archived') === 0) {
-            $hasArchived = true;
-            break;
+    /**
+     * Perform schema migrations to ensure the database has all required
+     * columns.  SQLite supports adding columns via ALTER TABLE, which
+     * allows us to evolve the schema over time without destroying
+     * existing data.  We check for missing columns and add them with
+     * sensible defaults.
+     */
+    // Helper closure to determine if a column exists on a table
+    $columnExists = function (string $table, string $column) use ($db): bool {
+        $stmt = $db->prepare("PRAGMA table_info(" . $table . ")");
+        $stmt->execute();
+        $cols = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($cols as $col) {
+            if (strcasecmp($col['name'], $column) === 0) {
+                return true;
+            }
         }
-    }
-    if (!$hasArchived) {
-        // Add the archived column with default 0
+        return false;
+    };
+    // orders.archived column to allow archiving/unarchiving orders
+    if (!$columnExists('orders', 'archived')) {
         $db->exec('ALTER TABLE orders ADD COLUMN archived INTEGER DEFAULT 0');
+    }
+    // customers.is_verified column to track whether a customer has verified their email
+    if (!$columnExists('customers', 'is_verified')) {
+        $db->exec('ALTER TABLE customers ADD COLUMN is_verified INTEGER DEFAULT 0');
+    }
+    // customers.verification_token column to store email verification tokens
+    if (!$columnExists('customers', 'verification_token')) {
+        $db->exec('ALTER TABLE customers ADD COLUMN verification_token TEXT');
     }
 }
 
@@ -91,7 +109,11 @@ function initDatabase(PDO $db): void
         email TEXT UNIQUE NOT NULL,
         billing_address TEXT,
         shipping_address TEXT,
-        password_hash TEXT NOT NULL
+        password_hash TEXT NOT NULL,
+        -- 0 means the user has not verified their email, 1 means verified
+        is_verified INTEGER DEFAULT 0,
+        -- random token used for email verification
+        verification_token TEXT
     )');
     $db->exec('CREATE TABLE IF NOT EXISTS products (
         id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -8,14 +8,15 @@ $title = 'Checkout';
 // Require cart not empty
 $cart = $_SESSION['cart'] ?? [];
 if (!$cart) {
-    echo '<p>Your cart is empty. <a href="/catalogue.php">Go back to catalogue</a>.</p>';
+    // Use relative link for catalogue so it works when the site is served from a subfolder
+    echo '<p>Your cart is empty. <a href="catalogue.php">Go back to catalogue</a>.</p>';
     include __DIR__ . '/includes/footer.php';
     return;
 }
 
 // Require login
 if (!isset($_SESSION['customer'])) {
-    header('Location: /login.php');
+    header('Location: login.php');
     exit;
 }
 

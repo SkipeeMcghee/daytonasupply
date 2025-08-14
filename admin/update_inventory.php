@@ -10,7 +10,8 @@ session_start();
 require_once __DIR__ . '/../includes/db.php';
 // Only proceed if admin is authenticated
 if (!isset($_SESSION['admin'])) {
-    header('Location: /managerportal.php');
+    // Use relative path to manager portal when redirecting from within admin
+    header('Location: ../managerportal.php');
     exit;
 }
 
@@ -87,7 +88,7 @@ try {
 
     $db->commit();
     // Redirect back to the manager portal once done
-    header('Location: /managerportal.php');
+    header('Location: ../managerportal.php');
     exit;
 } catch (Exception $e) {
     $db->rollBack();

@@ -25,25 +25,26 @@ $adminLoggedIn = isset($_SESSION['admin']);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo isset($title) ? htmlspecialchars($title) : 'Daytona Supply'; ?></title>
+    <!-- Use a relative path for the stylesheet so it still resolves when the site is served from a subfolder -->
     <link rel="stylesheet" href="assets/styles.css">
-    
 </head>
 <body>
 <header>
     <nav>
         <ul class="nav">
-            <li><a href="/index.php">Home</a></li>
-            <li><a href="/catalogue.php">Catalogue</a></li>
-            <li><a href="/cart.php">Cart (<?php echo $cartCount; ?>)</a></li>
+            <!-- Use relative links so navigation works regardless of the base directory -->
+            <li><a href="index.php">Home</a></li>
+            <li><a href="catalogue.php">Catalogue</a></li>
+            <li><a href="cart.php">Cart (<?php echo $cartCount; ?>)</a></li>
             <?php if ($loggedIn): ?>
-                <li><a href="/account.php">My Account</a></li>
-                <li><a href="/logout.php">Logout</a></li>
+                <li><a href="account.php">My Account</a></li>
+                <li><a href="logout.php">Logout</a></li>
             <?php else: ?>
-                <li><a href="/signup.php">Sign Up</a></li>
-                <li><a href="/login.php">Login</a></li>
+                <li><a href="signup.php">Sign Up</a></li>
+                <li><a href="login.php">Login</a></li>
             <?php endif; ?>
             <?php if ($adminLoggedIn): ?>
-                <li><a href="/managerportal.php">Manager Portal</a></li>
+                <li><a href="managerportal.php">Manager Portal</a></li>
             <?php endif; ?>
         </ul>
     </nav>

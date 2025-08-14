@@ -16,10 +16,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = $_POST['password'] ?? '';
     $customer = authenticateCustomer($email, $password);
     if ($customer) {
-        // Store customer data in session and redirect to account page
-        $_SESSION['customer'] = $customer;
-        header('Location: account.php');
-        exit;
+        // Check if the account has been verified
+        if (!empty($customer['is_verified']) && (int)$customer['is_verified'] === 1) {
+            // Store customer data in session and redirect to account page
+            $_SESSION['customer'] = $customer;
+            header('Location: account.php');
+            exit;
+        } else {
+            $error = 'Please verify your email address before logging in.';
+        }
     } else {
         $error = 'Invalid credentials';
     }

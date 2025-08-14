@@ -24,7 +24,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['product_id'])) {
     } else {
         $_SESSION['cart'][$pid] = $qty;
     }
-    header('Location: /cart.php');
+    // Redirect to the cart using a relative path so it works from subfolders
+    header('Location: cart.php');
     exit;
 }
 
@@ -71,7 +72,7 @@ if (!empty($_SESSION['cart'])) {
     <div class="message"><?php echo htmlspecialchars($message); ?></div>
 <?php endif; ?>
 <?php if (empty($cartItems)): ?>
-    <p>Your cart is empty.  <a href="/catalogue.php">Browse products</a>.</p>
+    <p>Your cart is empty.  <a href="catalogue.php">Browse products</a>.</p>
 <?php else: ?>
     <form method="post" action="">
         <input type="hidden" name="update_cart" value="1">
@@ -89,6 +90,6 @@ if (!empty($_SESSION['cart'])) {
         </table>
         <p><button type="submit">Update Cart</button></p>
     </form>
-    <p><a href="/checkout.php" class="button">Proceed to Checkout</a></p>
+    <p><a href="checkout.php" class="button">Proceed to Checkout</a></p>
 <?php endif; ?>
 <?php include __DIR__ . '/includes/footer.php'; ?>

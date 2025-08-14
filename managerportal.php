@@ -27,7 +27,7 @@ if (!isset($_SESSION['admin'])) {
         if ($hash && password_verify($password, $hash)) {
             // Successful login: set session and redirect to self
             $_SESSION['admin'] = true;
-            header('Location: /managerportal.php');
+            header('Location: managerportal.php');
             exit;
         } else {
             $loginError = 'Incorrect password.';
@@ -55,13 +55,13 @@ if (!isset($_SESSION['admin'])) {
 if (isset($_GET['approve_order'])) {
     $orderId = (int)$_GET['approve_order'];
     updateOrderStatus($orderId, 'Approved');
-    header('Location: /managerportal.php');
+    header('Location: managerportal.php');
     exit;
 }
 if (isset($_GET['reject_order'])) {
     $orderId = (int)$_GET['reject_order'];
     updateOrderStatus($orderId, 'Rejected');
-    header('Location: /managerportal.php');
+    header('Location: managerportal.php');
     exit;
 }
 
@@ -71,14 +71,14 @@ if (isset($_GET['archive_order'])) {
     archiveOrder($orderId, true);
     // Preserve the view parameter when redirecting
     $view = isset($_GET['view']) ? '&view=' . urlencode($_GET['view']) : '';
-    header('Location: /managerportal.php' . ($view ? '?' . ltrim($view, '&') : ''));
+    header('Location: managerportal.php' . ($view ? '?' . ltrim($view, '&') : ''));
     exit;
 }
 if (isset($_GET['unarchive_order'])) {
     $orderId = (int)$_GET['unarchive_order'];
     archiveOrder($orderId, false);
     $view = isset($_GET['view']) ? '&view=' . urlencode($_GET['view']) : '';
-    header('Location: /managerportal.php' . ($view ? '?' . ltrim($view, '&') : ''));
+    header('Location: managerportal.php' . ($view ? '?' . ltrim($view, '&') : ''));
     exit;
 }
 
@@ -88,7 +88,7 @@ if (isset($_GET['delete_customer'])) {
     deleteCustomer($custId);
     // After deletion stay on same view
     $view = isset($_GET['view']) ? '&view=' . urlencode($_GET['view']) : '';
-    header('Location: /managerportal.php' . ($view ? '?' . ltrim($view, '&') : ''));
+    header('Location: managerportal.php' . ($view ? '?' . ltrim($view, '&') : ''));
     exit;
 }
 
@@ -96,7 +96,7 @@ if (isset($_GET['delete_customer'])) {
 if (isset($_GET['delete_product'])) {
     $prodId = (int)$_GET['delete_product'];
     deleteProduct($prodId);
-    header('Location: /managerportal.php');
+    header('Location: managerportal.php');
     exit;
 }
 
@@ -119,7 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 saveProduct($data, $id);
             }
         }
-        header('Location: /managerportal.php');
+    header('Location: managerportal.php');
         exit;
     }
     // Add a new product
@@ -130,7 +130,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($name !== '') {
             saveProduct(['name' => $name, 'description' => $desc, 'price' => $price]);
         }
-        header('Location: /managerportal.php');
+    header('Location: managerportal.php');
         exit;
     }
     // Save customer changes
@@ -155,7 +155,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ]);
             }
         }
-        header('Location: /managerportal.php');
+        header('Location: managerportal.php');
         exit;
     }
 }
@@ -180,7 +180,8 @@ require_once __DIR__ . '/includes/header.php';
 
 <!-- Toolbar with inventory management -->
 <div style="display:flex; justify-content:flex-end; margin:10px 0 20px 0;">
-    <a href="/admin/update_inventory.php" style="background:#0b5ed7; color:#fff; padding:8px 14px; border-radius:6px; text-decoration:none; font-weight:600;">Update Inventory</a>
+    <!-- Use a relative URL so the link works when the site is served from a subfolder -->
+    <a href="admin/update_inventory.php" style="background:#0b5ed7; color:#fff; padding:8px 14px; border-radius:6px; text-decoration:none; font-weight:600;">Update Inventory</a>
 </div>
 
 <section>

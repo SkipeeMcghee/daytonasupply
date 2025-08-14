@@ -161,6 +161,78 @@ function sendEmail(string $to, string $subject, string $message): bool
 }
 
 /**
+ * Generate a random verification token for email verification.  A token
+ * consists of hexadecimal characters derived from cryptographically
+ * secure random bytes.  By default a 32‑character token is returned.
+ *
+ * @param int $length Length of the token in characters (must be even)
+ * @return string
+ */
+function generateVerificationToken(int $length = 32): string
+{
+    // Ensure length is even because bin2hex outputs two hex chars per byte
+    if ($length % 2 !== 0) {
+        $length++;
+    }
+    return bin2hex(random_bytes((int)($length / 2)));
+}
+
+/**
+ * Set a new verification token for a customer and mark them as not verified.
+ * This helper is used when a new customer registers and needs to verify
+ * their email address.  It stores the provided token and resets
+ * is_verified to 0.
+ *
+ * @param int $customerId
+ * @param string $token
+ * @return void
+ */
+function setCustomerVerification(int $customerId, string $token): void
+{
+    $db = getDb();
+    $stmt = $db->prepare('UPDATE customers SET verification_token = :token, is_verified = 0 WHERE id = :id');
+    $stmt->execute([
+        ':token' => $token,
+        ':id' => $customerId
+    ]);
+}
+
+/**
+ * Verify a customer using the provided token.  If the token matches a
+ * customer who has not yet been verified, the customer's is_verified
+ * flag is set to 1 and their verification_token is cleared.  The
+ * updated customer record is returned.  If the token is invalid or
+ * already used, null is returned.
+ *
+ * @param string $token
+ * @return array|null
+ */
+function verifyCustomer(string $token): ?array
+{
+    $db = getDb();
+    $db->beginTransaction();
+    try {
+        // Look up the customer by token and ensure they are not yet verified
+        $sel = $db->prepare('SELECT * FROM customers WHERE verification_token = :token AND is_verified = 0');
+        $sel->execute([':token' => $token]);
+        $customer = $sel->fetch(PDO::FETCH_ASSOC);
+        if (!$customer) {
+            $db->rollBack();
+            return null;
+        }
+        // Update verification status
+        $upd = $db->prepare('UPDATE customers SET is_verified = 1, verification_token = NULL WHERE id = :id');
+        $upd->execute([':id' => $customer['id']]);
+        $db->commit();
+        // Refresh and return the updated customer
+        return getCustomerById((int)$customer['id']);
+    } catch (Exception $e) {
+        $db->rollBack();
+        throw $e;
+    }
+}
+
+/**
  * Authenticate a customer by email and password.
  *
  * @param string $email
@@ -377,11 +449,31 @@ function searchProducts(string $term): array
 function updateOrderStatus(int $orderId, string $status): void
 {
     $db = getDb();
+    // Update the order status
     $stmt = $db->prepare('UPDATE orders SET status = :status WHERE id = :id');
     $stmt->execute([
         ':status' => $status,
         ':id' => $orderId
     ]);
+    // Send a notification email to the customer about the status change
+    try {
+        // Fetch order with customer info
+        $query = $db->prepare('SELECT o.id, o.status, c.name AS customer_name, c.email AS customer_email FROM orders o JOIN customers c ON o.customer_id = c.id WHERE o.id = :id');
+        $query->execute([':id' => $orderId]);
+        $order = $query->fetch(PDO::FETCH_ASSOC);
+        if ($order && !empty($order['customer_email'])) {
+            $to = $order['customer_email'];
+            $subj = 'Your Order #' . $order['id'] . ' has been updated';
+            $msg = "Hello " . $order['customer_name'] . ",\n\n" .
+                   "Your order #" . $order['id'] . " has been " . strtolower($status) . ".\n\n" .
+                   "You can log in to your account to view the details.\n\n" .
+                   "Thank you for shopping with us.";
+            sendEmail($to, $subj, $msg);
+        }
+    } catch (Exception $e) {
+        // Log but do not interrupt order status change on email failure
+        error_log('updateOrderStatus email error: ' . $e->getMessage());
+    }
 }
 
 /**
