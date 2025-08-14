@@ -4,6 +4,13 @@
 
 require_once __DIR__ . '/db.php';
 
+// Optionally load local configuration containing environment variables.
+// This file can be created by administrators to override settings such as
+// COMPANY_EMAIL, SMTP credentials, and other custom values without
+// modifying the main codebase.  If the file does not exist it is
+// ignored.
+@include __DIR__ . '/config.local.php';
+
 /**
  * Ensure the COMPANY_EMAIL environment variable is set.  Many parts of
  * the application rely on getenv('COMPANY_EMAIL') to determine where
