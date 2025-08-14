@@ -90,6 +90,16 @@ function migrateDatabase(PDO $db): void
     if (!$columnExists('customers', 'verification_token')) {
         $db->exec('ALTER TABLE customers ADD COLUMN verification_token TEXT');
     }
+
+    // Ensure at least one admin account exists.  If the admin table is
+    // empty, insert a default admin with password 'admin'.  The
+    // password_hash() function is used to securely store the password.
+    $adminCount = (int)$db->query('SELECT COUNT(*) FROM admin')->fetchColumn();
+    if ($adminCount === 0) {
+        $defaultHash = password_hash('admin', PASSWORD_DEFAULT);
+        $stmtIns = $db->prepare('INSERT INTO admin(password_hash) VALUES(:hash)');
+        $stmtIns->execute([':hash' => $defaultHash]);
+    }
 }
 
 /**
@@ -141,6 +151,45 @@ function initDatabase(PDO $db): void
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         password_hash TEXT NOT NULL
     )');
+
+    // Seed a default admin account if none exists yet.  We only want to
+    // insert the default admin on initial setup when there are no rows
+    // in the admin table.  The default password is "admin" and is
+    // hashed using PHP's password_hash() for security.  If you change
+    // this password later via the manager portal or directly in the
+    // database, the default insertion will be skipped on subsequent
+    // runs.
+    $existsStmt = $db->query('SELECT COUNT(*) FROM admin');
+    $count = (int)$existsStmt->fetchColumn();
+    if ($count === 0) {
+        $defaultHash = password_hash('admin', PASSWORD_DEFAULT);
+        $insAdmin = $db->prepare('INSERT INTO admin(password_hash) VALUES(:hash)');
+        $insAdmin->execute([':hash' => $defaultHash]);
+    }
+
+    // If a pre-defined inventory JSON exists and products table is empty,
+    // seed the products from that file.  This allows the catalogue to
+    // populate automatically on first run without requiring manual
+    // insertion.  The file should contain a JSON array of objects with
+    // keys "name", "description", and "price".
+    $prodCount = (int)$db->query('SELECT COUNT(*) FROM products')->fetchColumn();
+    $inventoryFile = __DIR__ . '/../data/inventory.json';
+    if ($prodCount === 0 && is_readable($inventoryFile)) {
+        $json = file_get_contents($inventoryFile);
+        $items = json_decode($json, true);
+        if (is_array($items)) {
+            $insProd = $db->prepare('INSERT INTO products(name, description, price) VALUES(:name, :description, :price)');
+            foreach ($items as $item) {
+                if (!empty($item['name'])) {
+                    $insProd->execute([
+                        ':name' => $item['name'],
+                        ':description' => $item['description'] ?? '',
+                        ':price' => isset($item['price']) ? (float)$item['price'] : 0.0
+                    ]);
+                }
+            }
+        }
+    }
 }
 
 ?>
