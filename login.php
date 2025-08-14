@@ -43,5 +43,6 @@ include __DIR__ . '/includes/header.php';
     <label>Password: <input type="password" name="password" required></label><br>
     <button type="submit">Login</button>
 </form>
+<p><a href="forgot_password.php">Forgot your password?</a></p>
 <p>Don't have an account? <a href="signup.php">Sign up</a></p>
 <?php include __DIR__ . '/includes/footer.php'; ?>

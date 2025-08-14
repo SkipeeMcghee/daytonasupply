@@ -16,7 +16,9 @@ if (!isset($_SESSION['customer'])) {
 $customer = $_SESSION['customer'];
 
 // Handle updates
+// Messages and errors to display
 $messages = [];
+$errors = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id   = (int)$customer['id'];
     $name = trim($_POST['name'] ?? $customer['name']);
@@ -24,12 +26,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $phone= trim($_POST['phone'] ?? $customer['phone']);
     $bill = trim($_POST['billing_address'] ?? $customer['billing_address']);
     $ship = trim($_POST['shipping_address'] ?? $customer['shipping_address']);
-    $pass = $_POST['password'] ?? '';
+    $newPass = $_POST['password'] ?? '';
+    $currentPass = $_POST['current_password'] ?? '';
     // If the user checked the same_as_billing box, copy billing to shipping
     $sameBillingFlag = isset($_POST['same_as_billing']);
     if ($sameBillingFlag) {
         $ship = $bill;
     }
+    // Build data for update
     $data = [
         'name' => $name,
         'business_name' => $biz,
@@ -37,14 +41,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'billing_address' => $bill,
         'shipping_address' => $ship
     ];
-    if ($pass !== '') {
-        $data['password'] = $pass;
+    // Handle password change
+    if ($newPass !== '') {
+        if ($currentPass === '') {
+            $errors[] = 'Please enter your current password to change it.';
+        } elseif (!authenticateCustomer($customer['email'], $currentPass)) {
+            $errors[] = 'Current password is incorrect.';
+        } else {
+            $data['password'] = $newPass;
+        }
     }
-    updateCustomer($id, $data);
-    // Refresh session data
-    $_SESSION['customer'] = getCustomerById($id);
-    $customer = $_SESSION['customer'];
-    $messages[] = 'Your details have been updated.';
+    if (empty($errors)) {
+        updateCustomer($id, $data);
+        // Refresh session data
+        $_SESSION['customer'] = getCustomerById($id);
+        $customer = $_SESSION['customer'];
+        $messages[] = 'Your details have been updated.';
+    }
 }
 
 $orders = getOrdersByCustomer((int)$customer['id']);
@@ -55,6 +68,13 @@ include __DIR__ . '/includes/header.php';
 <?php foreach ($messages as $msg): ?>
     <p class="success"><?= htmlspecialchars($msg) ?></p>
 <?php endforeach; ?>
+<?php if (!empty($errors)): ?>
+    <ul class="error">
+        <?php foreach ($errors as $err): ?>
+            <li><?= htmlspecialchars($err) ?></li>
+        <?php endforeach; ?>
+    </ul>
+<?php endif; ?>
 <h2>Your Details</h2>
 <form method="post" action="account.php">
     <p>Name: <input type="text" name="name" value="<?= htmlspecialchars($customer['name']) ?>" required></p>
@@ -91,6 +111,7 @@ include __DIR__ . '/includes/header.php';
         sync();
     });
     </script>
+    <p>Current Password: <input type="password" name="current_password"></p>
     <p>New Password (leave blank to keep current): <input type="password" name="password"></p>
     <p><button type="submit">Save Changes</button></p>
 </form>

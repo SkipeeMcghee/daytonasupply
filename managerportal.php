@@ -161,6 +161,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // At this point all actions are complete.  Determine which set of orders to display
+// and which customers to show (all vs. pending verification).
 $showArchived = (isset($_GET['view']) && $_GET['view'] === 'archived');
 if ($showArchived) {
     // Show only archived orders
@@ -169,7 +170,13 @@ if ($showArchived) {
     // Show only active (non-archived) orders
     $orders = getAllOrders(false, false);
 }
-$customers = getAllCustomers();
+// Determine whether to show only customers pending verification
+$showPendingCustomers = (isset($_GET['cust_view']) && $_GET['cust_view'] === 'pending');
+if ($showPendingCustomers) {
+    $customers = getAllCustomers(true);
+} else {
+    $customers = getAllCustomers(false);
+}
 $products = getAllProducts();
 
 // Include the header now that no further redirects will occur
@@ -236,10 +243,31 @@ require_once __DIR__ . '/includes/header.php';
 
 <section>
     <h3>Customers</h3>
+    <!-- Toggle between all customers and pending (unverified) customers -->
+    <p>
+        <?php
+        // Build a query string that preserves the current order view (archived vs active)
+        $orderViewParam = $showArchived ? 'view=archived' : '';
+        if ($showPendingCustomers) {
+            // Currently showing pending customers; link back to all
+            $qs = $orderViewParam ? '?' . $orderViewParam : '';
+            echo '<a href="' . htmlspecialchars('managerportal.php' . $qs) . '">Show All Customers</a>';
+        } else {
+            // Show pending customers link
+            $qs = '';
+            if ($orderViewParam !== '') {
+                $qs = '?'.$orderViewParam.'&cust_view=pending';
+            } else {
+                $qs = '?cust_view=pending';
+            }
+            echo '<a href="' . htmlspecialchars('managerportal.php' . $qs) . '">Show Pending Customers</a>';
+        }
+        ?>
+    </p>
     <form method="post" action="">
         <input type="hidden" name="save_customers" value="1">
         <table class="admin-table">
-            <tr><th>ID</th><th>Name</th><th>Business</th><th>Phone</th><th>Email</th><th>Billing</th><th>Shipping</th><th>Actions</th></tr>
+            <tr><th>ID</th><th>Name</th><th>Business</th><th>Phone</th><th>Email</th><th>Billing</th><th>Shipping</th><th>Verified</th><th>Actions</th></tr>
             <?php foreach ($customers as $cust): ?>
                 <tr>
                     <td><?php echo $cust['id']; ?></td>
@@ -249,11 +277,12 @@ require_once __DIR__ . '/includes/header.php';
                     <td><input type="email" name="c_email_<?php echo $cust['id']; ?>" value="<?php echo htmlspecialchars($cust['email']); ?>"></td>
                     <td><input type="text" name="c_bill_<?php echo $cust['id']; ?>" value="<?php echo htmlspecialchars($cust['billing_address']); ?>"></td>
                     <td><input type="text" name="c_ship_<?php echo $cust['id']; ?>" value="<?php echo htmlspecialchars($cust['shipping_address']); ?>"></td>
-                    <td><a href="?delete_customer=<?php echo $cust['id']; ?><?php echo $showArchived ? '&view=archived' : ''; ?>" onclick="return confirm('Are you sure you want to delete this customer? This will remove all of their orders.');">Delete</a></td>
+                    <td><?php echo (isset($cust['is_verified']) && (int)$cust['is_verified'] === 1) ? 'Yes' : 'No'; ?></td>
+                    <td><a href="?delete_customer=<?php echo $cust['id']; ?><?php echo $showArchived ? '&view=archived' : ''; ?><?php echo $showPendingCustomers ? '&cust_view=pending' : ''; ?>" onclick="return confirm('Are you sure you want to delete this customer? This will remove all of their orders.');">Delete</a></td>
                 </tr>
             <?php endforeach; ?>
             <?php if (empty($customers)): ?>
-                <tr><td colspan="7">No customers found.</td></tr>
+                <tr><td colspan="9">No customers found.</td></tr>
             <?php endif; ?>
         </table>
         <p><button type="submit">Save Customer Changes</button></p>

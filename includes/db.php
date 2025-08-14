@@ -91,6 +91,15 @@ function migrateDatabase(PDO $db): void
         $db->exec('ALTER TABLE customers ADD COLUMN verification_token TEXT');
     }
 
+    // customers.reset_token column to store password reset tokens (hashed)
+    if (!$columnExists('customers', 'reset_token')) {
+        $db->exec('ALTER TABLE customers ADD COLUMN reset_token TEXT');
+    }
+    // customers.reset_token_expires column to store expiration timestamp for reset tokens
+    if (!$columnExists('customers', 'reset_token_expires')) {
+        $db->exec('ALTER TABLE customers ADD COLUMN reset_token_expires TEXT');
+    }
+
     // Ensure at least one admin account exists.  If the admin table is
     // empty, insert a default admin with password 'admin'.  The
     // password_hash() function is used to securely store the password.
@@ -123,7 +132,10 @@ function initDatabase(PDO $db): void
         -- 0 means the user has not verified their email, 1 means verified
         is_verified INTEGER DEFAULT 0,
         -- random token used for email verification
-        verification_token TEXT
+        verification_token TEXT,
+        -- password reset token (hashed) and expiry timestamp
+        reset_token TEXT,
+        reset_token_expires TEXT
     )');
     $db->exec('CREATE TABLE IF NOT EXISTS products (
         id INTEGER PRIMARY KEY AUTOINCREMENT,

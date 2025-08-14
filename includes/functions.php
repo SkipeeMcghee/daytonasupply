@@ -250,6 +250,88 @@ function verifyCustomer(string $token): ?array
 }
 
 /**
+ * Retrieve a customer by their email address.  Returns null if no
+ * customer with the given email exists.  The email comparison is
+ * case-insensitive.
+ *
+ * @param string $email
+ * @return array|null
+ */
+function getCustomerByEmail(string $email): ?array
+{
+    $db = getDb();
+    $stmt = $db->prepare('SELECT * FROM customers WHERE LOWER(email) = LOWER(:email)');
+    $stmt->execute([':email' => $email]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    return $row ?: null;
+}
+
+/**
+ * Set a password reset token and its expiry time for a customer.  The
+ * provided token will be hashed using password_hash() before being
+ * stored.  The expiry should be an ISO8601 timestamp.  Any previous
+ * reset token and expiry will be overwritten.
+ *
+ * @param int $customerId
+ * @param string $token  The raw token to hash and store
+ * @param string $expires ISO8601 timestamp when the token expires
+ */
+function setPasswordResetToken(int $customerId, string $token, string $expires): void
+{
+    $db = getDb();
+    $hash = password_hash($token, PASSWORD_DEFAULT);
+    $stmt = $db->prepare('UPDATE customers SET reset_token = :hash, reset_token_expires = :expires WHERE id = :id');
+    $stmt->execute([
+        ':hash' => $hash,
+        ':expires' => $expires,
+        ':id' => $customerId
+    ]);
+}
+
+/**
+ * Find a customer by password reset token.  This function verifies
+ * that the provided raw token matches the stored hashed token and
+ * checks that the expiry has not passed.  If the token is valid and
+ * unexpired the matching customer record is returned; otherwise null
+ * is returned.
+ *
+ * @param string $token
+ * @return array|null
+ */
+function getCustomerByResetToken(string $token): ?array
+{
+    $db = getDb();
+    // Fetch all customers with a non-null reset token
+    $stmt = $db->query('SELECT * FROM customers WHERE reset_token IS NOT NULL');
+    $now = new DateTime();
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $expiresAt = isset($row['reset_token_expires']) ? new DateTime($row['reset_token_expires']) : null;
+        // Ensure token has not expired
+        if ($expiresAt && $expiresAt < $now) {
+            continue;
+        }
+        $hash = $row['reset_token'];
+        if ($hash && password_verify($token, $hash)) {
+            return $row;
+        }
+    }
+    return null;
+}
+
+/**
+ * Clear any password reset token and expiry for a customer.  Call this
+ * after a successful password reset or when invalidating tokens.
+ *
+ * @param int $customerId
+ */
+function clearPasswordResetToken(int $customerId): void
+{
+    $db = getDb();
+    $stmt = $db->prepare('UPDATE customers SET reset_token = NULL, reset_token_expires = NULL WHERE id = :id');
+    $stmt->execute([':id' => $customerId]);
+}
+
+/**
  * Authenticate a customer by email and password.
  *
  * @param string $email
@@ -392,10 +474,22 @@ function deleteProduct(int $id): void
  *
  * @return array
  */
-function getAllCustomers(): array
+/**
+ * Retrieve all customers.  By default this returns all customer records
+ * sorted by ID.  If $onlyUnverified is true, only customers who have
+ * not verified their email (is_verified = 0) are returned.
+ *
+ * @param bool $onlyUnverified Whether to return only unverified customers
+ * @return array
+ */
+function getAllCustomers(bool $onlyUnverified = false): array
 {
     $db = getDb();
-    $stmt = $db->query('SELECT * FROM customers ORDER BY id ASC');
+    if ($onlyUnverified) {
+        $stmt = $db->query('SELECT * FROM customers WHERE is_verified = 0 ORDER BY id ASC');
+    } else {
+        $stmt = $db->query('SELECT * FROM customers ORDER BY id ASC');
+    }
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
