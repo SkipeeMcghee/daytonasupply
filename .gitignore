@@ -1,19 +1,6 @@
 # Local secrets & configuration.  Prevent committing environment-specific
 # overrides such as SMTP credentials.
 includes/config.local.php
-includes/PHPMailer/
-
-# SQLite database and journal files
-data/*.sqlite
-data/*.db
-*.sqlite
-*.sqlite-shm
-*.sqlite-wal
-*.sqlite-journal
-
-# Composer dependencies and the phar itself
-vendor/
-composer.phar
 
 # Logs & temporary files
 logs/
