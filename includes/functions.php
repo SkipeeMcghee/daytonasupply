@@ -4,6 +4,16 @@
 
 require_once __DIR__ . '/db.php';
 
+// Attempt to load Composer autoloader if PHPMailer and other vendor
+// packages were installed via composer.  This will register the
+// PHPMailer classes automatically.  If the autoloader file does not
+// exist, it is silently ignored and the fallback mail() function will
+// be used.
+$vendorAutoload = __DIR__ . '/../vendor/autoload.php';
+if (is_readable($vendorAutoload)) {
+    require_once $vendorAutoload;
+}
+
 // Optionally load local configuration containing environment variables.
 // This file can be created by administrators to override settings such as
 // COMPANY_EMAIL, SMTP credentials, and other custom values without

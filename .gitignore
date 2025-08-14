@@ -1,8 +1,9 @@
-# ── Local secrets & config ────────────────────────────────────────────────────
+# Local secrets & configuration.  Prevent committing environment-specific
+# overrides such as SMTP credentials.
 includes/config.local.php
-includes/PHPMailer/        # only if you manually dropped PHPMailer files
+includes/PHPMailer/
 
-# ── SQLite database & journals (keep data out of Git) ────────────────────────
+# SQLite database and journal files
 data/*.sqlite
 data/*.db
 *.sqlite
@@ -10,22 +11,20 @@ data/*.db
 *.sqlite-wal
 *.sqlite-journal
 
-# ── Composer artifacts ───────────────────────────────────────────────────────
-/vendor/
-/composer.phar
-# (Keep composer.lock tracked for reproducible installs)
+# Composer dependencies and the phar itself
+vendor/
+composer.phar
 
-# ── Logs & temp ──────────────────────────────────────────────────────────────
+# Logs & temporary files
 logs/
-*.log
 tmp/
 cache/
 assets/cache/
 
-# ── Uploads (if you add user uploads later) ─────────────────────────────────
+# User uploads (if added in the future)
 uploads/
 
-# ── OS/editor junk ───────────────────────────────────────────────────────────
+# Operating system and IDE generated files
 .DS_Store
 Thumbs.db
 .idea/
