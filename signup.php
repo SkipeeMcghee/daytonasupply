@@ -34,6 +34,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $errors[] = 'Invalid email address.';
     }
+    // If the user indicated shipping address is the same as billing, copy it
+    $sameBillingFlag = isset($_POST['same_as_billing']);
+    if ($sameBillingFlag) {
+        $ship = $bill;
+    }
     // Attempt to create the customer
     if (empty($errors)) {
         try {
@@ -54,8 +59,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $host = $_SERVER['HTTP_HOST'];
             // dirname on PHP_SELF gives the current directory (may be subfolder)
             $dir = rtrim(dirname($_SERVER['PHP_SELF']), '/\\');
-            // Build relative path to verify.php
-            $verifyPath = ($dir === '' ? '' : $dir . '/') . 'verify.php?token=' . urlencode($token);
+            // Build relative path to verify.php.  Ensure we always include a leading
+            // slash between the host and the path.  When $dir is empty (site root),
+            // dirname() returns '' so without a leading slash the link would look like
+            // example.comverify.php which is invalid.  Prefix the path with a '/'.
+            if ($dir === '' || $dir === '.') {
+                $verifyPath = '/verify.php?token=' . urlencode($token);
+            } else {
+                $verifyPath = $dir . '/verify.php?token=' . urlencode($token);
+            }
             $verificationUrl = $scheme . '://' . $host . $verifyPath;
             // Send verification email
             $body = "Hello " . $name . ",\n\n" .
@@ -91,7 +103,36 @@ include __DIR__ . '/includes/header.php';
         <p>Phone: <input type="text" name="phone" value="<?= isset($phone) ? htmlspecialchars($phone) : '' ?>"></p>
         <p>Email: <input type="email" name="email" required value="<?= isset($email) ? htmlspecialchars($email) : '' ?>"></p>
         <p>Billing Address: <input type="text" name="billing_address" value="<?= isset($bill) ? htmlspecialchars($bill) : '' ?>"></p>
-        <p>Shipping Address: <input type="text" name="shipping_address" value="<?= isset($ship) ? htmlspecialchars($ship) : '' ?>"></p>
+        <p>Shipping Address: <input type="text" name="shipping_address" id="signup_shipping" value="<?= isset($ship) ? htmlspecialchars($ship) : '' ?>"></p>
+        <p><label><input type="checkbox" name="same_as_billing" id="signup_same_billing" value="1" <?= isset($_POST['same_as_billing']) ? 'checked' : '' ?>> Same as billing</label></p>
+        <script>
+        // Client‑side helper to mirror billing to shipping when the user
+        // indicates they are the same.  When checked, the shipping input
+        // value is kept in sync with the billing input and is disabled to
+        // prevent editing.  This improves usability but the server also
+        // copies the billing address on submission.
+        document.addEventListener('DOMContentLoaded', function() {
+            var checkbox = document.getElementById('signup_same_billing');
+            var bill = document.querySelector('input[name="billing_address"]');
+            var ship = document.getElementById('signup_shipping');
+            function sync() {
+                if (checkbox.checked) {
+                    ship.value = bill.value;
+                    ship.disabled = true;
+                } else {
+                    ship.disabled = false;
+                }
+            }
+            checkbox.addEventListener('change', sync);
+            bill.addEventListener('input', function() {
+                if (checkbox.checked) {
+                    ship.value = bill.value;
+                }
+            });
+            // initialize on load
+            sync();
+        });
+        </script>
         <p>Password: <input type="password" name="password" required></p>
         <p>Confirm Password: <input type="password" name="confirm" required></p>
         <p><button type="submit">Create Account</button></p>

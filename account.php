@@ -25,6 +25,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $bill = trim($_POST['billing_address'] ?? $customer['billing_address']);
     $ship = trim($_POST['shipping_address'] ?? $customer['shipping_address']);
     $pass = $_POST['password'] ?? '';
+    // If the user checked the same_as_billing box, copy billing to shipping
+    $sameBillingFlag = isset($_POST['same_as_billing']);
+    if ($sameBillingFlag) {
+        $ship = $bill;
+    }
     $data = [
         'name' => $name,
         'business_name' => $biz,
@@ -57,7 +62,35 @@ include __DIR__ . '/includes/header.php';
     <p>Phone: <input type="text" name="phone" value="<?= htmlspecialchars($customer['phone']) ?>"></p>
     <p>Email: <input type="email" value="<?= htmlspecialchars($customer['email']) ?>" disabled></p>
     <p>Billing Address: <input type="text" name="billing_address" value="<?= htmlspecialchars($customer['billing_address']) ?>"></p>
-    <p>Shipping Address: <input type="text" name="shipping_address" value="<?= htmlspecialchars($customer['shipping_address']) ?>"></p>
+    <?php
+    // Determine whether the customer currently has the same shipping and billing
+    $sameBillingChecked = (trim($customer['shipping_address']) === trim($customer['billing_address']));
+    ?>
+    <p>Shipping Address: <input type="text" name="shipping_address" id="account_shipping" value="<?= htmlspecialchars($customer['shipping_address']) ?>"></p>
+    <p><label><input type="checkbox" name="same_as_billing" id="account_same_billing" value="1" <?= $sameBillingChecked ? 'checked' : '' ?>> Same as billing</label></p>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var checkbox = document.getElementById('account_same_billing');
+        var bill = document.querySelector('input[name="billing_address"]');
+        var ship = document.getElementById('account_shipping');
+        function sync() {
+            if (checkbox.checked) {
+                ship.value = bill.value;
+                ship.disabled = true;
+            } else {
+                ship.disabled = false;
+            }
+        }
+        checkbox.addEventListener('change', sync);
+        bill.addEventListener('input', function() {
+            if (checkbox.checked) {
+                ship.value = bill.value;
+            }
+        });
+        // initialize on page load
+        sync();
+    });
+    </script>
     <p>New Password (leave blank to keep current): <input type="password" name="password"></p>
     <p><button type="submit">Save Changes</button></p>
 </form>
