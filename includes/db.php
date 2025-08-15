@@ -30,7 +30,26 @@ function getDb(): PDO
     if ($db !== null) {
         return $db;
     }
-    $dbFile = __DIR__ . '/../data/database.sqlite';
+    // Determine which database driver to use.  Default to SQLite for
+    // development, but allow MySQL by setting the DB_DRIVER
+    // environment variable to "mysql" and providing DB_HOST, DB_NAME,
+    // DB_USER and DB_PASS.  For SQLite, DB_PATH can override the
+    // location of the database file.
+    $driver = getenv('DB_DRIVER') ?: 'sqlite';
+    if (strcasecmp($driver, 'mysql') === 0) {
+        // Connect to MySQL
+        $host = getenv('DB_HOST') ?: 'localhost';
+        $name = getenv('DB_NAME') ?: 'daytona_supply';
+        $user = getenv('DB_USER') ?: 'root';
+        $pass = getenv('DB_PASS') ?: '';
+        $dsn = "mysql:host=$host;dbname=$name;charset=utf8mb4";
+        $db = new PDO($dsn, $user, $pass);
+        $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        // For MySQL we expect that the schema has been created ahead of time
+        return $db;
+    }
+    // Default: SQLite
+    $dbFile = getenv('DB_PATH') ?: __DIR__ . '/../data/database.sqlite';
     $initNeeded = !file_exists($dbFile);
     $dsn = 'sqlite:' . $dbFile;
     $db = new PDO($dsn);
@@ -43,8 +62,7 @@ function getDb(): PDO
         }
         initDatabase($db);
     }
-
-    // Always run migrations to ensure schema is up to date
+    // Always run migrations to ensure schema is up to date for SQLite
     migrateDatabase($db);
     return $db;
 }
