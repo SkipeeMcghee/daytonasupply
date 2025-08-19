@@ -1,7 +1,7 @@
-# Redirect all HTTP to HTTPS
+# Redirect HTTP to HTTPS (works with reverse proxies/nginx)
 RewriteEngine On
-RewriteCond %{HTTPS} !=on [OR]
-RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+RewriteCond %{HTTPS} !=on
+RewriteCond %{HTTP:X-Forwarded-Proto} !https
 RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
 # Auto-upgrade any http:// resources to https://
