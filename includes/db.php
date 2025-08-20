@@ -77,13 +77,19 @@ function getDb(): PDO
  */
 function migrateDatabase(PDO $db): void
 {
-    /**
-     * Perform schema migrations to ensure the database has all required
-     * columns.  SQLite supports adding columns via ALTER TABLE, which
-     * allows us to evolve the schema over time without destroying
-     * existing data.  We check for missing columns and add them with
-     * sensible defaults.
-     */
+    // Ensure 'verified' column exists in customers table
+    $result = $db->query("PRAGMA table_info(customers)");
+    $columns = $result->fetchAll(PDO::FETCH_ASSOC);
+    $hasVerified = false;
+    foreach ($columns as $col) {
+        if ($col['name'] === 'verified') {
+            $hasVerified = true;
+            break;
+        }
+    }
+    if (!$hasVerified) {
+        $db->exec("ALTER TABLE customers ADD COLUMN verified INTEGER DEFAULT 0");
+    }
     // Helper closure to determine if a column exists on a table
     $columnExists = function (string $table, string $column) use ($db): bool {
         $stmt = $db->prepare("PRAGMA table_info(" . $table . ")");

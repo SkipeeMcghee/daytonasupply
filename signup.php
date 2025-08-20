@@ -4,6 +4,13 @@
 // user is automatically logged in and redirected to their account page.
 
 session_start();
+$successMessage = '';
+$showForm = true;
+if (isset($_SESSION['signup_success'])) {
+    $successMessage = $_SESSION['signup_success'];
+    unset($_SESSION['signup_success']);
+    $showForm = false;
+}
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/functions.php';
 
@@ -11,9 +18,8 @@ $title = 'Sign Up';
 
 // Holds validation errors
 $errors = [];
-// Success message when registration completes
-$successMessage = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($showForm && $_SERVER['REQUEST_METHOD'] === 'POST') {
     // Gather and sanitize input
     $name    = trim($_POST['name'] ?? '');
     $biz     = trim($_POST['business_name'] ?? '');
@@ -24,6 +30,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = $_POST['password'] ?? '';
     $confirm  = $_POST['confirm'] ?? '';
 
+    // Google reCAPTCHA v3 verification
+    $recaptcha_response = $_POST['g-recaptcha-response'] ?? '';
+    $recaptcha_secret = '6Lfsm6wrAAAAAO-nZyV1DSDNVtsk5fzm3SALvNam';
+    $recaptcha_url = 'https://www.google.com/recaptcha/api/siteverify';
+    $recaptcha = false;
+    if ($recaptcha_response) {
+        // Debug: Log the outgoing URL and response
+        $recaptcha_debug = [];
+        $recaptcha_debug['request_url'] = $recaptcha_url . '?secret=' . $recaptcha_secret . '&response=' . $recaptcha_response;
+        $verify = @file_get_contents($recaptcha_debug['request_url']);
+        $recaptcha_debug['raw_response'] = $verify;
+        $captcha_success = json_decode($verify);
+        $recaptcha_debug['decoded_response'] = $captcha_success;
+        if ($captcha_success && $captcha_success->success && $captcha_success->score >= 0.5) {
+            $recaptcha = true;
+        } else {
+            $errors[] = 'Captcha verification failed. Please try again.';
+            $errors[] = 'reCAPTCHA debug info: ' . print_r($recaptcha_debug, true);
+        }
+    } else {
+    $errors[] = 'Captcha verification required.';
+    $errors[] = 'reCAPTCHA debug info: No response token received.';
+    }
     // Basic validation
     if ($name === '' || $email === '' || $password === '') {
         $errors[] = 'Name, email and password are required.';
@@ -40,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $ship = $bill;
     }
     // Attempt to create the customer
-    if (empty($errors)) {
+    if ($recaptcha && empty($errors)) {
         try {
             $customerId = createCustomer([
                 'name' => $name,
@@ -57,38 +86,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Construct verification URL.  Use current host and directory to build a link
             $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
             $host = $_SERVER['HTTP_HOST'];
-            // dirname on PHP_SELF gives the current directory (may be subfolder)
             $dir = rtrim(dirname($_SERVER['PHP_SELF']), '/\\');
-            // Build relative path to verify.php.  Ensure we always include a leading
-            // slash between the host and the path.  When $dir is empty (site root),
-            // dirname() returns '' so without a leading slash the link would look like
-            // example.comverify.php which is invalid.  Prefix the path with a '/'.
             if ($dir === '' || $dir === '.') {
                 $verifyPath = '/verify.php?token=' . urlencode($token);
             } else {
                 $verifyPath = $dir . '/verify.php?token=' . urlencode($token);
             }
             $verificationUrl = $scheme . '://' . $host . $verifyPath;
-            // Send verification email
             $body = "Hello " . $name . ",\n\n" .
                     "Thank you for registering an account with Daytona Supply.\n" .
                     "Please verify your email address by clicking the link below:\n\n" .
                     $verificationUrl . "\n\n" .
                     "If you did not sign up for an account, please ignore this message.";
             sendEmail($email, 'Verify your Daytona Supply account', $body);
-            // Show success message instead of logging the user in
             $successMessage = 'Registration successful! Please check your email to verify your account.';
+            // Store success message in session and redirect to avoid resubmission
+            $_SESSION['signup_success'] = $successMessage;
+            header('Location: signup.php');
+            exit;
         } catch (Exception $e) {
             $errors[] = $e->getMessage();
         }
     }
 }
-
+}
 include __DIR__ . '/includes/header.php';
 ?>
 <h1>Sign Up</h1>
 <?php if (!empty($successMessage)): ?>
-    <p class="message" style="color:green; font-weight:bold;"><?= htmlspecialchars($successMessage) ?></p>
+    <div class="message" style="background:#d4edda;color:#155724;padding:16px;border-radius:6px;font-weight:bold;margin-bottom:24px;border:1px solid #c3e6cb;">
+        <?= htmlspecialchars($successMessage) ?>
+    </div>
 <?php else: ?>
     <?php if (!empty($errors)): ?>
         <ul class="error">
@@ -135,7 +163,37 @@ include __DIR__ . '/includes/header.php';
         </script>
         <p>Password: <input type="password" name="password" required></p>
         <p>Confirm Password: <input type="password" name="confirm" required></p>
+        <input type="hidden" id="g-recaptcha-response" name="g-recaptcha-response">
         <p><button type="submit">Create Account</button></p>
+        <div class="g-recaptcha-badge" style="margin-top:10px;">
+            <small>This site is protected by reCAPTCHA and the Google <a href="https://policies.google.com/privacy">Privacy Policy</a> and <a href="https://policies.google.com/terms">Terms of Service</a> apply.</small>
+        </div>
+    </form>
+    <script src="https://www.google.com/recaptcha/api.js?render=6Lfsm6wrAAAAAFuElD_SuX0RdtxWv3myo3t5AvqT"></script>
+        }
+    <script>
+    grecaptcha.ready(function() {
+        document.querySelector('form[action="signup.php"]').addEventListener('submit', function(e) {
+            e.preventDefault();
+            grecaptcha.execute('6Lfsm6wrAAAAAFuElD_SuX0RdtxWv3myo3t5AvqT', {action: 'signup'}).then(function(token) {
+                document.getElementById('g-recaptcha-response').value = token;
+                e.target.submit();
+            });
+        });
+    });
+    </script>
+    <script src="https://www.google.com/recaptcha/api.js?render=6Lfsm6wrAAAAAFuElD_SuX0RdtxWv3myo3t5AvqT"></script>
+    <script>
+    grecaptcha.ready(function() {
+        document.querySelector('form[action="signup.php"]').addEventListener('submit', function(e) {
+            e.preventDefault();
+            grecaptcha.execute('6Lfsm6wrAAAAAFuElD_SuX0RdtxWv3myo3t5AvqT', {action: 'signup'}).then(function(token) {
+                document.getElementById('g-recaptcha-response').value = token;
+                e.target.submit();
+            });
+        });
+    });
+    </script>
     </form>
 <?php endif; ?>
 <?php include __DIR__ . '/includes/footer.php'; ?>

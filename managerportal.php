@@ -50,6 +50,60 @@ if (!isset($_SESSION['admin'])) {
 }
 
 // Admin is logged in: handle all state-changing actions BEFORE sending any HTML
+// Handle bulk verify/unverify/delete for customers
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Bulk verify selected unverified customers
+    if (isset($_POST['bulk_verify']) && !empty($_POST['unverified_ids'])) {
+        foreach ($_POST['unverified_ids'] as $id) {
+            setCustomerVerifiedStatus((int)$id, true);
+        }
+        header('Location: managerportal.php');
+        exit;
+    }
+    // Bulk unverify selected verified customers
+    if (isset($_POST['bulk_unverify']) && !empty($_POST['verified_ids'])) {
+        foreach ($_POST['verified_ids'] as $id) {
+            setCustomerVerifiedStatus((int)$id, false);
+        }
+        header('Location: managerportal.php');
+        exit;
+    }
+    // Bulk delete selected verified customers
+    if (isset($_POST['bulk_delete_verified']) && !empty($_POST['verified_ids'])) {
+        $ids = array_map('intval', $_POST['verified_ids']);
+        $db = getDb();
+        $in  = str_repeat('?,', count($ids) - 1) . '?';
+        $stmt = $db->prepare("DELETE FROM customers WHERE id IN ($in) AND is_verified = 1");
+        $stmt->execute($ids);
+        header('Location: managerportal.php');
+        exit;
+    }
+}
+// Handle mass delete of unverified customers
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mass_delete_unverified'])) {
+    $ids = array_map('intval', $_POST['unverified_ids'] ?? []);
+    if ($ids) {
+        $db = getDb();
+        $in  = str_repeat('?,', count($ids) - 1) . '?';
+        $stmt = $db->prepare("DELETE FROM customers WHERE id IN ($in) AND is_verified = 0");
+        $stmt->execute($ids);
+    }
+    header('Location: managerportal.php');
+    exit;
+}
+// Handle customer verification/unverification
+if (isset($_GET['verify_customer'])) {
+    $custId = (int)$_GET['verify_customer'];
+    setCustomerVerifiedStatus($custId, true);
+    header('Location: managerportal.php');
+    exit;
+}
+if (isset($_GET['unverify_customer'])) {
+    $custId = (int)$_GET['unverify_customer'];
+    setCustomerVerifiedStatus($custId, false);
+    header('Location: managerportal.php');
+    exit;
+}
 
 // Approve or reject orders
 if (isset($_GET['approve_order'])) {
@@ -162,21 +216,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // At this point all actions are complete.  Determine which set of orders to display
 // and which customers to show (all vs. pending verification).
+// Orders
 $showArchived = (isset($_GET['view']) && $_GET['view'] === 'archived');
 if ($showArchived) {
-    // Show only archived orders
     $orders = getAllOrders(true, true);
 } else {
-    // Show only active (non-archived) orders
     $orders = getAllOrders(false, false);
 }
-// Determine whether to show only customers pending verification
-$showPendingCustomers = (isset($_GET['cust_view']) && $_GET['cust_view'] === 'pending');
-if ($showPendingCustomers) {
-    $customers = getAllCustomers(true);
-} else {
-    $customers = getAllCustomers(false);
-}
+// Customers: separate lists for unverified and verified
+$unverifiedCustomers = getCustomersByVerified(false);
+$verifiedCustomers = getCustomersByVerified(true);
 $products = getAllProducts();
 
 // Include the header now that no further redirects will occur
@@ -243,49 +292,75 @@ require_once __DIR__ . '/includes/header.php';
 
 <section>
     <h3>Customers</h3>
-    <!-- Toggle between all customers and pending (unverified) customers -->
-    <p>
-        <?php
-        // Build a query string that preserves the current order view (archived vs active)
-        $orderViewParam = $showArchived ? 'view=archived' : '';
-        if ($showPendingCustomers) {
-            // Currently showing pending customers; link back to all
-            $qs = $orderViewParam ? '?' . $orderViewParam : '';
-            echo '<a href="' . htmlspecialchars('managerportal.php' . $qs) . '">Show All Customers</a>';
-        } else {
-            // Show pending customers link
-            $qs = '';
-            if ($orderViewParam !== '') {
-                $qs = '?'.$orderViewParam.'&cust_view=pending';
-            } else {
-                $qs = '?cust_view=pending';
-            }
-            echo '<a href="' . htmlspecialchars('managerportal.php' . $qs) . '">Show Pending Customers</a>';
-        }
-        ?>
-    </p>
-    <form method="post" action="">
-        <input type="hidden" name="save_customers" value="1">
+    <!-- Unverified/Pending Customers (top) -->
+    <h4>Unverified / Pending Customers</h4>
+    <form method="post" action="" id="bulkUnverifiedForm">
+        <div style="margin-bottom:10px;display:flex;gap:10px;">
+            <button type="submit" name="bulk_verify" onclick="return confirm('Verify all selected customers?');" style="background:#198754;color:#fff;padding:8px 16px;border:none;border-radius:4px;font-weight:600;">Verify Selected</button>
+            <button type="submit" name="mass_delete_unverified" onclick="return confirmMassDelete();" style="background:#dc3545;color:#fff;padding:8px 16px;border:none;border-radius:4px;font-weight:600;">Delete Selected</button>
+        </div>
         <table class="admin-table">
-            <tr><th>ID</th><th>Name</th><th>Business</th><th>Phone</th><th>Email</th><th>Billing</th><th>Shipping</th><th>Verified</th><th>Actions</th></tr>
-            <?php foreach ($customers as $cust): ?>
+            <tr><th><input type="checkbox" id="selectAllUnverified"></th><th>ID</th><th>Name</th><th>Business</th><th>Phone</th><th>Email</th><th>Billing</th><th>Shipping</th><th>Actions</th></tr>
+            <?php foreach ($unverifiedCustomers as $cust): ?>
                 <tr>
-                    <td><?php echo $cust['id']; ?></td>
-                    <td><input type="text" name="c_name_<?php echo $cust['id']; ?>" value="<?php echo htmlspecialchars($cust['name']); ?>"></td>
-                    <td><input type="text" name="c_business_<?php echo $cust['id']; ?>" value="<?php echo htmlspecialchars($cust['business_name']); ?>"></td>
-                    <td><input type="text" name="c_phone_<?php echo $cust['id']; ?>" value="<?php echo htmlspecialchars($cust['phone']); ?>"></td>
-                    <td><input type="email" name="c_email_<?php echo $cust['id']; ?>" value="<?php echo htmlspecialchars($cust['email']); ?>"></td>
-                    <td><input type="text" name="c_bill_<?php echo $cust['id']; ?>" value="<?php echo htmlspecialchars($cust['billing_address']); ?>"></td>
-                    <td><input type="text" name="c_ship_<?php echo $cust['id']; ?>" value="<?php echo htmlspecialchars($cust['shipping_address']); ?>"></td>
-                    <td><?php echo (isset($cust['is_verified']) && (int)$cust['is_verified'] === 1) ? 'Yes' : 'No'; ?></td>
-                    <td><a href="?delete_customer=<?php echo $cust['id']; ?><?php echo $showArchived ? '&view=archived' : ''; ?><?php echo $showPendingCustomers ? '&cust_view=pending' : ''; ?>" onclick="return confirm('Are you sure you want to delete this customer? This will remove all of their orders.');">Delete</a></td>
+                    <td><input type="checkbox" name="unverified_ids[]" value="<?= $cust['id'] ?>"></td>
+                    <td><?= $cust['id'] ?></td>
+                    <td><?= htmlspecialchars($cust['name']) ?></td>
+                    <td><?= htmlspecialchars($cust['business_name']) ?></td>
+                    <td><?= htmlspecialchars($cust['phone']) ?></td>
+                    <td><?= htmlspecialchars($cust['email']) ?></td>
+                    <td><?= htmlspecialchars($cust['billing_address']) ?></td>
+                    <td><?= htmlspecialchars($cust['shipping_address']) ?></td>
+                    <td>
+                        <a href="?verify_customer=<?= $cust['id'] ?>">Verify</a> |
+                        <a href="?delete_customer=<?= $cust['id'] ?>" onclick="return confirm('Are you sure you want to delete this customer? This will remove all of their orders.');">Delete</a>
+                    </td>
                 </tr>
             <?php endforeach; ?>
-            <?php if (empty($customers)): ?>
-                <tr><td colspan="9">No customers found.</td></tr>
+            <?php if (empty($unverifiedCustomers)): ?>
+                <tr><td colspan="9">No unverified customers found.</td></tr>
             <?php endif; ?>
         </table>
-        <p><button type="submit">Save Customer Changes</button></p>
+    </form>
+    <script>
+    // Select all checkboxes
+    document.getElementById('selectAllUnverified').onclick = function() {
+        var boxes = document.querySelectorAll('input[name="unverified_ids[]"]');
+        for (var i = 0; i < boxes.length; i++) boxes[i].checked = this.checked;
+    };
+    function confirmMassDelete() {
+        return confirm('Are you sure you want to delete all selected unverified customers? This cannot be undone.');
+    }
+    </script>
+    <!-- Verified Customers (below) -->
+    <h4>Verified Customers</h4>
+    <form method="post" action="" id="bulkVerifiedForm">
+        <div style="margin-bottom:10px;display:flex;gap:10px;">
+            <button type="submit" name="bulk_unverify" onclick="return confirm('Unverify all selected customers?');" style="background:#ffc107;color:#000;padding:8px 16px;border:none;border-radius:4px;font-weight:600;">Unverify Selected</button>
+            <button type="submit" name="bulk_delete_verified" onclick="return confirm('Delete all selected verified customers? This cannot be undone.');" style="background:#dc3545;color:#fff;padding:8px 16px;border:none;border-radius:4px;font-weight:600;">Delete Selected</button>
+        </div>
+        <table class="admin-table">
+            <tr><th><input type="checkbox" id="selectAllVerified"></th><th>ID</th><th>Name</th><th>Business</th><th>Phone</th><th>Email</th><th>Billing</th><th>Shipping</th><th>Actions</th></tr>
+            <?php foreach ($verifiedCustomers as $cust): ?>
+                <tr>
+                    <td><input type="checkbox" name="verified_ids[]" value="<?= $cust['id'] ?>"></td>
+                    <td><?= $cust['id'] ?></td>
+                    <td><?= htmlspecialchars($cust['name']) ?></td>
+                    <td><?= htmlspecialchars($cust['business_name']) ?></td>
+                    <td><?= htmlspecialchars($cust['phone']) ?></td>
+                    <td><?= htmlspecialchars($cust['email']) ?></td>
+                    <td><?= htmlspecialchars($cust['billing_address']) ?></td>
+                    <td><?= htmlspecialchars($cust['shipping_address']) ?></td>
+                    <td>
+                        <a href="?unverify_customer=<?= $cust['id'] ?>">Unverify</a> |
+                        <a href="?delete_customer=<?= $cust['id'] ?>" onclick="return confirm('Are you sure you want to delete this customer? This will remove all of their orders.');">Delete</a>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+            <?php if (empty($verifiedCustomers)): ?>
+                <tr><td colspan="9">No verified customers found.</td></tr>
+            <?php endif; ?>
+        </table>
     </form>
 </section>
 

@@ -77,16 +77,15 @@ include __DIR__ . '/includes/header.php';
 <?php endif; ?>
 <h2>Your Details</h2>
 <form method="post" action="account.php">
-    <p>Name: <input type="text" name="name" value="<?= htmlspecialchars($customer['name']) ?>" required></p>
-    <p>Business Name: <input type="text" name="business_name" value="<?= htmlspecialchars($customer['business_name']) ?>"></p>
-    <p>Phone: <input type="text" name="phone" value="<?= htmlspecialchars($customer['phone']) ?>"></p>
-    <p>Email: <input type="email" value="<?= htmlspecialchars($customer['email']) ?>" disabled></p>
-    <p>Billing Address: <input type="text" name="billing_address" value="<?= htmlspecialchars($customer['billing_address']) ?>"></p>
+    <p>Name: <input type="text" name="name" value="<?= htmlspecialchars($customer['name']) ?>" required autocomplete="off"></p>
+    <p>Business Name: <input type="text" name="business_name" value="<?= htmlspecialchars($customer['business_name']) ?>" autocomplete="off"></p>
+    <p>Phone: <input type="text" name="phone" value="<?= htmlspecialchars($customer['phone']) ?>" autocomplete="off"></p>
+    <p>Email: <input type="email" value="<?= htmlspecialchars($customer['email']) ?>" disabled autocomplete="off"></p>
+    <p>Billing Address: <input type="text" name="billing_address" value="<?= htmlspecialchars($customer['billing_address']) ?>" autocomplete="off"></p>
     <?php
-    // Determine whether the customer currently has the same shipping and billing
     $sameBillingChecked = (trim($customer['shipping_address']) === trim($customer['billing_address']));
     ?>
-    <p>Shipping Address: <input type="text" name="shipping_address" id="account_shipping" value="<?= htmlspecialchars($customer['shipping_address']) ?>"></p>
+    <p>Shipping Address: <input type="text" name="shipping_address" id="account_shipping" value="<?= htmlspecialchars($customer['shipping_address']) ?>" autocomplete="off"></p>
     <p><label><input type="checkbox" name="same_as_billing" id="account_same_billing" value="1" <?= $sameBillingChecked ? 'checked' : '' ?>> Same as billing</label></p>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -107,12 +106,15 @@ include __DIR__ . '/includes/header.php';
                 ship.value = bill.value;
             }
         });
-        // initialize on page load
         sync();
     });
     </script>
-    <p>Current Password: <input type="password" name="current_password"></p>
-    <p>New Password (leave blank to keep current): <input type="password" name="password"></p>
+    <hr>
+    <section style="margin-top:2em;">
+        <h3>Change your password</h3>
+        <p>Current Password: <input type="password" name="current_password" autocomplete="new-password"></p>
+        <p>New Password (leave blank to keep current): <input type="password" name="password" autocomplete="new-password"></p>
+    </section>
     <p><button type="submit">Save Changes</button></p>
 </form>
 

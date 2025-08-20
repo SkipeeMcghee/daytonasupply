@@ -1,4 +1,36 @@
 <?php
+/**
+ * Set customer verification status and send notification email.
+ * @param int $customerId
+ * @param bool $verified
+ * @return void
+ */
+function setCustomerVerifiedStatus(int $customerId, bool $verified): void {
+    $db = getDb();
+    $db->prepare('UPDATE customers SET is_verified = :verified WHERE id = :id')
+       ->execute([':verified' => $verified ? 1 : 0, ':id' => $customerId]);
+    $customer = getCustomerById($customerId);
+    if ($customer) {
+        $email = $customer['email'];
+        $name = $customer['name'];
+        $subject = $verified ? 'Your account has been verified' : 'Your account has been unverified';
+        $body = $verified
+            ? "Hello $name,\n\nYour Daytona Supply account has been verified. You can now place orders."
+            : "Hello $name,\n\nYour Daytona Supply account has been unverified. Please contact support if you have questions.";
+        sendEmail($email, $subject, $body);
+    }
+}
+/**
+ * Get all customers filtered by verification status.
+ * @param bool $verified True for verified, false for unverified
+ * @return array
+ */
+function getCustomersByVerified(bool $verified): array {
+    $db = getDb();
+    $stmt = $db->prepare('SELECT * FROM customers WHERE is_verified = :verified ORDER BY id DESC');
+    $stmt->execute([':verified' => $verified ? 1 : 0]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
 // Common functions for Daytona Supply site.  These functions wrap
 // database queries and other reusable logic.
 
@@ -368,9 +400,15 @@ function createCustomer(array $data): int
     // Check for existing email
     $stmt = $db->prepare('SELECT id FROM customers WHERE email = :email');
     $stmt->execute([':email' => $data['email']]);
-    if ($stmt->fetch()) {
+    $existing = $stmt->fetch();
+    if ($existing) {
+        // Debug output
+        error_log('DEBUG: Email already registered: ' . $data['email'] . ' (ID: ' . $existing['id'] . ')');
         throw new Exception('Email already registered');
+    } else {
+        error_log('DEBUG: Email not found, proceeding to insert: ' . $data['email']);
     }
+    error_log('DEBUG: Data to insert: ' . print_r($data, true));
     // Hash password and insert
     $hash = password_hash($data['password'], PASSWORD_DEFAULT);
     $ins = $db->prepare('INSERT INTO customers (name, business_name, phone, email, billing_address, shipping_address, password_hash) VALUES (:name, :business_name, :phone, :email, :billing_address, :shipping_address, :password_hash)');
