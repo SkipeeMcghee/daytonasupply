@@ -17,6 +17,7 @@ SetEnv DB_USER brian
 SetEnv DB_PASS 273h4ui^N
 
 # Gmail SMTP for automated emails
+SetEnv COMPANY_EMAIL packinggenerals@gmail.com
 SetEnv SMTP_HOST smtp.gmail.com
 SetEnv SMTP_PORT 587
 SetEnv SMTP_USER packinggenerals@gmail.com
