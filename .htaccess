@@ -8,3 +8,10 @@ RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 <IfModule mod_headers.c>
   Header always set Content-Security-Policy "upgrade-insecure-requests"
 </IfModule>
+
+# Force MySQL usage in production
+SetEnv DB_DRIVER mysql
+SetEnv DB_HOST localhost
+SetEnv DB_NAME daytona_supply
+SetEnv DB_USER brian
+SetEnv DB_PASS 273h4ui^N
