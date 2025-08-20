@@ -31,9 +31,11 @@ try {
     }
 
     // Remove all existing products to prevent duplicates.  We'll also reset
-    // the SQLite auto‑increment sequence so that new IDs start from 1 again.
+    // Remove all existing products to prevent duplicates.
     $db->exec('DELETE FROM products');
-    $db->exec("DELETE FROM sqlite_sequence WHERE name='products'");
+    // In MySQL, AUTO_INCREMENT will reset automatically if you use TRUNCATE
+    // Uncomment the following line if you want to reset IDs in MySQL:
+    // $db->exec('TRUNCATE TABLE products');
 
     // Read inventory from JSON file
     $inventoryPath = __DIR__ . '/../data/inventory.json';
