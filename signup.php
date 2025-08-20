@@ -170,7 +170,7 @@ include __DIR__ . '/includes/header.php';
         </div>
     </form>
     <script src="https://www.google.com/recaptcha/api.js?render=6Lfsm6wrAAAAAFuElD_SuX0RdtxWv3myo3t5AvqT"></script>
-        }
+        
     <script>
     grecaptcha.ready(function() {
         document.querySelector('form[action="signup.php"]').addEventListener('submit', function(e) {
