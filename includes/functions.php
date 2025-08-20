@@ -58,7 +58,7 @@ if (is_readable($vendorAutoload)) {
  * the application rely on getenv('COMPANY_EMAIL') to determine where
  * order notification emails should be sent.  If it is not defined
  * externally (e.g. via the web server configuration) we default
- * to brianheise22@gmail.com.  Using putenv() here means the
+ * to packinggenerals@gmail.com.  Using putenv() here means the
  * environment variable is available to subsequent code and library
  * calls without requiring additional configuration.
  */
