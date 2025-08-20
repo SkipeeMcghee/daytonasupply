@@ -63,7 +63,7 @@ if (is_readable($vendorAutoload)) {
  * calls without requiring additional configuration.
  */
 if (!getenv('COMPANY_EMAIL')) {
-    putenv('COMPANY_EMAIL=brianheise22@gmail.com');
+    putenv('COMPANY_EMAIL=packinggenerals@gmail.com');
 }
 
 /**
@@ -162,7 +162,7 @@ function sendEmail(string $to, string $subject, string $message): bool
      * If PHPMailer is not installed or sending fails, the function falls
      * back to PHP's built‑in mail() function.
      */
-    $from = getenv('COMPANY_EMAIL') ?: 'brianheise22@gmail.com';
+    $from = getenv('COMPANY_EMAIL') ?: 'packinggenerals@gmail.com';
     // Try PHPMailer if the class exists
     if (class_exists('\\PHPMailer\\PHPMailer\\PHPMailer')) {
         try {

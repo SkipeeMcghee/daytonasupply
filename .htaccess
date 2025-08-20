@@ -15,3 +15,10 @@ SetEnv DB_HOST localhost
 SetEnv DB_NAME daytona_supply
 SetEnv DB_USER brian
 SetEnv DB_PASS 273h4ui^N
+
+# Gmail SMTP for automated emails
+SetEnv SMTP_HOST smtp.gmail.com
+SetEnv SMTP_PORT 587
+SetEnv SMTP_USER packinggenerals@gmail.com
+SetEnv SMTP_PASS bwodqxwxempzstzl
+SetEnv SMTP_AUTH true
