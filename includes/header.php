@@ -25,8 +25,9 @@ $adminLoggedIn = isset($_SESSION['admin']);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo isset($title) ? htmlspecialchars($title) : 'Daytona Supply'; ?></title>
-    <!-- Use a relative path for the stylesheet so it still resolves when the site is served from a subfolder -->
-    <link rel="stylesheet" href="assets/styles.css">
+    <!-- Use a relative path for the stylesheet. Append file modification time to bust client caches when the file changes -->
+    <?php $cssPath = __DIR__ . '/../assets/styles.css'; ?>
+    <link rel="stylesheet" href="assets/styles.css?v=<?php echo file_exists($cssPath) ? filemtime($cssPath) : time(); ?>">
 </head>
 <body>
 <header>
