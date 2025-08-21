@@ -21,14 +21,15 @@ $errors = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 if ($showForm && $_SERVER['REQUEST_METHOD'] === 'POST') {
     // Gather and sanitize input
-    $name    = trim($_POST['name'] ?? '');
-    $biz     = trim($_POST['business_name'] ?? '');
-    $phone   = trim($_POST['phone'] ?? '');
-    $email   = trim($_POST['email'] ?? '');
-    $bill    = trim($_POST['billing_address'] ?? '');
-    $ship    = trim($_POST['shipping_address'] ?? '');
-    $password = $_POST['password'] ?? '';
-    $confirm  = $_POST['confirm'] ?? '';
+    // Normalize and limit lengths on inputs
+    $name    = normalizeScalar($_POST['name'] ?? '', 128, '');
+    $biz     = normalizeScalar($_POST['business_name'] ?? '', 128, '');
+    $phone   = normalizeScalar($_POST['phone'] ?? '', 32, '');
+    $email   = normalizeScalar($_POST['email'] ?? '', 254, '');
+    $bill    = normalizeScalar($_POST['billing_address'] ?? '', 255, '');
+    $ship    = normalizeScalar($_POST['shipping_address'] ?? '', 255, '');
+    $password = (string)($_POST['password'] ?? '');
+    $confirm  = (string)($_POST['confirm'] ?? '');
 
     // Google reCAPTCHA v3 verification
     $recaptcha_response = $_POST['g-recaptcha-response'] ?? '';

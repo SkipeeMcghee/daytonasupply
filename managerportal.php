@@ -20,7 +20,13 @@ $loginError = '';
 if (!isset($_SESSION['admin'])) {
     // If a login attempt is being made, validate the password
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['password'])) {
-        $password = $_POST['password'];
+        // Limit password length to a reasonable cap to avoid abuse while
+        // preserving the user's intended value. Do not trim as whitespace
+        // may be meaningful for passwords.
+        $password = (string)($_POST['password'] ?? '');
+        if (strlen($password) > 256) {
+            $password = substr($password, 0, 256);
+        }
         $db = getDb();
         $stmt = $db->query('SELECT password_hash FROM admin LIMIT 1');
         $hash = $stmt->fetchColumn();
@@ -109,13 +115,15 @@ if (isset($_GET['unverify_customer'])) {
 if (isset($_GET['approve_order'])) {
     $orderId = (int)$_GET['approve_order'];
     updateOrderStatus($orderId, 'Approved');
-    header('Location: managerportal.php');
+    $filterRedirect = isset($_GET['filter']) ? '?filter=' . urlencode($_GET['filter']) : '';
+    header('Location: managerportal.php' . $filterRedirect . '#order-' . $orderId);
     exit;
 }
 if (isset($_GET['reject_order'])) {
     $orderId = (int)$_GET['reject_order'];
     updateOrderStatus($orderId, 'Rejected');
-    header('Location: managerportal.php');
+    $filterRedirect = isset($_GET['filter']) ? '?filter=' . urlencode($_GET['filter']) : '';
+    header('Location: managerportal.php' . $filterRedirect . '#order-' . $orderId);
     exit;
 }
 
@@ -124,15 +132,15 @@ if (isset($_GET['archive_order'])) {
     $orderId = (int)$_GET['archive_order'];
     archiveOrder($orderId, true);
     // Preserve the view parameter when redirecting
-    $view = isset($_GET['view']) ? '&view=' . urlencode($_GET['view']) : '';
-    header('Location: managerportal.php' . ($view ? '?' . ltrim($view, '&') : ''));
+    $filterRedirect = isset($_GET['filter']) ? '?filter=' . urlencode($_GET['filter']) : '';
+    header('Location: managerportal.php' . $filterRedirect . '#order-' . $orderId);
     exit;
 }
 if (isset($_GET['unarchive_order'])) {
     $orderId = (int)$_GET['unarchive_order'];
     archiveOrder($orderId, false);
-    $view = isset($_GET['view']) ? '&view=' . urlencode($_GET['view']) : '';
-    header('Location: managerportal.php' . ($view ? '?' . ltrim($view, '&') : ''));
+    $filterRedirect = isset($_GET['filter']) ? '?filter=' . urlencode($_GET['filter']) : '';
+    header('Location: managerportal.php' . $filterRedirect . '#order-' . $orderId);
     exit;
 }
 
@@ -166,9 +174,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $priceField = 'price_' . $id;
             if (isset($_POST[$nameField], $_POST[$priceField])) {
                 $data = [
-                    'name' => trim($_POST[$nameField]),
-                    'description' => trim($_POST[$descField] ?? ''),
-                    'price' => (float)$_POST[$priceField]
+                    'name' => normalizeScalar($_POST[$nameField] ?? '', 128, ''),
+                    'description' => normalizeScalar($_POST[$descField] ?? '', 512, ''),
+                    'price' => (float)($_POST[$priceField] ?? 0.0)
                 ];
                 saveProduct($data, $id);
             }
@@ -178,9 +186,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     // Add a new product
     if (isset($_POST['add_product'])) {
-        $name = trim($_POST['name'] ?? '');
-        $desc = trim($_POST['description'] ?? '');
-        $price = (float)($_POST['price'] ?? 0);
+        $name = normalizeScalar($_POST['name'] ?? '', 128, '');
+        $desc = normalizeScalar($_POST['description'] ?? '', 512, '');
+        $price = (float)($_POST['price'] ?? 0.0);
         if ($name !== '') {
             saveProduct(['name' => $name, 'description' => $desc, 'price' => $price]);
         }
@@ -200,12 +208,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $shipField = 'c_ship_' . $id;
             if (isset($_POST[$nameField], $_POST[$emailField])) {
                 updateCustomer($id, [
-                    'name' => trim($_POST[$nameField]),
-                    'business_name' => trim($_POST[$bizField] ?? ''),
-                    'phone' => trim($_POST[$phoneField] ?? ''),
-                    'email' => trim($_POST[$emailField]),
-                    'billing_address' => trim($_POST[$billField] ?? ''),
-                    'shipping_address' => trim($_POST[$shipField] ?? '')
+                    'name' => normalizeScalar($_POST[$nameField] ?? '', 128, ''),
+                    'business_name' => normalizeScalar($_POST[$bizField] ?? '', 128, ''),
+                    'phone' => normalizeScalar($_POST[$phoneField] ?? '', 32, ''),
+                    'email' => normalizeScalar($_POST[$emailField] ?? '', 254, ''),
+                    'billing_address' => normalizeScalar($_POST[$billField] ?? '', 255, ''),
+                    'shipping_address' => normalizeScalar($_POST[$shipField] ?? '', 255, '')
                 ]);
             }
         }
@@ -214,19 +222,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// At this point all actions are complete.  Determine which set of orders to display
-// and which customers to show (all vs. pending verification).
-// Orders
-$showArchived = (isset($_GET['view']) && $_GET['view'] === 'archived');
-if ($showArchived) {
-    $orders = getAllOrders(true, true);
+// At this point all actions are complete. Determine which set of orders to display
+// Orders filter: all | pending | approved | rejected | archived
+$filter = isset($_GET['filter']) ? strtolower(trim($_GET['filter'])) : 'all';
+// Fetch archived-only when requested, otherwise fetch active orders only
+if ($filter === 'archived') {
+    $orders = getAllOrders(false, true);
 } else {
+    // active orders only (archived excluded)
     $orders = getAllOrders(false, false);
+    if ($filter === 'pending') {
+        $orders = array_values(array_filter($orders, function($o) { return strcasecmp($o['status'] ?? '', 'Pending') === 0; }));
+    } elseif ($filter === 'approved') {
+        $orders = array_values(array_filter($orders, function($o) { return strcasecmp($o['status'] ?? '', 'Approved') === 0; }));
+    } elseif ($filter === 'rejected') {
+        $orders = array_values(array_filter($orders, function($o) { return strcasecmp($o['status'] ?? '', 'Rejected') === 0; }));
+    }
 }
 // Customers: separate lists for unverified and verified
 $unverifiedCustomers = getCustomersByVerified(false);
 $verifiedCustomers = getCustomersByVerified(true);
 $products = getAllProducts();
+
+// Whether we're showing archived orders (used by the toggle link below)
+$showArchived = ($filter === 'archived');
 
 // Include the header now that no further redirects will occur
 require_once __DIR__ . '/includes/header.php';
@@ -234,60 +253,126 @@ require_once __DIR__ . '/includes/header.php';
 
 <h2>Manager Portal</h2>
 
-<!-- Toolbar with inventory management -->
-<div style="display:flex; justify-content:flex-end; margin:10px 0 20px 0;">
-    <!-- Use a relative URL so the link works when the site is served from a subfolder -->
-    <a href="admin/update_inventory.php" style="background:#0b5ed7; color:#fff; padding:8px 14px; border-radius:6px; text-decoration:none; font-weight:600;">Update Inventory</a>
-</div>
+<!-- Toolbar removed; Update Inventory button moved to Products section -->
 
-<section>
+<section id="orders-section">
     <h3>Orders</h3>
-    <!-- Toggle between active and archived orders -->
-    <p>
-        <?php if ($showArchived): ?>
-            <a href="?view=active">Show Active Orders</a>
-        <?php else: ?>
-            <a href="?view=archived">Show Archived Orders</a>
-        <?php endif; ?>
-    </p>
-    <table class="admin-table">
-        <tr><th>ID</th><th>Date</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Actions</th></tr>
-        <?php foreach ($orders as $order): ?>
-            <?php
-                $cust = getCustomerById((int)$order['customer_id']);
-                $items = getOrderItems((int)$order['id']);
-                $descArr = [];
-                foreach ($items as $it) {
+    <?php
+        // Friendly heading describing which list is shown
+        $filterLabels = [
+            'all' => 'All Orders',
+            'pending' => 'Pending Orders',
+            'approved' => 'Approved Orders',
+            'rejected' => 'Rejected Orders',
+            'archived' => 'Archived Orders'
+        ];
+    ?>
+    <div style="margin-bottom:6px;font-weight:700;">Showing: <?php echo htmlspecialchars($filterLabels[$filter] ?? 'Orders'); ?></div>
+
+    <div style="margin-bottom:8px; display:flex; gap:8px; flex-wrap:wrap;">
+        <?php
+            // Define label and colors for each filter button
+            $filters = [
+                'all' => ['label' => 'Show All', 'bg' => '#f0f0f0', 'color' => '#000'],
+                'pending' => ['label' => 'Show Pending', 'bg' => '#ffc107', 'color' => '#000'],
+                'approved' => ['label' => 'Show Approved', 'bg' => '#198754', 'color' => '#fff'],
+                'rejected' => ['label' => 'Show Rejected', 'bg' => '#dc3545', 'color' => '#fff'],
+                'archived' => ['label' => 'Show Archived', 'bg' => '#0d6efd', 'color' => '#fff']
+            ];
+            foreach ($filters as $key => $meta) {
+                $isActive = ($filter === $key);
+                $bg = $meta['bg'];
+                $color = $meta['color'];
+                // Non-active buttons get a drop shadow to appear raised; active button looks "pressed" (no shadow + slight translate)
+                $shadow = $isActive ? '' : 'box-shadow:0 6px 18px rgba(0,0,0,0.12);';
+                $pressed = $isActive ? 'transform:translateY(1px);' : '';
+                $url = 'managerportal.php?filter=' . urlencode($key);
+                echo '<a href="' . htmlspecialchars($url) . '" style="padding:8px 12px;border-radius:6px;text-decoration:none;font-weight:600; background:' . $bg . '; color:' . $color . '; ' . $shadow . ' ' . $pressed . '">' . htmlspecialchars($meta['label']) . '</a>';
+            }
+        ?>
+    </div>
+    <?php foreach ($orders as $order): ?>
+    <div id="order-<?php echo $order['id']; ?>" class="order-group">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <div><strong>Order #<?php echo $order['id']; ?></strong> — <?php echo htmlspecialchars(date('Y-m-d H:i', strtotime($order['created_at']))); ?> by <?php echo htmlspecialchars((getCustomerById((int)$order['customer_id'])['name'] ?? 'Unknown')); ?></div>
+        <div><span class="order-toggle" data-order="<?php echo $order['id']; ?>">Collapse</span></div>
+    </div>
+    <table class="admin-table order-items" data-order="<?php echo $order['id']; ?>">
+        <tr>
+            <th>ID</th>
+            <th>Date</th>
+            <th>Customer</th>
+            <th>SKU</th>
+            <th>Description</th>
+            <th>Quantity</th>
+            <th class="numeric">Rate</th>
+            <th class="numeric">Price</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+        <?php
+            $cust = getCustomerById((int)$order['customer_id']);
+            $items = getOrderItems((int)$order['id']);
+            $orderTotal = 0.0;
+        ?>
+        <?php if (!empty($items)): ?>
+            <?php $firstItem = true; foreach ($items as $it): ?>
+                <?php
                     $prod = getProductById((int)$it['product_id']);
-                    if ($prod) {
-                        $descArr[] = htmlspecialchars($prod['name']) . ' x' . (int)$it['quantity'];
-                    }
-                }
-            ?>
-            <tr>
-                <td><?php echo $order['id']; ?></td>
-                <td><?php echo htmlspecialchars(date('Y-m-d H:i', strtotime($order['created_at']))); ?></td>
-                <td><?php echo htmlspecialchars($cust['name'] ?? 'Unknown'); ?></td>
-                <td><?php echo implode(', ', $descArr); ?></td>
-                <td>$<?php echo number_format($order['total'], 2); ?></td>
-                <td><?php echo htmlspecialchars($order['status']); ?></td>
-                <td>
-                    <a href="?approve_order=<?php echo $order['id']; ?><?php echo $showArchived ? '&view=archived' : ''; ?>">Approve</a>
-                    |
-                    <a href="?reject_order=<?php echo $order['id']; ?><?php echo $showArchived ? '&view=archived' : ''; ?>">Reject</a>
-                    |
-                    <?php if (!empty($order['archived']) && $order['archived'] == 1): ?>
-                        <a href="?unarchive_order=<?php echo $order['id']; ?><?php echo $showArchived ? '&view=archived' : ''; ?>">Unarchive</a>
+                    $sku = $prod ? htmlspecialchars($prod['name']) : $it['product_id'];
+                    $desc = $prod ? htmlspecialchars($prod['description'] ?? $prod['name']) : 'Unknown product';
+                    $qty = (int)$it['quantity'];
+                    $rate = $prod ? (float)$prod['price'] : 0.0;
+                    $price = $rate * $qty;
+                    $orderTotal += $price;
+                ?>
+                <tr>
+                    <?php if ($firstItem): ?>
+                        <td><?php echo $order['id']; ?></td>
+                        <td><?php echo htmlspecialchars(date('Y-m-d H:i', strtotime($order['created_at']))); ?></td>
+                        <td><?php echo htmlspecialchars($cust['name'] ?? 'Unknown'); ?></td>
                     <?php else: ?>
-                        <a href="?archive_order=<?php echo $order['id']; ?><?php echo $showArchived ? '&view=archived' : ''; ?>">Archive</a>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    <?php endif; ?>
+                    <td><?php echo $sku; ?></td>
+                    <td><?php echo $desc; ?></td>
+                    <td class="numeric"><?php echo $qty; ?></td>
+                    <td class="numeric">$<?php echo number_format($rate, 2); ?></td>
+                    <td class="numeric">$<?php echo number_format($price, 2); ?></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <?php $firstItem = false; ?>
+            <?php endforeach; ?>
+            <tr class="order-total-row">
+                <td colspan="7" style="text-align:right"><strong>Total:</strong></td>
+                <td class="numeric"><strong>$<?php echo number_format($orderTotal, 2); ?></strong></td>
+                        <td><?php echo htmlspecialchars($order['status']); ?></td>
+                <td>
+                    <?php
+                        // Preserve the current filter in action links so returning view is consistent
+                        $filterParam = $filter ? '&filter=' . urlencode($filter) : '';
+                    ?>
+                    <a class="action-btn action-approve small" href="?approve_order=<?php echo $order['id']; ?><?php echo $filterParam; ?>">Approve</a>
+                    <a class="action-btn action-reject small" href="?reject_order=<?php echo $order['id']; ?><?php echo $filterParam; ?>">Reject</a>
+                    <?php if (!empty($order['archived']) && $order['archived'] == 1): ?>
+                        <a class="action-btn action-unarchive small" href="?unarchive_order=<?php echo $order['id']; ?><?php echo $filterParam; ?>">Unarchive</a>
+                    <?php else: ?>
+                        <a class="action-btn action-archive small" href="?archive_order=<?php echo $order['id']; ?><?php echo $filterParam; ?>">Archive</a>
                     <?php endif; ?>
                 </td>
             </tr>
-        <?php endforeach; ?>
-        <?php if (empty($orders)): ?>
-            <tr><td colspan="7">No orders found.</td></tr>
+        <?php else: ?>
+            <tr><td colspan="10">No items for order #<?php echo $order['id']; ?></td></tr>
         <?php endif; ?>
     </table>
+    </div>
+    <?php endforeach; ?>
+    <?php if (empty($orders)): ?>
+        <p>No orders found.</p>
+    <?php endif; ?>
 </section>
 
 <section>
@@ -312,8 +397,8 @@ require_once __DIR__ . '/includes/header.php';
                     <td><?= htmlspecialchars($cust['billing_address']) ?></td>
                     <td><?= htmlspecialchars($cust['shipping_address']) ?></td>
                     <td>
-                        <a href="?verify_customer=<?= $cust['id'] ?>">Verify</a> |
-                        <a href="?delete_customer=<?= $cust['id'] ?>" onclick="return confirm('Are you sure you want to delete this customer? This will remove all of their orders.');">Delete</a>
+                        <a class="mgr-btn mgr-verify" href="?verify_customer=<?= $cust['id'] ?>">Verify</a>
+                        <a class="mgr-btn mgr-delete" href="?delete_customer=<?= $cust['id'] ?>" onclick="return confirm('Are you sure you want to delete this customer? This will remove all of their orders.');">Delete</a>
                     </td>
                 </tr>
             <?php endforeach; ?>
@@ -352,8 +437,8 @@ require_once __DIR__ . '/includes/header.php';
                     <td><?= htmlspecialchars($cust['billing_address']) ?></td>
                     <td><?= htmlspecialchars($cust['shipping_address']) ?></td>
                     <td>
-                        <a href="?unverify_customer=<?= $cust['id'] ?>">Unverify</a> |
-                        <a href="?delete_customer=<?= $cust['id'] ?>" onclick="return confirm('Are you sure you want to delete this customer? This will remove all of their orders.');">Delete</a>
+                        <a class="mgr-btn mgr-unverify" href="?unverify_customer=<?= $cust['id'] ?>">Unverify</a>
+                        <a class="mgr-btn mgr-delete" href="?delete_customer=<?= $cust['id'] ?>" onclick="return confirm('Are you sure you want to delete this customer? This will remove all of their orders.');">Delete</a>
                     </td>
                 </tr>
             <?php endforeach; ?>
@@ -366,6 +451,9 @@ require_once __DIR__ . '/includes/header.php';
 
 <section>
     <h3>Products</h3>
+    <div style="display:flex; justify-content:flex-start; margin:8px 0 12px 0;">
+        <a href="admin/update_inventory.php" style="background:#0b5ed7; color:#fff; padding:8px 14px; border-radius:6px; text-decoration:none; font-weight:600;">Update Inventory</a>
+    </div>
     <form method="post" action="">
         <input type="hidden" name="save_products" value="1">
         <table class="admin-table">
@@ -377,7 +465,7 @@ require_once __DIR__ . '/includes/header.php';
                     <td><input type="text" name="name_<?php echo $prod['id']; ?>" value="<?php echo htmlspecialchars($prod['name']); ?>"></td>
                     <td><input type="text" name="desc_<?php echo $prod['id']; ?>" value="<?php echo htmlspecialchars($prod['description']); ?>"></td>
                     <td><input type="number" step="0.01" name="price_<?php echo $prod['id']; ?>" value="<?php echo number_format($prod['price'], 2); ?>"></td>
-                    <td><a href="?delete_product=<?php echo $prod['id']; ?>">Delete</a></td>
+                    <td><a class="mgr-btn mgr-product-delete" href="?delete_product=<?php echo $prod['id']; ?>" onclick="return confirm('Delete this product?');">Delete</a></td>
                 </tr>
                 <?php $rowNum++; ?>
             <?php endforeach; ?>

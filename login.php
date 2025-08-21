@@ -12,8 +12,9 @@ if (isset($_SESSION['customer'])) {
 
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = trim($_POST['email'] ?? '');
-    $password = $_POST['password'] ?? '';
+    // Normalize inputs to a reasonable length to prevent abuse
+    $email = normalizeScalar($_POST['email'] ?? '', 254, '');
+    $password = (string)($_POST['password'] ?? '');
     $customer = authenticateCustomer($email, $password);
     if ($customer) {
         // Check if the account has been verified

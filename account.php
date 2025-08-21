@@ -21,13 +21,14 @@ $messages = [];
 $errors = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id   = (int)$customer['id'];
-    $name = trim($_POST['name'] ?? $customer['name']);
-    $biz  = trim($_POST['business_name'] ?? $customer['business_name']);
-    $phone= trim($_POST['phone'] ?? $customer['phone']);
-    $bill = trim($_POST['billing_address'] ?? $customer['billing_address']);
-    $ship = trim($_POST['shipping_address'] ?? $customer['shipping_address']);
-    $newPass = $_POST['password'] ?? '';
-    $currentPass = $_POST['current_password'] ?? '';
+    // Normalize and cap lengths before updating
+    $name = normalizeScalar($_POST['name'] ?? $customer['name'], 128, $customer['name']);
+    $biz  = normalizeScalar($_POST['business_name'] ?? $customer['business_name'], 128, $customer['business_name']);
+    $phone= normalizeScalar($_POST['phone'] ?? $customer['phone'], 32, $customer['phone']);
+    $bill = normalizeScalar($_POST['billing_address'] ?? $customer['billing_address'], 255, $customer['billing_address']);
+    $ship = normalizeScalar($_POST['shipping_address'] ?? $customer['shipping_address'], 255, $customer['shipping_address']);
+    $newPass = (string)($_POST['password'] ?? '');
+    $currentPass = (string)($_POST['current_password'] ?? '');
     // If the user checked the same_as_billing box, copy billing to shipping
     $sameBillingFlag = isset($_POST['same_as_billing']);
     if ($sameBillingFlag) {
@@ -120,28 +121,63 @@ include __DIR__ . '/includes/header.php';
 
 <h2>Your Orders</h2>
 <?php if (!empty($orders)): ?>
-    <table class="account-table">
-        <tr><th>Order ID</th><th>Date</th><th>Items</th><th>Total</th><th>Status</th></tr>
-        <?php foreach ($orders as $order): ?>
-            <?php
-                $items = getOrderItems((int)$order['id']);
-                $desc = [];
-                foreach ($items as $item) {
-                    $prod = getProductById((int)$item['product_id']);
-                    if ($prod) {
-                        $desc[] = htmlspecialchars($prod['name']) . ' x' . (int)$item['quantity'];
-                    }
-                }
-            ?>
-            <tr>
-                <td><?= $order['id']; ?></td>
-                <td><?= htmlspecialchars(date('Y-m-d H:i', strtotime($order['created_at']))); ?></td>
-                <td><?= implode(', ', $desc); ?></td>
-                <td>$<?= number_format($order['total'], 2); ?></td>
-                <td><?= htmlspecialchars($order['status']); ?></td>
-            </tr>
-        <?php endforeach; ?>
-    </table>
+    <?php foreach ($orders as $order): ?>
+        <?php $items = getOrderItems((int)$order['id']); $orderTotal = 0.0; ?>
+        <div class="order-group">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <div><strong>Order #<?= $order['id']; ?></strong> — <?= htmlspecialchars(date('Y-m-d H:i', strtotime($order['created_at']))); ?></div>
+                <div><span class="order-toggle" data-order="<?= $order['id']; ?>">Collapse</span></div>
+            </div>
+            <table class="account-table order-items" data-order="<?= $order['id']; ?>">
+                <tr>
+                    <th>Order ID</th>
+                    <th>Date</th>
+                    <th>SKU</th>
+                    <th>Description</th>
+                    <th class="numeric">Quantity</th>
+                    <th class="numeric">Rate</th>
+                    <th class="numeric">Price</th>
+                    <th>Status</th>
+                </tr>
+                <?php if (!empty($items)): ?>
+                    <?php $firstItem = true; foreach ($items as $item): ?>
+                        <?php
+                            $prod = getProductById((int)$item['product_id']);
+                            $sku = $prod ? htmlspecialchars($prod['name']) : $item['product_id'];
+                            $desc = $prod ? htmlspecialchars($prod['description'] ?? $prod['name']) : 'Unknown product';
+                            $qty = (int)$item['quantity'];
+                            $rate = $prod ? (float)$prod['price'] : 0.0;
+                            $price = $rate * $qty;
+                            $orderTotal += $price;
+                        ?>
+                        <tr>
+                            <?php if ($firstItem): ?>
+                                <td><?= $order['id']; ?></td>
+                                <td><?= htmlspecialchars(date('Y-m-d H:i', strtotime($order['created_at']))); ?></td>
+                            <?php else: ?>
+                                <td></td>
+                                <td></td>
+                            <?php endif; ?>
+                            <td><?= htmlspecialchars($sku); ?></td>
+                            <td><?= $desc; ?></td>
+                            <td class="numeric"><?= $qty; ?></td>
+                            <td class="numeric">$<?= number_format($rate, 2); ?></td>
+                            <td class="numeric">$<?= number_format($price, 2); ?></td>
+                            <td></td>
+                        </tr>
+                        <?php $firstItem = false; ?>
+                    <?php endforeach; ?>
+                    <tr class="order-total-row">
+                        <td colspan="6" style="text-align:right"><strong>Total:</strong></td>
+                        <td class="numeric"><strong>$<?= number_format($orderTotal, 2); ?></strong></td>
+                        <td><?= htmlspecialchars($order['status']); ?></td>
+                    </tr>
+                <?php else: ?>
+                    <tr><td colspan="8">No items for order #<?= $order['id']; ?></td></tr>
+                <?php endif; ?>
+            </table>
+        </div>
+    <?php endforeach; ?>
 <?php else: ?>
     <p>You have not placed any orders.</p>
 <?php endif; ?>

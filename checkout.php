@@ -61,7 +61,9 @@ foreach ($cart as $pid => $qty) {
     if ($prod) {
         $subtotal = $prod['price'] * $qty;
         $items[] = [
+            'id' => (int)$pid,
             'name' => $prod['name'],
+            'description' => $prod['description'] ?? '',
             'price' => $prod['price'],
             'qty' => $qty,
             'subtotal' => $subtotal
@@ -76,16 +78,27 @@ foreach ($cart as $pid => $qty) {
     <div class="message"><?php echo htmlspecialchars($message); ?></div>
 <?php else: ?>
     <table class="cart-table">
-        <tr><th>Product</th><th>Price</th><th>Quantity</th><th>Subtotal</th></tr>
+        <tr>
+            <th>SKU</th>
+            <th>Description</th>
+            <th class="numeric">Quantity</th>
+            <th class="numeric">Rate</th>
+            <th class="numeric">Price</th>
+        </tr>
         <?php foreach ($items as $it): ?>
+            <?php $prod = getProductById((int)$it['id']); $sku = $prod ? htmlspecialchars($prod['name']) : htmlspecialchars($it['name']); $description = $prod ? htmlspecialchars($prod['description'] ?? $prod['name']) : htmlspecialchars($it['name']); ?>
             <tr>
-                <td><?php echo htmlspecialchars($it['name']); ?></td>
-                <td>$<?php echo number_format($it['price'], 2); ?></td>
-                <td><?php echo $it['qty']; ?></td>
-                <td>$<?php echo number_format($it['subtotal'], 2); ?></td>
+                <td><?php echo $sku; ?></td>
+                <td><?php echo $description; ?></td>
+                <td class="numeric"><?php echo $it['qty']; ?></td>
+                <td class="numeric">$<?php echo number_format($it['price'], 2); ?></td>
+                <td class="numeric">$<?php echo number_format($it['subtotal'], 2); ?></td>
             </tr>
         <?php endforeach; ?>
-        <tr><td colspan="3" style="text-align:right"><strong>Total:</strong></td><td><strong>$<?php echo number_format($total, 2); ?></strong></td></tr>
+        <tr>
+            <td colspan="4" style="text-align:right"><strong>Total:</strong></td>
+            <td class="numeric"><strong>$<?php echo number_format($total, 2); ?></strong></td>
+        </tr>
     </table>
     <form method="post" action="">
         <p><button type="submit">Place Order</button></p>

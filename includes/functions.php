@@ -79,6 +79,45 @@ function getAllProducts(): array
 }
 
 /**
+ * Escape user-supplied terms for use with SQL LIKE queries. This will
+ * escape common wildcard characters and wrap the term with percent
+ * signs for contains-style matches. Use with prepared statements.
+ *
+ * @param string $term
+ * @param PDO|null $db Optional PDO to access driver-specific escape rules (not used)
+ * @return string
+ */
+function likeTerm(string $term): string
+{
+    // Replace backslash first to avoid double-escaping
+    $term = str_replace('\\', '\\\\', $term);
+    // Escape % and _ which are SQL wildcards
+    $term = str_replace(['%', '_'], ['\\%', '\\_'], $term);
+    // Wrap with wildcards for a contains match
+    return '%' . $term . '%';
+}
+
+/**
+ * Normalize and validate a simple scalar input. Trims and enforces a
+ * maximum length to prevent overly long values being used in queries
+ * or stored. Returns the default if the resulting value is empty.
+ *
+ * @param mixed $value
+ * @param int $maxLen
+ * @param string|null $default
+ * @return string|null
+ */
+function normalizeScalar($value, int $maxLen = 255, ?string $default = null): ?string
+{
+    $s = trim((string)($value ?? ''));
+    if ($s === '') return $default;
+    if (strlen($s) > $maxLen) {
+        $s = substr($s, 0, $maxLen);
+    }
+    return $s;
+}
+
+/**
  * Retrieve a single product by its ID.
  *
  * @param int $id Product ID
@@ -582,8 +621,13 @@ function getAllOrders(bool $includeArchived = false, bool $onlyArchived = false)
 function searchProducts(string $term): array
 {
     $db = getDb();
-    $stmt = $db->prepare('SELECT * FROM products WHERE name LIKE :term OR description LIKE :term ORDER BY id ASC');
-    $stmt->execute([':term' => '%' . $term . '%']);
+    // Use ESCAPE '\\' and properly escape wildcard characters in the
+    // user-supplied term so that searches behave consistently and can't
+    // be abused by injected wildcard characters.
+    $escapeChar = "\\";
+    $sql = 'SELECT * FROM products WHERE name LIKE :term ESCAPE ' . "'" . $escapeChar . "'" . ' OR description LIKE :term ESCAPE ' . "'" . $escapeChar . "'" . ' ORDER BY id ASC';
+    $stmt = $db->prepare($sql);
+    $stmt->execute([':term' => likeTerm($term)]);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 

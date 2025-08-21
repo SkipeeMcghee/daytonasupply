@@ -35,6 +35,31 @@ table th, table td {
 table th {
     background: #eee;
 }
+/* Numeric alignment for currency and quantity */
+td.numeric, th.numeric {
+    text-align: right;
+    white-space: nowrap;
+}
+
+/* Order grouping visuals */
+.order-group {
+    border: 1px solid #ddd;
+    background: #fff;
+    margin-bottom: 0.5em;
+    padding: 0.25em;
+}
+.order-total-row td {
+    background: #f5f5f5;
+    font-weight: 700;
+}
+
+/* Collapse toggle */
+.order-toggle {
+    cursor: pointer;
+    color: #0b5ed7;
+    text-decoration: underline;
+    font-size: 0.9em;
+}
 form {
     display: inline-block;
 }
@@ -60,3 +85,119 @@ footer {
     background: #eee;
     margin-top: 2em;
 }
+
+/* Favorite star button styles */
+.fav-toggle { display:inline-flex; align-items:center; justify-content:center; padding:4px; }
+.fav-toggle .fav-icon path { fill: transparent; stroke: #000; stroke-width:1.5; transition: fill 200ms ease, stroke 200ms ease, transform 180ms ease; }
+.fav-toggle { background: transparent; border: none; }
+.fav-toggle:hover .fav-icon path { stroke: #000; transform: scale(1.05); }
+.fav-toggle.fav-on .fav-icon path { fill: #ffd54f; stroke: #000; }
+.fav-toggle.fav-on .fav-icon { filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15)); }
+
+/* Standardized view buttons (Show All / Show Favorites) */
+.view-btn {
+    padding:6px 10px;
+    border-radius:6px;
+    text-decoration:none;
+    background:#f0f0f0;
+    color:#000;
+    font-weight:600;
+    display:inline-block;
+    box-shadow:0 6px 18px rgba(0,0,0,0.12);
+}
+.view-btn:hover { box-shadow:0 8px 20px rgba(0,0,0,0.14); }
+.view-btn.active {
+    box-shadow:none;
+    transform:translateY(1px);
+    background:#e9e9e9;
+}
+
+/* SKU filter buttons */
+.sku-btn {
+    padding:6px 10px;
+    border-radius:6px;
+    text-decoration:none;
+    background:#e0e0e0; /* slightly darker */
+    color:#000;
+    font-weight:600;
+    display:inline-block;
+    box-shadow:0 6px 22px rgba(0,0,0,0.14);
+}
+.sku-btn:hover { box-shadow:0 10px 26px rgba(0,0,0,0.18); }
+.sku-btn.active { box-shadow:none; transform:translateY(1px); background:#d3d3d3; /* slightly darker active */ }
+
+/* small gold star used in Favorites button */
+.mini-star { color:#ffd54f; margin-left:6px; font-size:0.9em; /* black outline via text-shadow */ text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; }
+
+/* Cart remove X button */
+.cart-remove-btn { background:transparent; border:0; color:#dc3545; font-weight:700; cursor:pointer; font-size:18px; }
+.cart-remove-btn:hover { color:#a71d2a; }
+
+/* Force fixed column widths and wrapping for cart/checkout/account/manager tables */
+.cart-table, .admin-table, .account-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+/* Generic cell wrapping */
+.cart-table td, .cart-table th,
+.admin-table td, .admin-table th,
+.account-table td, .account-table th {
+    white-space: normal;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+/* Cart / Checkout column widths: SKU small, Description large, Quantity small, Rate, Price */
+.cart-table th:nth-child(1), .cart-table td:nth-child(1) { width: 14%; }
+.cart-table th:nth-child(2), .cart-table td:nth-child(2) { width: 48%; }
+.cart-table th:nth-child(3), .cart-table td:nth-child(3) { width: 10%; }
+.cart-table th:nth-child(4), .cart-table td:nth-child(4) { width: 14%; }
+.cart-table th:nth-child(5), .cart-table td:nth-child(5) { width: 12%; }
+.cart-table th:nth-child(6), .cart-table td:nth-child(6) { width: 4%; }
+
+/* Manager/Account order-items widths: keep description large */
+.admin-table.order-items th:nth-child(1), .admin-table.order-items td:nth-child(1) { width: 6%; }
+.admin-table.order-items th:nth-child(2), .admin-table.order-items td:nth-child(2) { width: 12%; }
+.admin-table.order-items th:nth-child(3), .admin-table.order-items td:nth-child(3) { width: 12%; }
+.admin-table.order-items th:nth-child(4), .admin-table.order-items td:nth-child(4) { width: 8%; }
+.admin-table.order-items th:nth-child(5), .admin-table.order-items td:nth-child(5) { width: 32%; }
+.admin-table.order-items th:nth-child(6), .admin-table.order-items td:nth-child(6) { width: 6%; }
+.admin-table.order-items th:nth-child(7), .admin-table.order-items td:nth-child(7) { width: 8%; }
+.admin-table.order-items th:nth-child(8), .admin-table.order-items td:nth-child(8) { width: 8%; }
+.admin-table.order-items th:nth-child(9), .admin-table.order-items td:nth-child(9) { width: 6%; }
+.admin-table.order-items th:nth-child(10), .admin-table.order-items td:nth-child(10) { width: 6%; }
+
+/* Account table variant (if different class) */
+.account-table.order-items th:nth-child(1), .account-table.order-items td:nth-child(1) { width: 6%; }
+.account-table.order-items th:nth-child(2), .account-table.order-items td:nth-child(2) { width: 12%; }
+.account-table.order-items th:nth-child(3), .account-table.order-items td:nth-child(3) { width: 12%; }
+.account-table.order-items th:nth-child(4), .account-table.order-items td:nth-child(4) { width: 39%; } /* Description: wide */
+.account-table.order-items th:nth-child(5), .account-table.order-items td:nth-child(5) { width: 3%; } /* Quantity: very narrow */
+.account-table.order-items th:nth-child(6), .account-table.order-items td:nth-child(6) { width: 8%; }
+.account-table.order-items th:nth-child(7), .account-table.order-items td:nth-child(7) { width: 8%; }
+.account-table.order-items th:nth-child(8), .account-table.order-items td:nth-child(8) { width: 8%; }
+.account-table.order-items th:nth-child(9), .account-table.order-items td:nth-child(9) { width: 4%; }
+.account-table.order-items th:nth-child(10), .account-table.order-items td:nth-child(10) { width: 6%; }
+
+/* Make status column wider across admin/account tables (approx 150% of previous) */
+.admin-table.order-items th:nth-child(9), .admin-table.order-items td:nth-child(9),
+.account-table.order-items th:nth-child(9), .account-table.order-items td:nth-child(9) {
+    width: 9%;
+}
+
+/* Action button styles used in manager portal */
+.action-btn { padding:6px 8px; border-radius:4px; color:#fff; text-decoration:none; font-weight:600; display:inline-block; margin-right:6px; }
+.action-approve { background:#198754; }
+.action-reject { background:#dc3545; }
+.action-archive { background:#0d6efd; }
+.action-unarchive { background:#6c757d; }
+.action-btn.small { padding:4px 6px; font-size:0.9em; }
+
+/* Manager small control buttons for customer/product rows */
+.mgr-btn { display:inline-block; padding:4px 6px; border-radius:4px; color:#fff; text-decoration:none; font-weight:700; font-size:0.85em; margin-right:6px; }
+.mgr-verify { background:#198754; } /* green */
+.mgr-unverify { background:#ffc107; color:#000; } /* yellow */
+.mgr-delete { background:#dc3545; } /* red */
+.mgr-product-delete { background:#b02a37; } /* slightly darker red for product delete */
+.mgr-btn:focus { outline:2px solid rgba(0,0,0,0.12); box-shadow:0 2px 6px rgba(0,0,0,0.08); }

@@ -29,6 +29,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['product_id'])) {
     exit;
 }
 
+// Handle immediate removal via remove_item
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['remove_item'])) {
+    $rid = (int)$_POST['remove_item'];
+    if (isset($_SESSION['cart'][$rid])) {
+        unset($_SESSION['cart'][$rid]);
+    }
+    header('Location: cart.php');
+    exit;
+}
+
 // Handle cart update form (quantity adjustments/removals)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_cart'])) {
     if (isset($_SESSION['cart']) && is_array($_SESSION['cart'])) {
@@ -77,16 +87,34 @@ if (!empty($_SESSION['cart'])) {
     <form method="post" action="">
         <input type="hidden" name="update_cart" value="1">
         <table class="cart-table">
-            <tr><th>Product</th><th>Price</th><th>Quantity</th><th>Subtotal</th></tr>
+            <tr>
+                <th>SKU</th>
+                <th>Description</th>
+                <th>Quantity</th>
+                <th>Rate</th>
+                <th>Price</th>
+                <th></th>
+            </tr>
             <?php foreach ($cartItems as $item): ?>
+                <?php $prod = getProductById((int)$item['id']); $sku = $prod ? htmlspecialchars($prod['name']) : $item['id']; $description = $prod ? htmlspecialchars($prod['description'] ?? $prod['name']) : htmlspecialchars($item['name']); ?>
                 <tr>
-                    <td><?php echo htmlspecialchars($item['name']); ?></td>
-                    <td>$<?php echo number_format($item['price'], 2); ?></td>
+                    <td><?php echo $sku; ?></td>
+                    <td><?php echo $description; ?></td>
                     <td><input type="number" name="qty_<?php echo $item['id']; ?>" value="<?php echo $item['quantity']; ?>" min="0" style="width:60px"></td>
+                    <td>$<?php echo number_format($item['price'], 2); ?></td>
                     <td>$<?php echo number_format($item['subtotal'], 2); ?></td>
+                    <td style="text-align:center;">
+                        <form method="post" action="" style="margin:0;">
+                            <input type="hidden" name="remove_item" value="<?php echo $item['id']; ?>">
+                            <button type="submit" class="cart-remove-btn" title="Remove item">×</button>
+                        </form>
+                    </td>
                 </tr>
             <?php endforeach; ?>
-            <tr><td colspan="3" style="text-align:right"><strong>Total:</strong></td><td><strong>$<?php echo number_format($total, 2); ?></strong></td></tr>
+            <tr>
+                <td colspan="4" style="text-align:right"><strong>Total:</strong></td>
+                <td><strong>$<?php echo number_format($total, 2); ?></strong></td>
+            </tr>
         </table>
         <p><button type="submit">Update Cart</button></p>
     </form>

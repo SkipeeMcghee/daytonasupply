@@ -44,7 +44,12 @@ function getDb(): PDO
         $pass = getenv('DB_PASS') ?: '';
         $dsn = "mysql:host=$host;dbname=$name;charset=utf8mb4";
         $db = new PDO($dsn, $user, $pass);
-        $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    // Use real prepared statements where possible and surface errors
+    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    // Disable emulated prepares so the driver uses native prepares
+    $db->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+    // Use associative arrays by default for consistency
+    $db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
         // For MySQL we expect that the schema has been created ahead of time
         return $db;
     }
@@ -53,7 +58,12 @@ function getDb(): PDO
     $initNeeded = !file_exists($dbFile);
     $dsn = 'sqlite:' . $dbFile;
     $db = new PDO($dsn);
+    // Ensure errors are raised as exceptions, prefer native prepares and
+    // set a sane default fetch mode to avoid callers having to pass the
+    // fetch mode repeatedly.
     $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $db->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+    $db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
     if ($initNeeded) {
         // Ensure the data directory exists
         $dir = dirname($dbFile);
