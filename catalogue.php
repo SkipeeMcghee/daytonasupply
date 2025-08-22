@@ -118,20 +118,43 @@ try {
         $products = getAllProducts();
     }
 } catch (Exception $e) {
-    // Log the exception for diagnosis to both system log and a local project log
-    $msg = '[' . date('c') . '] catalogue.php error: ' . $e->getMessage() . "\n" . $e->getTraceAsString() . "\n";
+    // Build a detailed message for diagnostics and include a short error reference
+    $errorRef = bin2hex(random_bytes(6)); // short identifier for cross-referencing
+    $msg = '[' . date('c') . '] catalogue.php error (' . $errorRef . '): ' . $e->getMessage() . "\n" . $e->getTraceAsString() . "\n";
+    // Log to the system logger first
     error_log($msg);
-    // Attempt to write to a project-local log so Apache users can inspect errors
-    $logDir = __DIR__ . '/data/logs';
-    if (!is_dir($logDir)) {
-        @mkdir($logDir, 0755, true);
+    // Try a sequence of project-local writable locations so at least one
+    // place captures the error even when the webserver user has restricted
+    // permissions.  We prefer data/logs/, then data/, then project root.
+    $candidates = [__DIR__ . '/data/logs', __DIR__ . '/data', __DIR__];
+    $written = false;
+    foreach ($candidates as $dir) {
+        try {
+            if (!is_dir($dir)) {
+                @mkdir($dir, 0755, true);
+            }
+            $logFile = rtrim($dir, '\\/') . '/catalogue_errors.log';
+            $res = @file_put_contents($logFile, $msg, FILE_APPEND | LOCK_EX);
+            if ($res !== false) {
+                $written = true;
+                break;
+            }
+        } catch (Exception $inner) {
+            // ignore and try next candidate
+        }
     }
-    @file_put_contents($logDir . '/catalogue_errors.log', $msg, FILE_APPEND | LOCK_EX);
+    if (!$written) {
+        // As a last resort, attempt to write to PHP's sys_get_temp_dir()
+        $tmp = sys_get_temp_dir() ?: null;
+        if ($tmp) {
+            @file_put_contents(rtrim($tmp, '\\/') . '/daytona_catalogue_errors.log', $msg, FILE_APPEND | LOCK_EX);
+        }
+    }
     http_response_code(500);
     include __DIR__ . '/includes/header.php';
     echo '<main><h1>Product Catalogue</h1>';
     echo '<p>Sorry, we are unable to perform that search right now. Our team has been notified.</p>';
-    echo '<p>If this problem continues, please contact support.</p></main>';
+    echo '<p>If this problem continues, please contact support and quote reference <strong>' . htmlspecialchars($errorRef) . '</strong>.</p></main>';
     include __DIR__ . '/includes/footer.php';
     exit;
 }
