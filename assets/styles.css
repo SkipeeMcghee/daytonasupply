@@ -79,6 +79,27 @@ button:hover {
     border: 1px solid #d6e9c6;
     margin-bottom: 1em;
 }
+
+/* Home hero styles */
+.home-hero { margin: 1.25em 0; }
+.home-hero .hero-inner { display:flex; gap:1.25em; align-items:center; }
+.home-hero .hero-media { flex: 0 0 220px; }
+.hero-img { width:100%; max-width:220px; height:auto; display:block; border-radius:8px; }
+.home-hero .hero-content { flex:1 1 auto; }
+.home-hero h3 { margin:0 0 0.5em 0; font-size:1.25rem; color:#002b5c; }
+.lead { margin:0 0 0.75em 0; font-size:1rem; color:#222; line-height:1.4; }
+.hero-features { list-style: disc; margin:0 0 0.75em 1.25em; padding:0; color:#333; }
+.hero-features li { margin:0.35em 0; }
+.hero-ctas { display:flex; gap:0.6em; margin-top:0.5em; }
+.hero-ctas .view-btn { background:#004080; color:#fff; box-shadow:none; }
+
+@media (max-width: 768px) {
+    .home-hero .hero-inner { flex-direction:column; align-items:flex-start; }
+    .home-hero .hero-media { flex:0 0 auto; }
+    .hero-img { max-width:180px; }
+    .lead { font-size:0.95rem; }
+    .hero-ctas { flex-wrap:wrap; }
+}
 footer {
     text-align: center;
     padding: 1em;
