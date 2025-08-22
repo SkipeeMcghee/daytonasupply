@@ -39,6 +39,11 @@ $adminLoggedIn = isset($_SESSION['admin']);
 </head>
 <body>
 <header>
+    <div class="site-brand">
+        <a href="index.php">
+            <img src="assets/images/Logowhite.png" alt="Daytona Supply" class="site-logo">
+        </a>
+    </div>
     <nav>
         <ul class="nav">
             <!-- Use relative links so navigation works regardless of the base directory -->
@@ -57,6 +62,5 @@ $adminLoggedIn = isset($_SESSION['admin']);
             <?php endif; ?>
         </ul>
     </nav>
-    <h1 class="site-title">Daytona Supply</h1>
 </header>
 <main>

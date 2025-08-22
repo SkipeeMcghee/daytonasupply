@@ -10,6 +10,13 @@ header {
     color: white;
     padding: 1em;
 }
+/* Site logo in header */
+.site-brand { display:flex; align-items:center; justify-content:flex-start; margin-bottom:0.6em; margin-left:0.25em; }
+.site-logo { height:88px; width:auto; display:block; }
+
+@media (max-width: 768px) {
+    .site-logo { height:72px; }
+}
 header .nav {
     list-style: none;
     margin: 0;
