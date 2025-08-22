@@ -7,6 +7,14 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// If the site is being served over HTTPS, instruct modern browsers
+// to automatically upgrade insecure (http://) subresources to HTTPS.
+// This helps mitigate mixed-content warnings without changing runtime URLs.
+if (!empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off') {
+    // Send the CSP header early before any output is emitted.
+    header('Content-Security-Policy: upgrade-insecure-requests');
+}
+
 // Determine the number of items in the cart (stored in session)
 $cartCount = 0;
 if (!empty($_SESSION['cart']) && is_array($_SESSION['cart'])) {
