@@ -1,5 +1,12 @@
 # Daytona Supply Website
 
+Diagnostic helpers
+------------------
+
+tools/run_catalogue_test.php — A small CLI helper that simulates a GET request to render `catalogue.php` from the command line for debugging server-side rendering and search. Usage: run `php tools/run_catalogue_test.php` from the project root. The script is intentionally non-destructive and writes its rendered output to STDOUT; you can redirect it to a file if you want a snapshot, e.g. `php tools/run_catalogue_test.php > tools/catalogue_output.html`.
+
+Cleanup action performed: removed the previously generated `tools/catalogue_output.html` snapshot to keep the repo tidy while retaining `tools/run_catalogue_test.php` for future debugging needs.
+
 This repository contains a simple e‑commerce style website for Daytona Supply built with PHP and SQLite.  It provides the following pages and features:
 
 * **index.php** – Landing page introducing the company.

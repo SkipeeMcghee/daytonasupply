@@ -3,6 +3,16 @@
 
 // Start a session so cart and user data persist across requests.
 session_start();
+// If running on localhost or CLI enable error display for debugging to help
+// diagnose HTTP 500 responses during development. This will not affect
+// production if your site is served from a public host.
+$remote = $_SERVER['REMOTE_ADDR'] ?? '';
+$host = $_SERVER['HTTP_HOST'] ?? '';
+if (php_sapi_name() === 'cli' || $remote === '127.0.0.1' || $remote === '::1' || stripos($host, 'localhost') !== false) {
+    ini_set('display_errors', '1');
+    ini_set('display_startup_errors', '1');
+    error_reporting(E_ALL);
+}
 require __DIR__ . '/includes/db.php';
 require __DIR__ . '/includes/functions.php';
 
@@ -10,7 +20,7 @@ $title = 'Product Catalogue';
 
 // If the form to add a product was submitted, update the session cart
 // Toggle favorite handler (AJAX-aware)
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['favorite_product_id'])) {
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['favorite_product_id'])) {
     $fid = (int)$_POST['favorite_product_id'];
     if (!isset($_SESSION['favorites']) || !is_array($_SESSION['favorites'])) {
         $_SESSION['favorites'] = [];
@@ -40,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['favorite_product_id']
 }
 
 // If the form to add a product was submitted, update the session cart
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['product_id'], $_POST['quantity'])) {
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['product_id'], $_POST['quantity'])) {
     $pid = (int)$_POST['product_id'];
     $qty = (int)$_POST['quantity'];
     if ($qty < 1) {
@@ -93,18 +103,37 @@ $showMode = normalizeScalar($_GET['show'] ?? 'all', 32, 'all');
 $skuKey = normalizeScalar($_GET['sku'] ?? '', 64, '');
 
 // Determine which products to show
-if ($search !== '') {
-    // Fall back to a manual query if a dedicated search function is not available
-    $db = getDb();
-    // Use backslash as the ESCAPE character so our escaped wildcards are honored.
-    $escapeChar = "\\";
-    $sql = 'SELECT * FROM products WHERE name LIKE :term ESCAPE ' . "'" . $escapeChar . "'" . ' OR description LIKE :term ESCAPE ' . "'" . $escapeChar . "'" . ' ORDER BY id ASC';
-    $stmt = $db->prepare($sql);
-    $term = likeTerm($search);
-    $stmt->execute([':term' => $term]);
-    $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
-} else {
-    $products = getAllProducts();
+try {
+    if ($search !== '') {
+        // Fall back to a manual query if a dedicated search function is not available
+        $db = getDb();
+        // Use backslash as the ESCAPE character so our escaped wildcards are honored.
+        $escapeChar = "\\";
+        $sql = 'SELECT * FROM products WHERE name LIKE :term ESCAPE ' . "'" . $escapeChar . "'" . ' OR description LIKE :term ESCAPE ' . "'" . $escapeChar . "'" . ' ORDER BY id ASC';
+        $stmt = $db->prepare($sql);
+        $term = likeTerm($search);
+        $stmt->execute([':term' => $term]);
+        $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } else {
+        $products = getAllProducts();
+    }
+} catch (Exception $e) {
+    // Log the exception for diagnosis to both system log and a local project log
+    $msg = '[' . date('c') . '] catalogue.php error: ' . $e->getMessage() . "\n" . $e->getTraceAsString() . "\n";
+    error_log($msg);
+    // Attempt to write to a project-local log so Apache users can inspect errors
+    $logDir = __DIR__ . '/data/logs';
+    if (!is_dir($logDir)) {
+        @mkdir($logDir, 0755, true);
+    }
+    @file_put_contents($logDir . '/catalogue_errors.log', $msg, FILE_APPEND | LOCK_EX);
+    http_response_code(500);
+    include __DIR__ . '/includes/header.php';
+    echo '<main><h1>Product Catalogue</h1>';
+    echo '<p>Sorry, we are unable to perform that search right now. Our team has been notified.</p>';
+    echo '<p>If this problem continues, please contact support.</p></main>';
+    include __DIR__ . '/includes/footer.php';
+    exit;
 }
 
 // If showing favorites, filter the products list by session favorites
