@@ -149,41 +149,71 @@ footer {
 }
 
 /* Cart / Checkout column widths: SKU small, Description large, Quantity small, Rate, Price */
-.cart-table th:nth-child(1), .cart-table td:nth-child(1) { width: 14%; }
-.cart-table th:nth-child(2), .cart-table td:nth-child(2) { width: 48%; }
-.cart-table th:nth-child(3), .cart-table td:nth-child(3) { width: 10%; }
-.cart-table th:nth-child(4), .cart-table td:nth-child(4) { width: 14%; }
-.cart-table th:nth-child(5), .cart-table td:nth-child(5) { width: 12%; }
-.cart-table th:nth-child(6), .cart-table td:nth-child(6) { width: 4%; }
+.cart-table th:nth-child(1), .cart-table td:nth-child(1) { width: 12%; } /* SKU */
+.cart-table th:nth-child(2), .cart-table td:nth-child(2) { width: 48%; } /* Description */
+.cart-table th:nth-child(3), .cart-table td:nth-child(3) { width: 12%; } /* Quantity */
+.cart-table th:nth-child(4), .cart-table td:nth-child(4) { width: 14%; } /* Rate */
+.cart-table th:nth-child(5), .cart-table td:nth-child(5) { width: 10%; } /* Price */
+.cart-table th:nth-child(6), .cart-table td:nth-child(6) { width: 4%; }  /* Remove */
 
 /* Manager/Account order-items widths: keep description large */
 .admin-table.order-items th:nth-child(1), .admin-table.order-items td:nth-child(1) { width: 6%; }
 .admin-table.order-items th:nth-child(2), .admin-table.order-items td:nth-child(2) { width: 12%; }
 .admin-table.order-items th:nth-child(3), .admin-table.order-items td:nth-child(3) { width: 12%; }
 .admin-table.order-items th:nth-child(4), .admin-table.order-items td:nth-child(4) { width: 8%; }
-.admin-table.order-items th:nth-child(5), .admin-table.order-items td:nth-child(5) { width: 32%; }
+.admin-table.order-items th:nth-child(5), .admin-table.order-items td:nth-child(5) { width: 30%; }
 .admin-table.order-items th:nth-child(6), .admin-table.order-items td:nth-child(6) { width: 6%; }
 .admin-table.order-items th:nth-child(7), .admin-table.order-items td:nth-child(7) { width: 8%; }
 .admin-table.order-items th:nth-child(8), .admin-table.order-items td:nth-child(8) { width: 8%; }
 .admin-table.order-items th:nth-child(9), .admin-table.order-items td:nth-child(9) { width: 6%; }
-.admin-table.order-items th:nth-child(10), .admin-table.order-items td:nth-child(10) { width: 6%; }
+.admin-table.order-items th:nth-child(10), .admin-table.order-items td:nth-child(10) { width: 4%; }
 
 /* Account table variant (if different class) */
 .account-table.order-items th:nth-child(1), .account-table.order-items td:nth-child(1) { width: 6%; }
 .account-table.order-items th:nth-child(2), .account-table.order-items td:nth-child(2) { width: 12%; }
 .account-table.order-items th:nth-child(3), .account-table.order-items td:nth-child(3) { width: 12%; }
-.account-table.order-items th:nth-child(4), .account-table.order-items td:nth-child(4) { width: 39%; } /* Description: wide */
-.account-table.order-items th:nth-child(5), .account-table.order-items td:nth-child(5) { width: 3%; } /* Quantity: very narrow */
+.account-table.order-items th:nth-child(4), .account-table.order-items td:nth-child(4) { width: 35%; } /* Description */
+.account-table.order-items th:nth-child(5), .account-table.order-items td:nth-child(5) { width: 6%; }  /* Quantity: widened */
 .account-table.order-items th:nth-child(6), .account-table.order-items td:nth-child(6) { width: 8%; }
 .account-table.order-items th:nth-child(7), .account-table.order-items td:nth-child(7) { width: 8%; }
 .account-table.order-items th:nth-child(8), .account-table.order-items td:nth-child(8) { width: 8%; }
 .account-table.order-items th:nth-child(9), .account-table.order-items td:nth-child(9) { width: 4%; }
-.account-table.order-items th:nth-child(10), .account-table.order-items td:nth-child(10) { width: 6%; }
+.account-table.order-items th:nth-child(10), .account-table.order-items td:nth-child(10) { width: 5%; }
 
 /* Make status column wider across admin/account tables (approx 150% of previous) */
 .admin-table.order-items th:nth-child(9), .admin-table.order-items td:nth-child(9),
 .account-table.order-items th:nth-child(9), .account-table.order-items td:nth-child(9) {
     width: 9%;
+}
+
+/* Responsive behavior for small screens: allow horizontal scrolling and improve touch readability */
+@media (max-width: 768px) {
+    /* Allow tables to scroll horizontally instead of squashing columns */
+    .cart-table, .admin-table, .account-table, table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        white-space: nowrap; /* keep columns readable and enable horizontal scroll */
+    }
+
+    /* Improve cell spacing and font-size for mobile */
+    .cart-table th, .cart-table td,
+    .admin-table th, .admin-table td,
+    .account-table th, .account-table td,
+    table th, table td {
+        padding: 10px 12px;
+        font-size: 14px;
+        vertical-align: middle;
+        white-space: normal; /* allow multiline when needed inside the cell */
+        min-width: 110px; /* ensure each column remains legible when scrolled */
+    }
+
+    /* Make headers slightly bolder and increase line-height for readability */
+    table th { font-weight: 700; line-height: 1.2; }
+
+    /* Reduce table border weight to avoid visual clutter */
+    table th, table td { border-width: 1px; }
 }
 
 /* Action button styles used in manager portal */
