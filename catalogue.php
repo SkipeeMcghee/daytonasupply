@@ -13,8 +13,31 @@ if (php_sapi_name() === 'cli' || $remote === '127.0.0.1' || $remote === '::1' ||
     ini_set('display_startup_errors', '1');
     error_reporting(E_ALL);
 }
-require __DIR__ . '/includes/db.php';
-require __DIR__ . '/includes/functions.php';
+// Include dependencies and catch exceptions during bootstrap so we can
+// surface a friendly error page and log the failure (this catches errors
+// like DB connection failures that would otherwise trigger a 500 with
+// no project-level log entry).
+try {
+    require __DIR__ . '/includes/db.php';
+    require __DIR__ . '/includes/functions.php';
+} catch (Exception $e) {
+    $errorRef = bin2hex(random_bytes(6));
+    $msg = '[' . date('c') . '] catalogue.php bootstrap error (' . $errorRef . '): ' . $e->getMessage() . "\n" . $e->getTraceAsString() . "\n";
+    error_log($msg);
+    // Attempt to persist to project-level locations
+    $candidates = [__DIR__ . '/data/logs', __DIR__ . '/data', __DIR__];
+    foreach ($candidates as $dir) {
+        if (!is_dir($dir)) @mkdir($dir, 0755, true);
+        @file_put_contents(rtrim($dir, '\\/').'/catalogue_errors.log', $msg, FILE_APPEND | LOCK_EX);
+    }
+    http_response_code(500);
+    include __DIR__ . '/includes/header.php';
+    echo '<main><h1>Product Catalogue</h1>';
+    echo '<p>Sorry, we are unable to perform that search right now. Our team has been notified.</p>';
+    echo '<p>Please quote reference <strong>' . htmlspecialchars($errorRef) . '</strong> when contacting support.</p></main>';
+    include __DIR__ . '/includes/footer.php';
+    exit;
+}
 
 $title = 'Product Catalogue';
 

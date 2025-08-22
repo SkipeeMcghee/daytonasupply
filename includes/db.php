@@ -43,15 +43,32 @@ function getDb(): PDO
         $user = getenv('DB_USER') ?: 'root';
         $pass = getenv('DB_PASS') ?: '';
         $dsn = "mysql:host=$host;dbname=$name;charset=utf8mb4";
-        $db = new PDO($dsn, $user, $pass);
-    // Use real prepared statements where possible and surface errors
-    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    // Disable emulated prepares so the driver uses native prepares
-    $db->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-    // Use associative arrays by default for consistency
-    $db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-        // For MySQL we expect that the schema has been created ahead of time
-        return $db;
+        // Try to connect to MySQL; if it fails, log and gracefully fall back to
+        // the bundled SQLite file so the site remains available.
+        try {
+            $db = new PDO($dsn, $user, $pass);
+            // Use real prepared statements where possible and surface errors
+            $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            // Disable emulated prepares so the driver uses native prepares
+            $db->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+            // Use associative arrays by default for consistency
+            $db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+            // For MySQL we expect that the schema has been created ahead of time
+            return $db;
+        } catch (Exception $e) {
+            // Log the MySQL connection failure and continue to SQLite fallback
+            $errorRef = null;
+            try { $errorRef = bin2hex(random_bytes(6)); } catch (Exception $_) { $errorRef = substr(md5(uniqid('', true)), 0, 12); }
+            $msg = '[' . date('c') . '] getDb mysql connection failed (' . $errorRef . '): ' . $e->getMessage() . "\n" . $e->getTraceAsString() . "\n";
+            error_log($msg);
+            // Try to persist to project-level locations for diagnosis
+            $candidates = [__DIR__ . '/../data/logs', __DIR__ . '/../data', __DIR__];
+            foreach ($candidates as $dir) {
+                if (!is_dir($dir)) @mkdir($dir, 0755, true);
+                @file_put_contents(rtrim($dir, '\\/').'/catalogue_errors.log', $msg, FILE_APPEND | LOCK_EX);
+            }
+            // Fall back to SQLite by continuing below
+        }
     }
     // Default: SQLite
     $dbFile = getenv('DB_PATH') ?: __DIR__ . '/../data/database.sqlite';
