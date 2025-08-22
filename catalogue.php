@@ -128,15 +128,7 @@ $skuKey = normalizeScalar($_GET['sku'] ?? '', 64, '');
 // Determine which products to show
 try {
     if ($search !== '') {
-        // Fall back to a manual query if a dedicated search function is not available
-        $db = getDb();
-        // Use backslash as the ESCAPE character so our escaped wildcards are honored.
-        $escapeChar = "\\";
-        $sql = 'SELECT * FROM products WHERE name LIKE :term ESCAPE ' . "'" . $escapeChar . "'" . ' OR description LIKE :term ESCAPE ' . "'" . $escapeChar . "'" . ' ORDER BY id ASC';
-        $stmt = $db->prepare($sql);
-        $term = likeTerm($search);
-        $stmt->execute([':term' => $term]);
-        $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $products = getProductsBySearch($search);
     } else {
         $products = getAllProducts();
     }

@@ -618,17 +618,37 @@ function getAllOrders(bool $includeArchived = false, bool $onlyArchived = false)
  * @param string $term
  * @return array
  */
-function searchProducts(string $term): array
+// legacy search wrapper preserved below
+
+/**
+ * New wrapper to centralize product search behavior. Use this from pages
+ * so search logic lives in one place and can be adjusted for different
+ * DB drivers or performance optimizations without changing templates.
+ *
+ * @param string $term
+ * @param PDO|null $db Optional PDO instance to use (helps testing)
+ * @return array
+ */
+function getProductsBySearch(string $term, ?PDO $db = null): array
 {
-    $db = getDb();
-    // Use ESCAPE '\\' and properly escape wildcard characters in the
-    // user-supplied term so that searches behave consistently and can't
-    // be abused by injected wildcard characters.
+    $db = $db ?? getDb();
+    // Normalize term length and trim
+    $term = normalizeScalar($term, 150, '');
+    if ($term === '') return [];
+
+    // Escape wildcard chars and use a parameterized query. Use the
+    // same ESCAPE character for portability across drivers.
     $escapeChar = "\\";
     $sql = 'SELECT * FROM products WHERE name LIKE :term ESCAPE ' . "'" . $escapeChar . "'" . ' OR description LIKE :term ESCAPE ' . "'" . $escapeChar . "'" . ' ORDER BY id ASC';
     $stmt = $db->prepare($sql);
     $stmt->execute([':term' => likeTerm($term)]);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+// Keep the old name for backward compatibility
+function searchProducts(string $term): array
+{
+    return getProductsBySearch($term);
 }
 
 /**
