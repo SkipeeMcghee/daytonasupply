@@ -173,7 +173,7 @@ include __DIR__ . '/includes/header.php';
     <p>Street Address 2:<br><input type="text" name="billing_street2" value="<?= htmlspecialchars($customer['billing_street2'] ?? '') ?>" autocomplete="off"></p>
         <p>City:<br><input type="text" name="billing_city" value="<?= htmlspecialchars($customer['billing_city'] ?? '') ?>" autocomplete="off"></p>
         <p>State:<br><input type="text" name="billing_state" value="<?= htmlspecialchars($customer['billing_state'] ?? '') ?>" autocomplete="off"></p>
-        <p>Zip:<br><input type="text" name="billing_zip" value="<?= htmlspecialchars($customer['billing_zip'] ?? '') ?>" autocomplete="off"></p>
+    <p>Zip:<br><input type="text" name="billing_zip" value="<?= htmlspecialchars($customer['billing_postal_code'] ?? $customer['billing_zip'] ?? '') ?>" autocomplete="off"></p>
     </fieldset>
     <?php
     $sameBillingChecked = (trim($customer['shipping_address']) === trim($customer['billing_address']));
@@ -186,7 +186,7 @@ include __DIR__ . '/includes/header.php';
             <p>Street Address 2:<br><input type="text" name="shipping_street2" value="<?= htmlspecialchars($customer['shipping_street2'] ?? '') ?>" autocomplete="off"></p>
             <p>City:<br><input type="text" name="shipping_city" value="<?= htmlspecialchars($customer['shipping_city'] ?? '') ?>" autocomplete="off"></p>
             <p>State:<br><input type="text" name="shipping_state" value="<?= htmlspecialchars($customer['shipping_state'] ?? '') ?>" autocomplete="off"></p>
-            <p>Zip:<br><input type="text" name="shipping_zip" value="<?= htmlspecialchars($customer['shipping_zip'] ?? '') ?>" autocomplete="off"></p>
+            <p>Zip:<br><input type="text" name="shipping_zip" value="<?= htmlspecialchars($customer['shipping_postal_code'] ?? $customer['shipping_zip'] ?? '') ?>" autocomplete="off"></p>
         </div>
     </fieldset>
     <script>
