@@ -53,6 +53,13 @@ if (is_readable($vendorAutoload)) {
 // ignored.
 @include __DIR__ . '/config.local.php';
 
+// Ensure application timezone is set to local (Daytona / Eastern Time).
+// This prevents order times from being stored/displayed in UTC which
+// previously resulted in a four-hour offset for the owner.
+// Force application timezone to Eastern Time to avoid UTC/host mismatches.
+// This ensures order timestamps display in ET consistently.
+date_default_timezone_set('America/New_York');
+
 /**
  * Ensure the COMPANY_EMAIL environment variable is set.  Many parts of
  * the application rely on getenv('COMPANY_EMAIL') to determine where
@@ -141,7 +148,7 @@ function getProductById(int $id): ?array
  * @param array $cart Map of product IDs to quantities
  * @return int Newly created order ID
  */
-function createOrder(int $customerId, array $cart): int
+function createOrder(int $customerId, array $cart, float $taxAmount = 0.0): int
 {
     $db = getDb();
     $db->beginTransaction();
@@ -153,6 +160,10 @@ function createOrder(int $customerId, array $cart): int
             if ($prod) {
                 $total += $prod['price'] * $qty;
             }
+        }
+        // Apply tax amount if provided
+        if ($taxAmount && $taxAmount > 0) {
+            $total += $taxAmount;
         }
         // Insert order
         $insOrder = $db->prepare('INSERT INTO orders(customer_id, status, total, created_at) VALUES(:customer_id, :status, :total, :created_at)');
@@ -450,14 +461,54 @@ function createCustomer(array $data): int
     error_log('DEBUG: Data to insert: ' . print_r($data, true));
     // Hash password and insert
     $hash = password_hash($data['password'], PASSWORD_DEFAULT);
-    $ins = $db->prepare('INSERT INTO customers (name, business_name, phone, email, billing_address, shipping_address, password_hash) VALUES (:name, :business_name, :phone, :email, :billing_address, :shipping_address, :password_hash)');
+    // Only use discrete address components if they were explicitly provided
+    // in the $data array (e.g., from the account page). Do not infer
+    // billing_street/shipping_street from the legacy single-line values
+    // to avoid silently overwriting customer inputs.
+    $billing_street = array_key_exists('billing_street', $data) ? ($data['billing_street'] ?? '') : '';
+    $billing_street2 = array_key_exists('billing_street2', $data) ? ($data['billing_street2'] ?? '') : '';
+    $billing_city = array_key_exists('billing_city', $data) ? ($data['billing_city'] ?? '') : '';
+    $billing_state = array_key_exists('billing_state', $data) ? ($data['billing_state'] ?? '') : '';
+    $billing_zip = array_key_exists('billing_zip', $data) ? ($data['billing_zip'] ?? '') : '';
+
+    $shipping_street = array_key_exists('shipping_street', $data) ? ($data['shipping_street'] ?? '') : '';
+    $shipping_street2 = array_key_exists('shipping_street2', $data) ? ($data['shipping_street2'] ?? '') : '';
+    $shipping_city = array_key_exists('shipping_city', $data) ? ($data['shipping_city'] ?? '') : '';
+    $shipping_state = array_key_exists('shipping_state', $data) ? ($data['shipping_state'] ?? '') : '';
+    $shipping_zip = array_key_exists('shipping_zip', $data) ? ($data['shipping_zip'] ?? '') : '';
+
+    // Keep legacy billing_address/shipping_address populated from provided
+    // legacy keys if present (signup form may still provide these), otherwise
+    // build from explicit discrete parts only when those were provided.
+    if (isset($data['billing_address'])) {
+        $legacy_bill = $data['billing_address'];
+    } else {
+        $legacy_bill = trim($billing_street . "\n" . $billing_street2 . "\n" . trim($billing_city . ' ' . $billing_state . ' ' . $billing_zip));
+    }
+    if (isset($data['shipping_address'])) {
+        $legacy_ship = $data['shipping_address'];
+    } else {
+        $legacy_ship = trim($shipping_street . "\n" . $shipping_street2 . "\n" . trim($shipping_city . ' ' . $shipping_state . ' ' . $shipping_zip));
+    }
+
+    $ins = $db->prepare('INSERT INTO customers (name, business_name, phone, email, billing_address, shipping_address, billing_street, billing_street2, billing_city, billing_state, billing_zip, shipping_street, shipping_street2, shipping_city, shipping_state, shipping_zip, password_hash) VALUES (:name, :business_name, :phone, :email, :billing_address, :shipping_address, :billing_street, :billing_street2, :billing_city, :billing_state, :billing_zip, :shipping_street, :shipping_street2, :shipping_city, :shipping_state, :shipping_zip, :password_hash)');
     $ins->execute([
         ':name' => $data['name'],
         ':business_name' => $data['business_name'] ?? '',
         ':phone' => $data['phone'] ?? '',
         ':email' => $data['email'],
-        ':billing_address' => $data['billing_address'] ?? '',
-        ':shipping_address' => $data['shipping_address'] ?? '',
+        ':billing_address' => $legacy_bill,
+        ':shipping_address' => $legacy_ship,
+        ':billing_street' => $billing_street,
+        ':billing_street2' => $billing_street2,
+        ':billing_city' => $billing_city,
+        ':billing_state' => $billing_state,
+        ':billing_zip' => $billing_zip,
+        ':shipping_street' => $shipping_street,
+        ':shipping_street2' => $shipping_street2,
+        ':shipping_city' => $shipping_city,
+        ':shipping_state' => $shipping_state,
+        ':shipping_zip' => $shipping_zip,
         ':password_hash' => $hash
     ]);
     return (int)$db->lastInsertId();
@@ -487,7 +538,7 @@ function getCustomerById(int $id): ?array
 function updateCustomer(int $id, array $data): void
 {
     $db = getDb();
-    $fields = ['name', 'business_name', 'phone', 'email', 'billing_address', 'shipping_address'];
+    $fields = ['name', 'business_name', 'phone', 'email', 'billing_address', 'shipping_address', 'billing_street', 'billing_street2', 'billing_city', 'billing_state', 'billing_zip', 'shipping_street', 'shipping_street2', 'shipping_city', 'shipping_state', 'shipping_zip'];
     $sets = [];
     $params = [':id' => $id];
     foreach ($fields as $field) {
@@ -501,6 +552,17 @@ function updateCustomer(int $id, array $data): void
         $params[':password_hash'] = password_hash($data['password'], PASSWORD_DEFAULT);
     }
     if ($sets) {
+        // If discrete address components are present, ensure legacy concatenated
+        // fields reflect the same primary street value to avoid data loss.
+        if (isset($params[':billing_street']) && (!isset($params[':billing_address']) || trim((string)$params[':billing_address']) === '')) {
+            $params[':billing_address'] = trim($params[':billing_street'] . "\n" . ($params[':billing_street2'] ?? '') . "\n" . trim(($params[':billing_city'] ?? '') . ' ' . ($params[':billing_state'] ?? '') . ' ' . ($params[':billing_zip'] ?? '')));
+            $sets[] = 'billing_address = :billing_address';
+        }
+        if (isset($params[':shipping_street']) && (!isset($params[':shipping_address']) || trim((string)$params[':shipping_address']) === '')) {
+            $params[':shipping_address'] = trim($params[':shipping_street'] . "\n" . ($params[':shipping_street2'] ?? '') . "\n" . trim(($params[':shipping_city'] ?? '') . ' ' . ($params[':shipping_state'] ?? '') . ' ' . ($params[':shipping_zip'] ?? '')));
+            $sets[] = 'shipping_address = :shipping_address';
+        }
+
         $sql = 'UPDATE customers SET ' . implode(', ', $sets) . ' WHERE id = :id';
         $stmt = $db->prepare($sql);
         $stmt->execute($params);
@@ -659,7 +721,7 @@ function searchProducts(string $term): array
  * @param int $orderId
  * @param string $status
  */
-function updateOrderStatus(int $orderId, string $status): void
+function updateOrderStatus(int $orderId, string $status, ?string $managerNote = null): void
 {
     $db = getDb();
     // Update the order status
@@ -679,8 +741,11 @@ function updateOrderStatus(int $orderId, string $status): void
             $subj = 'Your Order #' . $order['id'] . ' has been updated';
             $msg = "Hello " . $order['customer_name'] . ",\n\n" .
                    "Your order #" . $order['id'] . " has been " . strtolower($status) . ".\n\n" .
-                   "You can log in to your account to view the details.\n\n" .
-                   "Thank you for shopping with us.";
+                   "You can log in to your account to view the details.\n\n";
+            if ($managerNote && trim($managerNote) !== '') {
+                $msg .= "Message from our team:\n" . trim($managerNote) . "\n\n";
+            }
+            $msg .= "Thank you for shopping with us.";
             sendEmail($to, $subj, $msg);
         }
     } catch (Exception $e) {

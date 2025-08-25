@@ -48,8 +48,8 @@ $adminLoggedIn = isset($_SESSION['admin']);
         <ul class="nav">
             <!-- Use relative links so navigation works regardless of the base directory -->
             <li><a href="index.php">Home</a></li>
-            <li><a href="catalogue.php">Catalogue</a></li>
-            <li><a href="cart.php">Cart (<?php echo $cartCount; ?>)</a></li>
+            <li><a href="catalogue.php">Catalog</a></li>
+            <li><a id="cart-link" href="cart.php">Cart (<span id="cart-count"><?php echo $cartCount; ?></span>)</a></li>
             <?php if ($loggedIn): ?>
                 <li><a href="account.php">My Account</a></li>
                 <li><a href="logout.php">Logout</a></li>

@@ -24,24 +24,28 @@ $customer = $_SESSION['customer'];
 $message = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Create order
-    $orderId = createOrder((int)$customer['id'], $cart);
-    // Prepare email to company
+    // Apply optional sales tax (6.5%)
+    $applyTax = isset($_POST['apply_tax']) && ($_POST['apply_tax'] === '1' || $_POST['apply_tax'] === 'on');
+    $cartTotal = 0.0;
     $itemsDesc = [];
     foreach ($cart as $pid => $qty) {
         $prod = getProductById((int)$pid);
         if ($prod) {
             $itemsDesc[] = $prod['name'] . ' x' . $qty . ' ($' . number_format($prod['price'] * $qty, 2) . ')';
+            $cartTotal += $prod['price'] * $qty;
         }
     }
+    $taxAmount = $applyTax ? round($cartTotal * 0.065, 2) : 0.0;
+    // Create order (include tax)
+    $orderId = createOrder((int)$customer['id'], $cart, $taxAmount);
+    // Prepare email to company
     $body = "A new purchase order has been placed.\n\n" .
             "Order ID: {$orderId}\n" .
             "Customer: {$customer['name']} ({$customer['email']})\n\n" .
             "Items:\n" . implode("\n", $itemsDesc) . "\n\n" .
-            "Total: $" . number_format(array_sum(array_map(function($pid, $qty) {
-                $prod = getProductById((int)$pid);
-                return $prod ? $prod['price'] * $qty : 0;
-            }, array_keys($cart), $cart)), 2) . "\n\n" .
+            "Subtotal: $" . number_format($cartTotal, 2) . "\n" .
+            ($taxAmount > 0 ? ("Tax: $" . number_format($taxAmount, 2) . "\n") : "") .
+            "Total: $" . number_format($cartTotal + $taxAmount, 2) . "\n\n" .
             "Please review and approve this order in the manager portal.";
     // Send email to company
     $companyEmail = getenv('COMPANY_EMAIL') ?: 'packinggenerals@gmail.com';
@@ -50,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     // Clear cart
     $_SESSION['cart'] = [];
-    $message = 'Thank you! Your order has been submitted and is awaiting approval.';
+    $message = 'Thank you! Your order has been submitted and is awaiting approval. You will receive an email reply shortly.';
 }
 
 // Build order summary
@@ -73,7 +77,9 @@ foreach ($cart as $pid => $qty) {
 }
 ?>
 
-<h2>Checkout</h2>
+<section class="page-hero">
+    <h2>Checkout</h2>
+</section>
 <?php if ($message): ?>
     <div class="message"><?php echo htmlspecialchars($message); ?></div>
 <?php else: ?>
@@ -96,13 +102,55 @@ foreach ($cart as $pid => $qty) {
             </tr>
         <?php endforeach; ?>
         <tr>
+            <td colspan="4" style="text-align:right"><strong>Subtotal:</strong></td>
+            <td class="numeric" id="checkout-subtotal"><strong>$<?php echo number_format($total, 2); ?></strong></td>
+        </tr>
+        <tr id="checkout-tax-row" style="display:none;">
+            <td colspan="4" style="text-align:right"><strong>Sales Tax (6.5%):</strong></td>
+            <td class="numeric" id="checkout-tax-amount">$0.00</td>
+        </tr>
+        <tr>
             <td colspan="4" style="text-align:right"><strong>Total:</strong></td>
-            <td class="numeric"><strong>$<?php echo number_format($total, 2); ?></strong></td>
+            <td class="numeric" id="checkout-total"><strong>$<?php echo number_format($total, 2); ?></strong></td>
         </tr>
     </table>
-    <form method="post" action="">
-        <p><button type="submit">Place Order</button></p>
+    <form method="post" action="" id="checkout-form">
+        <p><label><input type="checkbox" name="apply_tax" id="apply_tax" value="1"> Apply sales tax (6.5%)</label></p>
+        <p class="lead" id="checkout-lead">Once you click on PLACE ORDER, the request is received at our Order Desk for review and fulfillment.  You will receive a confirmation Email when your order has been accepted. Sales Tax applies unless you have a valid Sales Tax Exemption Form on file with us.</p>
+        <p><button type="submit" class="proceed-btn">Place Order</button></p>
     </form>
+    <script>
+    (function(){
+        var taxCheckbox = document.getElementById('apply_tax');
+        var subtotalEl = document.getElementById('checkout-subtotal');
+        var taxRow = document.getElementById('checkout-tax-row');
+        var taxAmtEl = document.getElementById('checkout-tax-amount');
+        var totalEl = document.getElementById('checkout-total');
+        function parseMoney(s){ return parseFloat(s.replace(/[^0-9.-]+/g,'')) || 0; }
+        function update() {
+            var sub = parseMoney(subtotalEl.textContent || subtotalEl.innerText || '0');
+            if (taxCheckbox && taxCheckbox.checked) {
+                var tax = Math.round(sub * 0.065 * 100) / 100;
+                taxAmtEl.textContent = '$' + tax.toFixed(2);
+                taxRow.style.display = '';
+                totalEl.textContent = '$' + ( (Math.round((sub + tax) * 100))/100 ).toFixed(2);
+            } else {
+                taxRow.style.display = 'none';
+                taxAmtEl.textContent = '$0.00';
+                totalEl.textContent = '$' + sub.toFixed(2);
+            }
+        }
+        if (taxCheckbox) {
+            taxCheckbox.addEventListener('change', update);
+            // run once on load to set initial state
+            update();
+        }
+        // After successful submission the server sets $message; hide lead when message present
+        <?php if ($message): ?>
+            var lead = document.getElementById('checkout-lead'); if (lead) lead.style.display = 'none';
+        <?php endif; ?>
+    })();
+    </script>
 <?php endif; ?>
 
 <?php include __DIR__ . '/includes/footer.php'; ?>

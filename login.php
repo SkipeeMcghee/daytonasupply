@@ -35,14 +35,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $title = 'Login';
 include __DIR__ . '/includes/header.php';
 ?>
-<h1>Login</h1>
+<section class="page-hero">
+    <h1>Login</h1>
+    <p class="lead">Enter your Email address and Password into the fields below, then click the LOGIN button.</p>
+</section>
 <?php if (!empty($error)): ?>
     <p style="color:red"><?= htmlspecialchars($error) ?></p>
 <?php endif; ?>
-<form method="post" action="login.php">
-    <label>Email: <input type="email" name="email" required></label><br>
-    <label>Password: <input type="password" name="password" required></label><br>
-    <button type="submit">Login</button>
+<form method="post" action="login.php" class="vertical-form">
+    <p>Email:<br><input type="email" name="email" required></p>
+    <p>Password:<br><input type="password" name="password" required></p>
+    <p><button type="submit">LOGIN</button></p>
 </form>
 <p><a href="forgot_password.php">Forgot your password?</a></p>
 <p>Don't have an account? <a href="signup.php">Sign up</a></p>

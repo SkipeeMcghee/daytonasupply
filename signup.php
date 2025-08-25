@@ -1,8 +1,4 @@
 <?php
-// Customer sign‑up page.  Presents a form for creating a new customer
-// account and handles registration logic.  On successful sign‑up the
-// user is automatically logged in and redirected to their account page.
-
 session_start();
 $successMessage = '';
 $showForm = true;
@@ -15,61 +11,40 @@ require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/functions.php';
 
 $title = 'Sign Up';
-
-// Holds validation errors
 $errors = [];
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-if ($showForm && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Gather and sanitize input
-    // Normalize and limit lengths on inputs
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $showForm) {
     $name    = normalizeScalar($_POST['name'] ?? '', 128, '');
     $biz     = normalizeScalar($_POST['business_name'] ?? '', 128, '');
     $phone   = normalizeScalar($_POST['phone'] ?? '', 32, '');
     $email   = normalizeScalar($_POST['email'] ?? '', 254, '');
-    $bill    = normalizeScalar($_POST['billing_address'] ?? '', 255, '');
-    $ship    = normalizeScalar($_POST['shipping_address'] ?? '', 255, '');
+    // billing (legacy single-line entry from signup)
+    $bill = normalizeScalar($_POST['billing_address'] ?? '', 512, '');
+    // shipping (legacy single-line entry)
+    $ship = normalizeScalar($_POST['shipping_address'] ?? '', 512, '');
     $password = (string)($_POST['password'] ?? '');
     $confirm  = (string)($_POST['confirm'] ?? '');
 
-    // Google reCAPTCHA v3 verification
     $recaptcha_response = $_POST['g-recaptcha-response'] ?? '';
     $recaptcha_secret = '6Lfsm6wrAAAAAO-nZyV1DSDNVtsk5fzm3SALvNam';
-    $recaptcha_url = 'https://www.google.com/recaptcha/api/siteverify';
     $recaptcha = false;
     if ($recaptcha_response) {
-        // Debug: Log the outgoing URL and response
-        $recaptcha_debug = [];
-        $recaptcha_debug['request_url'] = $recaptcha_url . '?secret=' . $recaptcha_secret . '&response=' . $recaptcha_response;
-        $verify = @file_get_contents($recaptcha_debug['request_url']);
-        $recaptcha_debug['raw_response'] = $verify;
+        $verify = @file_get_contents('https://www.google.com/recaptcha/api/siteverify?secret=' . $recaptcha_secret . '&response=' . urlencode($recaptcha_response));
         $captcha_success = json_decode($verify);
-        $recaptcha_debug['decoded_response'] = $captcha_success;
-        if ($captcha_success && $captcha_success->success && $captcha_success->score >= 0.5) {
+        if ($captcha_success && $captcha_success->success && ($captcha_success->score ?? 0) >= 0.5) {
             $recaptcha = true;
         } else {
             $errors[] = 'Captcha verification failed. Please try again.';
-            $errors[] = 'reCAPTCHA debug info: ' . print_r($recaptcha_debug, true);
         }
     } else {
-    $errors[] = 'Captcha verification required.';
-    $errors[] = 'reCAPTCHA debug info: No response token received.';
+        $errors[] = 'Captcha verification required.';
     }
-    // Basic validation
     if ($name === '' || $email === '' || $password === '') {
         $errors[] = 'Name, email and password are required.';
     }
-    if ($password !== $confirm) {
-        $errors[] = 'Passwords do not match.';
-    }
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $errors[] = 'Invalid email address.';
-    }
-    // If the user indicated shipping address is the same as billing, copy it
+    if ($password !== $confirm) $errors[] = 'Passwords do not match.';
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = 'Invalid email address.';
     $sameBillingFlag = isset($_POST['same_as_billing']);
-    if ($sameBillingFlag) {
-        $ship = $bill;
-    }
-    // Attempt to create the customer
+    if ($sameBillingFlag) $ship = $bill;
     if ($recaptcha && empty($errors)) {
         try {
             $customerId = createCustomer([
@@ -77,14 +52,14 @@ if ($showForm && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 'business_name' => $biz,
                 'phone' => $phone,
                 'email' => $email,
+                // Pass only legacy fields so we do not populate discrete address
+                // columns from the sign-up flow.
                 'billing_address' => $bill,
                 'shipping_address' => $ship,
                 'password' => $password
             ]);
-            // Generate a verification token and associate it with the new customer
             $token = generateVerificationToken();
             setCustomerVerification($customerId, $token);
-            // Construct verification URL.  Use current host and directory to build a link
             $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
             $host = $_SERVER['HTTP_HOST'];
             $dir = rtrim(dirname($_SERVER['PHP_SELF']), '/\\');
@@ -100,9 +75,7 @@ if ($showForm && $_SERVER['REQUEST_METHOD'] === 'POST') {
                     $verificationUrl . "\n\n" .
                     "If you did not sign up for an account, please ignore this message.";
             sendEmail($email, 'Verify your Daytona Supply account', $body);
-            $successMessage = 'Registration successful! Please check your email to verify your account.';
-            // Store success message in session and redirect to avoid resubmission
-            $_SESSION['signup_success'] = $successMessage;
+            $_SESSION['signup_success'] = 'Registration successful! Please check your email to verify your account.';
             header('Location: signup.php');
             exit;
         } catch (Exception $e) {
@@ -110,77 +83,79 @@ if ($showForm && $_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
-}
 include __DIR__ . '/includes/header.php';
 ?>
 <h1>Sign Up</h1>
 <?php if (!empty($successMessage)): ?>
-    <div class="message" style="background:#d4edda;color:#155724;padding:16px;border-radius:6px;font-weight:bold;margin-bottom:24px;border:1px solid #c3e6cb;">
-        <?= htmlspecialchars($successMessage) ?>
-    </div>
+    <div class="message"><?= htmlspecialchars($successMessage) ?></div>
 <?php else: ?>
+    <p class="lead">For new accounts, please complete the boxes, then click on the Create Account button below.</p>
     <?php if (!empty($errors)): ?>
-        <ul class="error">
-            <?php foreach ($errors as $err): ?>
-                <li><?= htmlspecialchars($err) ?></li>
-            <?php endforeach; ?>
-        </ul>
+        <ul class="error"><?php foreach ($errors as $err): ?><li><?= htmlspecialchars($err) ?></li><?php endforeach; ?></ul>
     <?php endif; ?>
-    <form method="post" action="signup.php">
-        <p>Name: <input type="text" name="name" required value="<?= isset($name) ? htmlspecialchars($name) : '' ?>"></p>
-        <p>Business Name: <input type="text" name="business_name" value="<?= isset($biz) ? htmlspecialchars($biz) : '' ?>"></p>
-        <p>Phone: <input type="text" name="phone" value="<?= isset($phone) ? htmlspecialchars($phone) : '' ?>"></p>
-        <p>Email: <input type="email" name="email" required value="<?= isset($email) ? htmlspecialchars($email) : '' ?>"></p>
-        <p>Billing Address: <input type="text" name="billing_address" value="<?= isset($bill) ? htmlspecialchars($bill) : '' ?>"></p>
-        <p>Shipping Address: <input type="text" name="shipping_address" id="signup_shipping" value="<?= isset($ship) ? htmlspecialchars($ship) : '' ?>"></p>
-        <p><label><input type="checkbox" name="same_as_billing" id="signup_same_billing" value="1" <?= isset($_POST['same_as_billing']) ? 'checked' : '' ?>> Same as billing</label></p>
-        <script>
-        // Client‑side helper to mirror billing to shipping when the user
-        // indicates they are the same.  When checked, the shipping input
-        // value is kept in sync with the billing input and is disabled to
-        // prevent editing.  This improves usability but the server also
-        // copies the billing address on submission.
-        document.addEventListener('DOMContentLoaded', function() {
-            var checkbox = document.getElementById('signup_same_billing');
-            var bill = document.querySelector('input[name="billing_address"]');
-            var ship = document.getElementById('signup_shipping');
-            function sync() {
-                if (checkbox.checked) {
-                    ship.value = bill.value;
-                    ship.disabled = true;
-                } else {
-                    ship.disabled = false;
-                }
-            }
-            checkbox.addEventListener('change', sync);
-            bill.addEventListener('input', function() {
-                if (checkbox.checked) {
-                    ship.value = bill.value;
-                }
-            });
-            // initialize on load
-            sync();
-        });
-        </script>
-        <p>Password: <input type="password" name="password" required></p>
-        <p>Confirm Password: <input type="password" name="confirm" required></p>
+    <form method="post" action="signup.php" class="vertical-form">
+        <p>Name:<br><input type="text" name="name" required value="<?= isset($name) ? htmlspecialchars($name) : '' ?>"></p>
+        <p>Business Name:<br><input type="text" name="business_name" value="<?= isset($biz) ? htmlspecialchars($biz) : '' ?>"></p>
+        <p>Phone:<br><input type="text" name="phone" value="<?= isset($phone) ? htmlspecialchars($phone) : '' ?>"></p>
+        <p>Email:<br><input type="email" name="email" required value="<?= isset($email) ? htmlspecialchars($email) : '' ?>"></p>
+        <fieldset>
+            <legend>Billing Address</legend>
+            <p>Street Address:<br><input type="text" name="billing_street" value="<?= isset($bill_street) ? htmlspecialchars($bill_street) : '' ?>" autocomplete="off"></p>
+            <p>Street Address 2:<br><input type="text" name="billing_street2" value="<?= isset($bill_street2) ? htmlspecialchars($bill_street2) : '' ?>" autocomplete="off"></p>
+            <p>City:<br><input type="text" name="billing_city" value="<?= isset($bill_city) ? htmlspecialchars($bill_city) : '' ?>" autocomplete="off"></p>
+            <p>State:<br><input type="text" name="billing_state" value="<?= isset($bill_state) ? htmlspecialchars($bill_state) : '' ?>" autocomplete="off"></p>
+            <p>Zip:<br><input type="text" name="billing_zip" value="<?= isset($bill_zip) ? htmlspecialchars($bill_zip) : '' ?>" autocomplete="off"></p>
+        </fieldset>
+        <fieldset>
+            <legend>Shipping Address</legend>
+            <p><label><input type="checkbox" name="same_as_billing" id="signup_same_billing" value="1" <?= isset($_POST['same_as_billing']) ? 'checked' : '' ?>> Same as billing</label></p>
+            <div id="signup_shipping_fields">
+                <p>Street Address:<br><input type="text" name="shipping_street" value="<?= isset($ship_street) ? htmlspecialchars($ship_street) : '' ?>" autocomplete="off"></p>
+                <p>Street Address 2:<br><input type="text" name="shipping_street2" value="<?= isset($ship_street2) ? htmlspecialchars($ship_street2) : '' ?>" autocomplete="off"></p>
+                <p>City:<br><input type="text" name="shipping_city" value="<?= isset($ship_city) ? htmlspecialchars($ship_city) : '' ?>" autocomplete="off"></p>
+                <p>State:<br><input type="text" name="shipping_state" value="<?= isset($ship_state) ? htmlspecialchars($ship_state) : '' ?>" autocomplete="off"></p>
+                <p>Zip:<br><input type="text" name="shipping_zip" value="<?= isset($ship_zip) ? htmlspecialchars($ship_zip) : '' ?>" autocomplete="off"></p>
+            </div>
+        </fieldset>
+        <p>Password:<br><input type="password" name="password" required></p>
+        <p>Confirm Password:<br><input type="password" name="confirm" required></p>
         <input type="hidden" id="g-recaptcha-response" name="g-recaptcha-response">
         <p><button type="submit">Create Account</button></p>
-        <div class="g-recaptcha-badge" style="margin-top:10px;">
-            <small>This site is protected by reCAPTCHA and the Google <a href="https://policies.google.com/privacy">Privacy Policy</a> and <a href="https://policies.google.com/terms">Terms of Service</a> apply.</small>
-        </div>
     </form>
-    <script src="https://www.google.com/recaptcha/api.js?render=6Lfsm6wrAAAAAFuElD_SuX0RdtxWv3myo3t5AvqT"></script>
-        
     <script>
-    grecaptcha.ready(function() {
-        document.querySelector('form[action="signup.php"]').addEventListener('submit', function(e) {
-            e.preventDefault();
-            grecaptcha.execute('6Lfsm6wrAAAAAFuElD_SuX0RdtxWv3myo3t5AvqT', {action: 'signup'}).then(function(token) {
-                document.getElementById('g-recaptcha-response').value = token;
-                e.target.submit();
-            });
-        });
+    document.addEventListener('DOMContentLoaded', function() {
+        var checkbox = document.getElementById('signup_same_billing');
+        var billing = {
+            street: document.querySelector('input[name="billing_street"]'),
+            street2: document.querySelector('input[name="billing_street2"]'),
+            city: document.querySelector('input[name="billing_city"]'),
+            state: document.querySelector('input[name="billing_state"]'),
+            zip: document.querySelector('input[name="billing_zip"]')
+        };
+        var shipping = {
+            street: document.querySelector('input[name="shipping_street"]'),
+            street2: document.querySelector('input[name="shipping_street2"]'),
+            city: document.querySelector('input[name="shipping_city"]'),
+            state: document.querySelector('input[name="shipping_state"]'),
+            zip: document.querySelector('input[name="shipping_zip"]')
+        };
+        function setShipping(disable) {
+            if (disable) {
+                shipping.street.value = billing.street.value || '';
+                shipping.street2.value = billing.street2.value || '';
+                shipping.city.value = billing.city.value || '';
+                shipping.state.value = billing.state.value || '';
+                shipping.zip.value = billing.zip.value || '';
+                Object.values(shipping).forEach(function(f) { f.disabled = true; });
+            } else {
+                Object.values(shipping).forEach(function(f) { f.disabled = false; });
+            }
+        }
+        if (checkbox) {
+            checkbox.addEventListener('change', function() { setShipping(checkbox.checked); });
+        }
+        Object.values(billing).forEach(function(f) { if (f) f.addEventListener('input', function() { if (checkbox && checkbox.checked) setShipping(true); }); });
+        setShipping(checkbox && checkbox.checked);
     });
     </script>
     <script src="https://www.google.com/recaptcha/api.js?render=6Lfsm6wrAAAAAFuElD_SuX0RdtxWv3myo3t5AvqT"></script>
@@ -195,6 +170,6 @@ include __DIR__ . '/includes/header.php';
         });
     });
     </script>
-    </form>
 <?php endif; ?>
 <?php include __DIR__ . '/includes/footer.php'; ?>
+ 

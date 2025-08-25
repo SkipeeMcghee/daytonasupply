@@ -114,14 +114,16 @@ if (isset($_GET['unverify_customer'])) {
 // Approve or reject orders
 if (isset($_GET['approve_order'])) {
     $orderId = (int)$_GET['approve_order'];
-    updateOrderStatus($orderId, 'Approved');
+    $note = isset($_GET['manager_note']) ? normalizeScalar($_GET['manager_note'], 1024, '') : null;
+    updateOrderStatus($orderId, 'Approved', $note);
     $filterRedirect = isset($_GET['filter']) ? '?filter=' . urlencode($_GET['filter']) : '';
     header('Location: managerportal.php' . $filterRedirect . '#order-' . $orderId);
     exit;
 }
 if (isset($_GET['reject_order'])) {
     $orderId = (int)$_GET['reject_order'];
-    updateOrderStatus($orderId, 'Rejected');
+    $note = isset($_GET['manager_note']) ? normalizeScalar($_GET['manager_note'], 1024, '') : null;
+    updateOrderStatus($orderId, 'Rejected', $note);
     $filterRedirect = isset($_GET['filter']) ? '?filter=' . urlencode($_GET['filter']) : '';
     header('Location: managerportal.php' . $filterRedirect . '#order-' . $orderId);
     exit;
@@ -294,7 +296,7 @@ require_once __DIR__ . '/includes/header.php';
     <?php foreach ($orders as $order): ?>
     <div id="order-<?php echo $order['id']; ?>" class="order-group">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-        <div><strong>Order #<?php echo $order['id']; ?></strong> — <?php echo htmlspecialchars(date('Y-m-d H:i', strtotime($order['created_at']))); ?> by <?php echo htmlspecialchars((getCustomerById((int)$order['customer_id'])['name'] ?? 'Unknown')); ?></div>
+    <div><strong>Order #<?php echo $order['id']; ?></strong> — <?php echo htmlspecialchars(date('n/j/Y g:i A', strtotime($order['created_at']))); ?> by <?php echo htmlspecialchars((getCustomerById((int)$order['customer_id'])['name'] ?? 'Unknown')); ?></div>
         <div><span class="order-toggle" data-order="<?php echo $order['id']; ?>">Collapse</span></div>
     </div>
     <table class="admin-table order-items" data-order="<?php echo $order['id']; ?>">
@@ -329,7 +331,7 @@ require_once __DIR__ . '/includes/header.php';
                 <tr>
                     <?php if ($firstItem): ?>
                         <td><?php echo $order['id']; ?></td>
-                        <td><?php echo htmlspecialchars(date('Y-m-d H:i', strtotime($order['created_at']))); ?></td>
+                        <td><?php echo htmlspecialchars(date('n/j/Y g:i A', strtotime($order['created_at']))); ?></td>
                         <td><?php echo htmlspecialchars($cust['name'] ?? 'Unknown'); ?></td>
                     <?php else: ?>
                         <td></td>
@@ -394,8 +396,8 @@ require_once __DIR__ . '/includes/header.php';
                     <td><?= htmlspecialchars($cust['business_name']) ?></td>
                     <td><?= htmlspecialchars($cust['phone']) ?></td>
                     <td><?= htmlspecialchars($cust['email']) ?></td>
-                    <td><?= htmlspecialchars($cust['billing_address']) ?></td>
-                    <td><?= htmlspecialchars($cust['shipping_address']) ?></td>
+                    <td><?= htmlspecialchars(trim(($cust['billing_street'] ?? $cust['billing_address'] ?? '') . "\n" . ($cust['billing_street2'] ?? '') . "\n" . trim(($cust['billing_city'] ?? '') . ' ' . ($cust['billing_state'] ?? '') . ' ' . ($cust['billing_zip'] ?? '')))) ?></td>
+                    <td><?= htmlspecialchars(trim(($cust['shipping_street'] ?? $cust['shipping_address'] ?? '') . "\n" . ($cust['shipping_street2'] ?? '') . "\n" . trim(($cust['shipping_city'] ?? '') . ' ' . ($cust['shipping_state'] ?? '') . ' ' . ($cust['shipping_zip'] ?? '')))) ?></td>
                     <td>
                         <a class="mgr-btn mgr-verify" href="?verify_customer=<?= $cust['id'] ?>">Verify</a>
                         <a class="mgr-btn mgr-delete" href="?delete_customer=<?= $cust['id'] ?>" onclick="return confirm('Are you sure you want to delete this customer? This will remove all of their orders.');">Delete</a>
@@ -434,8 +436,8 @@ require_once __DIR__ . '/includes/header.php';
                     <td><?= htmlspecialchars($cust['business_name']) ?></td>
                     <td><?= htmlspecialchars($cust['phone']) ?></td>
                     <td><?= htmlspecialchars($cust['email']) ?></td>
-                    <td><?= htmlspecialchars($cust['billing_address']) ?></td>
-                    <td><?= htmlspecialchars($cust['shipping_address']) ?></td>
+                    <td><?= htmlspecialchars(trim(($cust['billing_street'] ?? $cust['billing_address'] ?? '') . "\n" . ($cust['billing_street2'] ?? '') . "\n" . trim(($cust['billing_city'] ?? '') . ' ' . ($cust['billing_state'] ?? '') . ' ' . ($cust['billing_zip'] ?? '')))) ?></td>
+                    <td><?= htmlspecialchars(trim(($cust['shipping_street'] ?? $cust['shipping_address'] ?? '') . "\n" . ($cust['shipping_street2'] ?? '') . "\n" . trim(($cust['shipping_city'] ?? '') . ' ' . ($cust['shipping_state'] ?? '') . ' ' . ($cust['shipping_zip'] ?? '')))) ?></td>
                     <td>
                         <a class="mgr-btn mgr-unverify" href="?unverify_customer=<?= $cust['id'] ?>">Unverify</a>
                         <a class="mgr-btn mgr-delete" href="?delete_customer=<?= $cust['id'] ?>" onclick="return confirm('Are you sure you want to delete this customer? This will remove all of their orders.');">Delete</a>

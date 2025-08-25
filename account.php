@@ -25,8 +25,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = normalizeScalar($_POST['name'] ?? $customer['name'], 128, $customer['name']);
     $biz  = normalizeScalar($_POST['business_name'] ?? $customer['business_name'], 128, $customer['business_name']);
     $phone= normalizeScalar($_POST['phone'] ?? $customer['phone'], 32, $customer['phone']);
-    $bill = normalizeScalar($_POST['billing_address'] ?? $customer['billing_address'], 255, $customer['billing_address']);
-    $ship = normalizeScalar($_POST['shipping_address'] ?? $customer['shipping_address'], 255, $customer['shipping_address']);
+    // Accept split address inputs. If the POST key exists we treat an empty
+    // string as intentional (allowing the user to clear a previously set value).
+    if (array_key_exists('billing_street', $_POST)) {
+        $bill_street = normalizeScalar($_POST['billing_street'], 128, '');
+    } else {
+        $bill_street = normalizeScalar($customer['billing_street'] ?? $customer['billing_address'] ?? '', 128, $customer['billing_street'] ?? $customer['billing_address'] ?? '');
+    }
+    if (array_key_exists('billing_street2', $_POST)) {
+        $bill_street2 = normalizeScalar($_POST['billing_street2'], 128, '');
+    } else {
+        $bill_street2 = normalizeScalar($customer['billing_street2'] ?? '', 128, $customer['billing_street2'] ?? '');
+    }
+    if (array_key_exists('billing_city', $_POST)) {
+        $bill_city = normalizeScalar($_POST['billing_city'], 64, '');
+    } else {
+        $bill_city = normalizeScalar($customer['billing_city'] ?? '', 64, $customer['billing_city'] ?? '');
+    }
+    if (array_key_exists('billing_state', $_POST)) {
+        $bill_state = normalizeScalar($_POST['billing_state'], 64, '');
+    } else {
+        $bill_state = normalizeScalar($customer['billing_state'] ?? '', 64, $customer['billing_state'] ?? '');
+    }
+    if (array_key_exists('billing_zip', $_POST)) {
+        $bill_zip = normalizeScalar($_POST['billing_zip'], 16, '');
+    } else {
+        $bill_zip = normalizeScalar($customer['billing_zip'] ?? '', 16, $customer['billing_zip'] ?? '');
+    }
+    $bill = $bill_street;
+    if ($bill_street2 !== '') $bill .= "\n" . $bill_street2;
+    if ($bill_city || $bill_state || $bill_zip) $bill .= "\n" . trim("$bill_city $bill_state $bill_zip");
+
+    if (array_key_exists('shipping_street', $_POST)) {
+        $ship_street = normalizeScalar($_POST['shipping_street'], 128, '');
+    } else {
+        $ship_street = normalizeScalar($customer['shipping_street'] ?? $customer['shipping_address'] ?? '', 128, $customer['shipping_street'] ?? $customer['shipping_address'] ?? '');
+    }
+    if (array_key_exists('shipping_street2', $_POST)) {
+        $ship_street2 = normalizeScalar($_POST['shipping_street2'], 128, '');
+    } else {
+        $ship_street2 = normalizeScalar($customer['shipping_street2'] ?? '', 128, $customer['shipping_street2'] ?? '');
+    }
+    if (array_key_exists('shipping_city', $_POST)) {
+        $ship_city = normalizeScalar($_POST['shipping_city'], 64, '');
+    } else {
+        $ship_city = normalizeScalar($customer['shipping_city'] ?? '', 64, $customer['shipping_city'] ?? '');
+    }
+    if (array_key_exists('shipping_state', $_POST)) {
+        $ship_state = normalizeScalar($_POST['shipping_state'], 64, '');
+    } else {
+        $ship_state = normalizeScalar($customer['shipping_state'] ?? '', 64, $customer['shipping_state'] ?? '');
+    }
+    if (array_key_exists('shipping_zip', $_POST)) {
+        $ship_zip = normalizeScalar($_POST['shipping_zip'], 16, '');
+    } else {
+        $ship_zip = normalizeScalar($customer['shipping_zip'] ?? '', 16, $customer['shipping_zip'] ?? '');
+    }
+    $ship = $ship_street;
+    if ($ship_street2 !== '') $ship .= "\n" . $ship_street2;
+    if ($ship_city || $ship_state || $ship_zip) $ship .= "\n" . trim("$ship_city $ship_state $ship_zip");
     $newPass = (string)($_POST['password'] ?? '');
     $currentPass = (string)($_POST['current_password'] ?? '');
     // If the user checked the same_as_billing box, copy billing to shipping
@@ -39,8 +96,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'name' => $name,
         'business_name' => $biz,
         'phone' => $phone,
-        'billing_address' => $bill,
-        'shipping_address' => $ship
+    // Persist discrete components as well as legacy concatenated field
+    'billing_address' => $bill,
+    'shipping_address' => $ship,
+    'billing_street' => $bill_street,
+    'billing_street2' => $bill_street2,
+    'billing_city' => $bill_city,
+    'billing_state' => $bill_state,
+    'billing_zip' => $bill_zip,
+    'shipping_street' => $ship_street,
+    'shipping_street2' => $ship_street2,
+    'shipping_city' => $ship_city,
+    'shipping_state' => $ship_state,
+    'shipping_zip' => $ship_zip
     ];
     // Handle password change
     if ($newPass !== '') {
@@ -62,10 +130,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $orders = getOrdersByCustomer((int)$customer['id']);
+// Ensure orders are displayed newest first (defensive sort in case underlying
+// data source ordering changes). Sort by created_at descending.
+usort($orders, function($a, $b) {
+    $ta = strtotime($a['created_at'] ?? '');
+    $tb = strtotime($b['created_at'] ?? '');
+    return $tb <=> $ta; // newest first
+});
 $title = 'My Account';
 include __DIR__ . '/includes/header.php';
 ?>
-<h1>My Account</h1>
+<section class="page-hero">
+    <h1>My Account</h1>
+    <p class="lead">If you have no changes to make, go directly to the CATALOG</p>
+</section>
 <?php foreach ($messages as $msg): ?>
     <p class="success"><?= htmlspecialchars($msg) ?></p>
 <?php endforeach; ?>
@@ -77,37 +155,65 @@ include __DIR__ . '/includes/header.php';
     </ul>
 <?php endif; ?>
 <h2>Your Details</h2>
-<form method="post" action="account.php">
-    <p>Name: <input type="text" name="name" value="<?= htmlspecialchars($customer['name']) ?>" required autocomplete="off"></p>
-    <p>Business Name: <input type="text" name="business_name" value="<?= htmlspecialchars($customer['business_name']) ?>" autocomplete="off"></p>
-    <p>Phone: <input type="text" name="phone" value="<?= htmlspecialchars($customer['phone']) ?>" autocomplete="off"></p>
-    <p>Email: <input type="email" value="<?= htmlspecialchars($customer['email']) ?>" disabled autocomplete="off"></p>
-    <p>Billing Address: <input type="text" name="billing_address" value="<?= htmlspecialchars($customer['billing_address']) ?>" autocomplete="off"></p>
+<form method="post" action="account.php" class="vertical-form">
+    <p>Name:<br> <input type="text" name="name" value="<?= htmlspecialchars($customer['name']) ?>" required autocomplete="off"></p>
+    <p>Business Name:<br> <input type="text" name="business_name" value="<?= htmlspecialchars($customer['business_name']) ?>" autocomplete="off"></p>
+    <p>Phone:<br> <input type="text" name="phone" value="<?= htmlspecialchars($customer['phone']) ?>" autocomplete="off"></p>
+    <p>Email:<br> <input type="email" value="<?= htmlspecialchars($customer['email']) ?>" disabled autocomplete="off"></p>
+    <fieldset>
+        <legend>Billing Address</legend>
+    <p>Street Address:<br><input type="text" name="billing_street" value="<?= htmlspecialchars($customer['billing_street'] ?? $customer['billing_address']) ?>" autocomplete="off"></p>
+    <p>Street Address 2:<br><input type="text" name="billing_street2" value="<?= htmlspecialchars($customer['billing_street2'] ?? '') ?>" autocomplete="off"></p>
+        <p>City:<br><input type="text" name="billing_city" value="<?= htmlspecialchars($customer['billing_city'] ?? '') ?>" autocomplete="off"></p>
+        <p>State:<br><input type="text" name="billing_state" value="<?= htmlspecialchars($customer['billing_state'] ?? '') ?>" autocomplete="off"></p>
+        <p>Zip:<br><input type="text" name="billing_zip" value="<?= htmlspecialchars($customer['billing_zip'] ?? '') ?>" autocomplete="off"></p>
+    </fieldset>
     <?php
     $sameBillingChecked = (trim($customer['shipping_address']) === trim($customer['billing_address']));
     ?>
-    <p>Shipping Address: <input type="text" name="shipping_address" id="account_shipping" value="<?= htmlspecialchars($customer['shipping_address']) ?>" autocomplete="off"></p>
-    <p><label><input type="checkbox" name="same_as_billing" id="account_same_billing" value="1" <?= $sameBillingChecked ? 'checked' : '' ?>> Same as billing</label></p>
+    <fieldset>
+        <legend>Shipping Address</legend>
+        <p><label><input type="checkbox" name="same_as_billing" id="account_same_billing" value="1" <?= $sameBillingChecked ? 'checked' : '' ?>> Same as billing</label></p>
+        <div id="account_shipping_fields">
+            <p>Street Address:<br><input type="text" name="shipping_street" value="<?= htmlspecialchars($customer['shipping_street'] ?? $customer['shipping_address']) ?>" autocomplete="off"></p>
+            <p>Street Address 2:<br><input type="text" name="shipping_street2" value="<?= htmlspecialchars($customer['shipping_street2'] ?? '') ?>" autocomplete="off"></p>
+            <p>City:<br><input type="text" name="shipping_city" value="<?= htmlspecialchars($customer['shipping_city'] ?? '') ?>" autocomplete="off"></p>
+            <p>State:<br><input type="text" name="shipping_state" value="<?= htmlspecialchars($customer['shipping_state'] ?? '') ?>" autocomplete="off"></p>
+            <p>Zip:<br><input type="text" name="shipping_zip" value="<?= htmlspecialchars($customer['shipping_zip'] ?? '') ?>" autocomplete="off"></p>
+        </div>
+    </fieldset>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         var checkbox = document.getElementById('account_same_billing');
-        var bill = document.querySelector('input[name="billing_address"]');
-        var ship = document.getElementById('account_shipping');
-        function sync() {
-            if (checkbox.checked) {
-                ship.value = bill.value;
-                ship.disabled = true;
+        var billing = {
+            street: document.querySelector('input[name="billing_street"]'),
+            street2: document.querySelector('input[name="billing_street2"]'),
+            city: document.querySelector('input[name="billing_city"]'),
+            state: document.querySelector('input[name="billing_state"]'),
+            zip: document.querySelector('input[name="billing_zip"]')
+        };
+        var shipping = {
+            street: document.querySelector('input[name="shipping_street"]'),
+            street2: document.querySelector('input[name="shipping_street2"]'),
+            city: document.querySelector('input[name="shipping_city"]'),
+            state: document.querySelector('input[name="shipping_state"]'),
+            zip: document.querySelector('input[name="shipping_zip"]')
+        };
+        function setShipping(disable) {
+            if (disable) {
+                shipping.street.value = billing.street.value || '';
+                shipping.street2.value = billing.street2.value || '';
+                shipping.city.value = billing.city.value || '';
+                shipping.state.value = billing.state.value || '';
+                shipping.zip.value = billing.zip.value || '';
+                Object.values(shipping).forEach(function(f) { f.disabled = true; });
             } else {
-                ship.disabled = false;
+                Object.values(shipping).forEach(function(f) { f.disabled = false; });
             }
         }
-        checkbox.addEventListener('change', sync);
-        bill.addEventListener('input', function() {
-            if (checkbox.checked) {
-                ship.value = bill.value;
-            }
-        });
-        sync();
+        checkbox.addEventListener('change', function() { setShipping(checkbox.checked); });
+        Object.values(billing).forEach(function(f) { f.addEventListener('input', function() { if (checkbox.checked) setShipping(true); }); });
+        setShipping(checkbox.checked);
     });
     </script>
     <hr>
@@ -116,7 +222,7 @@ include __DIR__ . '/includes/header.php';
         <p>Current Password: <input type="password" name="current_password" autocomplete="new-password"></p>
         <p>New Password (leave blank to keep current): <input type="password" name="password" autocomplete="new-password"></p>
     </section>
-    <p><button type="submit">Save Changes</button></p>
+    <p><button type="submit" class="proceed-btn">Save Changes</button></p>
 </form>
 
 <h2>Your Orders</h2>
@@ -125,7 +231,7 @@ include __DIR__ . '/includes/header.php';
         <?php $items = getOrderItems((int)$order['id']); $orderTotal = 0.0; ?>
         <div class="order-group">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                <div><strong>Order #<?= $order['id']; ?></strong> — <?= htmlspecialchars(date('Y-m-d H:i', strtotime($order['created_at']))); ?></div>
+                <div><strong>Order #<?= $order['id']; ?></strong> — <?= htmlspecialchars(date('n/j/Y g:i A', strtotime($order['created_at']))); ?></div>
                 <div><span class="order-toggle" data-order="<?= $order['id']; ?>">Collapse</span></div>
             </div>
             <table class="account-table order-items" data-order="<?= $order['id']; ?>">
@@ -153,7 +259,7 @@ include __DIR__ . '/includes/header.php';
                         <tr>
                             <?php if ($firstItem): ?>
                                 <td><?= $order['id']; ?></td>
-                                <td><?= htmlspecialchars(date('Y-m-d H:i', strtotime($order['created_at']))); ?></td>
+                                <td><?= htmlspecialchars(date('n/j/Y g:i A', strtotime($order['created_at']))); ?></td>
                             <?php else: ?>
                                 <td></td>
                                 <td></td>

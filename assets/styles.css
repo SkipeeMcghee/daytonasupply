@@ -100,6 +100,24 @@ button:hover {
 .hero-ctas { display:flex; gap:0.6em; margin-top:0.5em; }
 .hero-ctas .view-btn { background:#004080; color:#fff; box-shadow:none; }
 
+/* Generic page hero to give catalogue/cart/checkout/account/signup/login pages
+   a consistent, attractive header like the home page. */
+.page-hero {
+    background: #ffffff;
+    padding: 1em;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+    margin: 1em 0;
+}
+.page-hero h1, .page-hero h2 {
+    margin: 0 0 0.45em 0;
+    color: #002b5c;
+}
+.page-hero .lead {
+    margin: 0 0 0.75em 0;
+    color: #333;
+}
+
 @media (max-width: 768px) {
     .home-hero .hero-inner { flex-direction:column; align-items:flex-start; }
     .home-hero .hero-media { flex:0 0 auto; }
@@ -127,7 +145,7 @@ footer {
     padding:6px 10px;
     border-radius:6px;
     text-decoration:none;
-    background:#f0f0f0;
+    background:#bfbfbf; /* darker */
     color:#000;
     font-weight:600;
     display:inline-block;
@@ -135,6 +153,8 @@ footer {
 }
 .view-btn:hover { box-shadow:0 8px 20px rgba(0,0,0,0.14); }
 .view-btn.active {
+/* Added message (non-intrusive) */
+.added-msg { font-weight:700; box-shadow: 0 6px 18px rgba(0,0,0,0.12); }
     box-shadow:none;
     transform:translateY(1px);
     background:#e9e9e9;
@@ -145,14 +165,28 @@ footer {
     padding:6px 10px;
     border-radius:6px;
     text-decoration:none;
-    background:#e0e0e0; /* slightly darker */
-    color:#000;
+    background:#5c5f63; /* slightly lighter unpressed */
+    color:#fff;
     font-weight:600;
     display:inline-block;
-    box-shadow:0 6px 22px rgba(0,0,0,0.14);
+    box-shadow:0 6px 16px rgba(0,0,0,0.18);
 }
-.sku-btn:hover { box-shadow:0 10px 26px rgba(0,0,0,0.18); }
-.sku-btn.active { box-shadow:none; transform:translateY(1px); background:#d3d3d3; /* slightly darker active */ }
+.sku-btn:hover { box-shadow:0 10px 26px rgba(0,0,0,0.22); background:#4a4d51; }
+.sku-btn.active { box-shadow:none; transform:translateY(1px); background:#3b3f44; }
+
+/* Proceed to cart button used in catalogue lead */
+.proceed-btn { display:inline-block; padding:6px 8px; background:#0d6efd; color:#fff; border-radius:6px; text-decoration:none; font-weight:700; font-size:0.9rem; margin-left:6px; }
+.proceed-btn:hover { background:#0b5ed7; }
+
+/* Muted variant for less-prominent actions (gray background) */
+.muted-btn {
+    background: #6c757d !important;
+    color: #fff !important;
+    box-shadow: none !important;
+}
+.muted-btn:hover {
+    background: #5a6268 !important;
+}
 
 /* small gold star used in Favorites button */
 .mini-star { color:#ffd54f; margin-left:6px; font-size:0.9em; /* black outline via text-shadow */ text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; }

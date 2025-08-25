@@ -39,7 +39,7 @@ try {
     exit;
 }
 
-$title = 'Product Catalogue';
+$title = 'Catalog';
 
 // If the form to add a product was submitted, update the session cart
 // Toggle favorite handler (AJAX-aware)
@@ -254,7 +254,10 @@ if ($skuKey !== '') {
 
 include __DIR__ . '/includes/header.php';
 ?>
-<h1>Product Catalogue</h1>
+<section class="page-hero">
+    <h1>Catalog</h1>
+    <p class="lead">Browse through our extensive product listings or click on a category below to go directly to a product group. Use the SEARCH box to find a product or product group. Click ADD to order a product. When ready, <a href="cart.php" class="proceed-btn">PROCEED TO CART</a></p>
+</section>
 <div style="margin-bottom:8px; display:flex; gap:10px; align-items:center;">
     <div style="font-weight:700;">View:</div>
     <?php
@@ -263,8 +266,8 @@ include __DIR__ . '/includes/header.php';
         $allUrl = 'catalogue.php' . ($search ? '?search=' . urlencode($search) : '');
         $favUrl = 'catalogue.php?show=favorites' . ($search ? '&search=' . urlencode($search) : '');
     ?>
-    <a href="<?= htmlspecialchars($allUrl) ?>" class="view-btn<?= $allActive ? ' active' : '' ?>">Show All</a>
-    <a href="<?= htmlspecialchars($favUrl) ?>" class="view-btn<?= $favActive ? ' active' : '' ?>">Favorites <span class="mini-star">★</span></a>
+    <a href="<?= htmlspecialchars($allUrl) ?>" class="sku-btn<?= $allActive ? ' active' : '' ?>">Show All</a>
+    <a href="<?= htmlspecialchars($favUrl) ?>" class="sku-btn<?= $favActive ? ' active' : '' ?>">Favorites <span class="mini-star">★</span></a>
 </div>
 <div style="margin-bottom:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
     <?php foreach ($skuFilters as $label => $codes):
@@ -274,12 +277,12 @@ include __DIR__ . '/includes/header.php';
         if ($search) $url .= '&search=' . urlencode($search);
         $isActiveSku = (strtoupper($skuKey) === strtoupper($label));
     ?>
-        <a href="<?= htmlspecialchars($url) ?>" class="sku-btn<?= $isActiveSku ? ' active' : '' ?>"><?= htmlspecialchars($label) ?></a>
+        <a href="<?= htmlspecialchars($url) ?>" class="sku-btn<?= $isActiveSku ? ' active' : '' ?>" data-sku="<?= htmlspecialchars($label) ?>"><?= htmlspecialchars($label) ?></a>
     <?php endforeach; ?>
 </div>
 <form method="get" action="catalogue.php" style="margin-bottom:1em;">
     <input type="text" name="search" value="<?= htmlspecialchars($search) ?>" placeholder="Search products...">
-    <button type="submit">Search</button>
+    <button type="submit" class="proceed-btn">Search</button>
     <?php if ($search !== ''): ?>
         <a href="catalogue.php">Clear</a>
     <?php endif; ?>

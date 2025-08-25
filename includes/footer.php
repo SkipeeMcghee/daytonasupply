@@ -6,6 +6,7 @@
 <footer>
     <p>&copy; <?php echo date('Y'); ?> Daytona Supply. All rights reserved.</p>
 </footer>
+<script src="assets/scripts.js?v=<?php echo file_exists(__DIR__ . '/../assets/scripts.js') ? filemtime(__DIR__ . '/../assets/scripts.js') : time(); ?>"></script>
 <script>
 // Collapse/expand order groups when toggle clicked
 document.addEventListener('DOMContentLoaded', function() {

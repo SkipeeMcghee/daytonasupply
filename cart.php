@@ -29,20 +29,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['product_id'])) {
     exit;
 }
 
-// Handle immediate removal via remove_item
+// Immediate remove via remove_item is handled by update_cart flow: keep compatibility
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['remove_item'])) {
     $rid = (int)$_POST['remove_item'];
     if (isset($_SESSION['cart'][$rid])) {
-        unset($_SESSION['cart'][$rid]);
+        // set quantity to 0 and allow the update handler below to process it
+        $_POST['qty_' . $rid] = 0;
+        $_POST['update_cart'] = 1;
     }
-    header('Location: cart.php');
-    exit;
 }
 
 // Handle cart update form (quantity adjustments/removals)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_cart'])) {
     if (isset($_SESSION['cart']) && is_array($_SESSION['cart'])) {
-        foreach ($_SESSION['cart'] as $pid => $qty) {
+        foreach (array_keys($_SESSION['cart']) as $pid) {
             $field = 'qty_' . $pid;
             if (isset($_POST[$field])) {
                 $newQty = (int)$_POST[$field];
@@ -77,7 +77,9 @@ if (!empty($_SESSION['cart'])) {
     }
 }
 ?>
-<h2>Your Cart</h2>
+<section class="page-hero">
+    <h2>Your Cart</h2>
+</section>
 <?php if ($message): ?>
     <div class="message"><?php echo htmlspecialchars($message); ?></div>
 <?php endif; ?>
@@ -103,12 +105,9 @@ if (!empty($_SESSION['cart'])) {
                     <td><input type="number" name="qty_<?php echo $item['id']; ?>" value="<?php echo $item['quantity']; ?>" min="0" style="width:60px"></td>
                     <td>$<?php echo number_format($item['price'], 2); ?></td>
                     <td>$<?php echo number_format($item['subtotal'], 2); ?></td>
-                    <td style="text-align:center;">
-                        <form method="post" action="" style="margin:0;">
-                            <input type="hidden" name="remove_item" value="<?php echo $item['id']; ?>">
-                            <button type="submit" class="cart-remove-btn" title="Remove item">×</button>
-                        </form>
-                    </td>
+                        <td style="text-align:center;">
+                            <button type="button" class="cart-remove-btn" title="Remove item" data-item-id="<?php echo $item['id']; ?>">×</button>
+                        </td>
                 </tr>
             <?php endforeach; ?>
             <tr>
@@ -116,8 +115,26 @@ if (!empty($_SESSION['cart'])) {
                 <td><strong>$<?php echo number_format($total, 2); ?></strong></td>
             </tr>
         </table>
-        <p><button type="submit">Update Cart</button></p>
+    <p><button type="submit" class="proceed-btn muted-btn">Update Cart</button></p>
     </form>
-    <p><a href="checkout.php" class="button">Proceed to Checkout</a></p>
+    <script>
+    // Replace remove buttons behaviour: set the qty input to 0 and submit the form
+    document.addEventListener('DOMContentLoaded', function() {
+        var buttons = document.querySelectorAll('.cart-remove-btn[data-item-id]');
+        buttons.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var id = btn.getAttribute('data-item-id');
+                var qtyField = document.querySelector('input[name="qty_' + id + '"]');
+                if (qtyField) {
+                    qtyField.value = 0;
+                    // submit the enclosing form
+                    var form = document.querySelector('form[action=""]');
+                    if (form) form.submit();
+                }
+            });
+        });
+    });
+    </script>
+    <p><a href="checkout.php" class="proceed-btn">Proceed to Checkout</a></p>
 <?php endif; ?>
 <?php include __DIR__ . '/includes/footer.php'; ?>
