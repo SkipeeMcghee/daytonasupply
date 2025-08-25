@@ -30,12 +30,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (array_key_exists('billing_street', $_POST)) {
         $bill_street = normalizeScalar($_POST['billing_street'], 128, '');
     } else {
-        $bill_street = normalizeScalar($customer['billing_street'] ?? $customer['billing_address'] ?? '', 128, $customer['billing_street'] ?? $customer['billing_address'] ?? '');
+        // Prefer the discrete DB column billing_line1, then billing_street,
+        // otherwise fall back to the first line of the legacy billing_address
+        $addr = $customer['billing_address'] ?? '';
+        $firstLine = strtok($addr, "\n") ?: '';
+        $bill_street = normalizeScalar($customer['billing_line1'] ?? $customer['billing_street'] ?? $firstLine, 128, $customer['billing_line1'] ?? $customer['billing_street'] ?? $firstLine);
     }
     if (array_key_exists('billing_street2', $_POST)) {
         $bill_street2 = normalizeScalar($_POST['billing_street2'], 128, '');
     } else {
-        $bill_street2 = normalizeScalar($customer['billing_street2'] ?? '', 128, $customer['billing_street2'] ?? '');
+        $bill_street2 = normalizeScalar($customer['billing_line2'] ?? $customer['billing_street2'] ?? '', 128, $customer['billing_line2'] ?? $customer['billing_street2'] ?? '');
     }
     if (array_key_exists('billing_city', $_POST)) {
         $bill_city = normalizeScalar($_POST['billing_city'], 64, '');
@@ -59,12 +63,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (array_key_exists('shipping_street', $_POST)) {
         $ship_street = normalizeScalar($_POST['shipping_street'], 128, '');
     } else {
-        $ship_street = normalizeScalar($customer['shipping_street'] ?? $customer['shipping_address'] ?? '', 128, $customer['shipping_street'] ?? $customer['shipping_address'] ?? '');
+        // Prefer discrete DB column shipping_line1, fall back to first line of shipping_address
+        $saddr = $customer['shipping_address'] ?? '';
+        $sfirst = strtok($saddr, "\n") ?: '';
+        $ship_street = normalizeScalar($customer['shipping_line1'] ?? $customer['shipping_street'] ?? $sfirst, 128, $customer['shipping_line1'] ?? $customer['shipping_street'] ?? $sfirst);
     }
     if (array_key_exists('shipping_street2', $_POST)) {
         $ship_street2 = normalizeScalar($_POST['shipping_street2'], 128, '');
     } else {
-        $ship_street2 = normalizeScalar($customer['shipping_street2'] ?? '', 128, $customer['shipping_street2'] ?? '');
+        $ship_street2 = normalizeScalar($customer['shipping_line2'] ?? $customer['shipping_street2'] ?? '', 128, $customer['shipping_line2'] ?? $customer['shipping_street2'] ?? '');
     }
     if (array_key_exists('shipping_city', $_POST)) {
         $ship_city = normalizeScalar($_POST['shipping_city'], 64, '');
