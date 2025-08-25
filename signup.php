@@ -17,10 +17,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $showForm) {
     $biz     = normalizeScalar($_POST['business_name'] ?? '', 128, '');
     $phone   = normalizeScalar($_POST['phone'] ?? '', 32, '');
     $email   = normalizeScalar($_POST['email'] ?? '', 254, '');
-    // billing (legacy single-line entry from signup)
-    $bill = normalizeScalar($_POST['billing_address'] ?? '', 512, '');
-    // shipping (legacy single-line entry)
-    $ship = normalizeScalar($_POST['shipping_address'] ?? '', 512, '');
+    // billing discrete components
+    $bill_street = normalizeScalar($_POST['billing_street'] ?? '', 128, '');
+    $bill_street2 = normalizeScalar($_POST['billing_street2'] ?? '', 128, '');
+    $bill_city = normalizeScalar($_POST['billing_city'] ?? '', 64, '');
+    $bill_state = normalizeScalar($_POST['billing_state'] ?? '', 64, '');
+    $bill_zip = normalizeScalar($_POST['billing_zip'] ?? '', 16, '');
+    // shipping discrete components
+    $ship_street = normalizeScalar($_POST['shipping_street'] ?? '', 128, '');
+    $ship_street2 = normalizeScalar($_POST['shipping_street2'] ?? '', 128, '');
+    $ship_city = normalizeScalar($_POST['shipping_city'] ?? '', 64, '');
+    $ship_state = normalizeScalar($_POST['shipping_state'] ?? '', 64, '');
+    $ship_zip = normalizeScalar($_POST['shipping_zip'] ?? '', 16, '');
     $password = (string)($_POST['password'] ?? '');
     $confirm  = (string)($_POST['confirm'] ?? '');
 
@@ -52,10 +60,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $showForm) {
                 'business_name' => $biz,
                 'phone' => $phone,
                 'email' => $email,
-                // Pass only legacy fields so we do not populate discrete address
-                // columns from the sign-up flow.
-                'billing_address' => $bill,
-                'shipping_address' => $ship,
+                // Pass discrete address components
+                'billing_street' => $bill_street,
+                'billing_street2' => $bill_street2,
+                'billing_city' => $bill_city,
+                'billing_state' => $bill_state,
+                'billing_zip' => $bill_zip,
+                'shipping_street' => $ship_street,
+                'shipping_street2' => $ship_street2,
+                'shipping_city' => $ship_city,
+                'shipping_state' => $ship_state,
+                'shipping_zip' => $ship_zip,
                 'password' => $password
             ]);
             $token = generateVerificationToken();

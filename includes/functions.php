@@ -72,7 +72,9 @@ if (!getenv('COMPANY_EMAIL')) {
 function updateCustomer(int $id, array $data)
 {
     $db = getDb();
-    $fields = ['name', 'business_name', 'phone', 'email', 'billing_address', 'shipping_address', 'billing_street', 'billing_street2', 'billing_city', 'billing_state', 'billing_zip', 'shipping_street', 'shipping_street2', 'shipping_city', 'shipping_state', 'shipping_zip'];
+    // Acceptable input keys from forms. We no longer accept legacy
+    // billing_address/shipping_address here — use the discrete keys only.
+    $fields = ['name', 'business_name', 'phone', 'email', 'billing_street', 'billing_street2', 'billing_city', 'billing_state', 'billing_zip', 'shipping_street', 'shipping_street2', 'shipping_city', 'shipping_state', 'shipping_zip'];
     $sets = [];
     $params = [':id' => $id];
     // Map form/legacy field names to actual DB column names found in the
@@ -121,16 +123,9 @@ function updateCustomer(int $id, array $data)
         // Nothing to update
         return 0;
     }
-    // If discrete address components are present, ensure legacy concatenated
-    // fields reflect the same primary street value to avoid data loss.
-    if (isset($params[':billing_street']) && (!isset($params[':billing_address']) || trim((string)$params[':billing_address']) === '')) {
-        $params[':billing_address'] = trim($params[':billing_street'] . "\n" . ($params[':billing_street2'] ?? '') . "\n" . trim(($params[':billing_city'] ?? '') . ' ' . ($params[':billing_state'] ?? '') . ' ' . ($params[':billing_zip'] ?? '')));
-        if (!in_array('billing_address = :billing_address', $sets, true)) $sets[] = 'billing_address = :billing_address';
-    }
-    if (isset($params[':shipping_street']) && (!isset($params[':shipping_address']) || trim((string)$params[':shipping_address']) === '')) {
-        $params[':shipping_address'] = trim($params[':shipping_street'] . "\n" . ($params[':shipping_street2'] ?? '') . "\n" . trim(($params[':shipping_city'] ?? '') . ' ' . ($params[':shipping_state'] ?? '') . ' ' . ($params[':shipping_zip'] ?? '')));
-        if (!in_array('shipping_address = :shipping_address', $sets, true)) $sets[] = 'shipping_address = :shipping_address';
-    }
+    // We intentionally no longer build or write legacy concatenated
+    // billing_address/shipping_address values. The discrete columns are
+    // authoritative and are mapped above via $fieldMap.
 
     $sql = 'UPDATE customers SET ' . implode(', ', $sets) . ' WHERE id = :id';
     // Diagnostic: if updating billing_postal_code (posted as billing_zip),
@@ -554,7 +549,8 @@ function authenticateCustomer(string $email, string $password): ?array
  * Create a new customer record.
  *
  * @param array $data Associative array containing keys: name, business_name,
- *                    phone, email, billing_address, shipping_address, password.
+ *                    phone, email, billing_line1, billing_line2, billing_city, billing_state, billing_postal_code,
+ *                    shipping_line1, shipping_line2, shipping_city, shipping_state, shipping_postal_code, password.
  * @return int Newly created customer ID.
  * @throws Exception If email already exists or validation fails.
  */
@@ -580,53 +576,37 @@ function createCustomer(array $data): int
     // Hash password and insert
     $hash = password_hash($data['password'], PASSWORD_DEFAULT);
     // Only use discrete address components if they were explicitly provided
-    // in the $data array (e.g., from the account page). Do not infer
-    // billing_street/shipping_street from the legacy single-line values
-    // to avoid silently overwriting customer inputs.
-    $billing_street = array_key_exists('billing_street', $data) ? ($data['billing_street'] ?? '') : '';
-    $billing_street2 = array_key_exists('billing_street2', $data) ? ($data['billing_street2'] ?? '') : '';
+    // in the $data array (e.g., from the account page). Map them to the
+    // final database column names (billing_line1 etc.). We intentionally
+    // avoid creating or storing legacy single-line address fields.
+    $billing_line1 = array_key_exists('billing_street', $data) ? ($data['billing_street'] ?? '') : '';
+    $billing_line2 = array_key_exists('billing_street2', $data) ? ($data['billing_street2'] ?? '') : '';
     $billing_city = array_key_exists('billing_city', $data) ? ($data['billing_city'] ?? '') : '';
     $billing_state = array_key_exists('billing_state', $data) ? ($data['billing_state'] ?? '') : '';
-    $billing_zip = array_key_exists('billing_zip', $data) ? ($data['billing_zip'] ?? '') : '';
+    $billing_postal_code = array_key_exists('billing_zip', $data) ? ($data['billing_zip'] ?? '') : '';
 
-    $shipping_street = array_key_exists('shipping_street', $data) ? ($data['shipping_street'] ?? '') : '';
-    $shipping_street2 = array_key_exists('shipping_street2', $data) ? ($data['shipping_street2'] ?? '') : '';
+    $shipping_line1 = array_key_exists('shipping_street', $data) ? ($data['shipping_street'] ?? '') : '';
+    $shipping_line2 = array_key_exists('shipping_street2', $data) ? ($data['shipping_street2'] ?? '') : '';
     $shipping_city = array_key_exists('shipping_city', $data) ? ($data['shipping_city'] ?? '') : '';
     $shipping_state = array_key_exists('shipping_state', $data) ? ($data['shipping_state'] ?? '') : '';
-    $shipping_zip = array_key_exists('shipping_zip', $data) ? ($data['shipping_zip'] ?? '') : '';
+    $shipping_postal_code = array_key_exists('shipping_zip', $data) ? ($data['shipping_zip'] ?? '') : '';
 
-    // Keep legacy billing_address/shipping_address populated from provided
-    // legacy keys if present (signup form may still provide these), otherwise
-    // build from explicit discrete parts only when those were provided.
-    if (isset($data['billing_address'])) {
-        $legacy_bill = $data['billing_address'];
-    } else {
-        $legacy_bill = trim($billing_street . "\n" . $billing_street2 . "\n" . trim($billing_city . ' ' . $billing_state . ' ' . $billing_zip));
-    }
-    if (isset($data['shipping_address'])) {
-        $legacy_ship = $data['shipping_address'];
-    } else {
-        $legacy_ship = trim($shipping_street . "\n" . $shipping_street2 . "\n" . trim($shipping_city . ' ' . $shipping_state . ' ' . $shipping_zip));
-    }
-
-    $ins = $db->prepare('INSERT INTO customers (name, business_name, phone, email, billing_address, shipping_address, billing_street, billing_street2, billing_city, billing_state, billing_zip, shipping_street, shipping_street2, shipping_city, shipping_state, shipping_zip, password_hash) VALUES (:name, :business_name, :phone, :email, :billing_address, :shipping_address, :billing_street, :billing_street2, :billing_city, :billing_state, :billing_zip, :shipping_street, :shipping_street2, :shipping_city, :shipping_state, :shipping_zip, :password_hash)');
+    $ins = $db->prepare('INSERT INTO customers (name, business_name, phone, email, billing_line1, billing_line2, billing_city, billing_state, billing_postal_code, shipping_line1, shipping_line2, shipping_city, shipping_state, shipping_postal_code, password_hash) VALUES (:name, :business_name, :phone, :email, :billing_line1, :billing_line2, :billing_city, :billing_state, :billing_postal_code, :shipping_line1, :shipping_line2, :shipping_city, :shipping_state, :shipping_postal_code, :password_hash)');
     $ins->execute([
         ':name' => $data['name'],
         ':business_name' => $data['business_name'] ?? '',
         ':phone' => $data['phone'] ?? '',
         ':email' => $data['email'],
-        ':billing_address' => $legacy_bill,
-        ':shipping_address' => $legacy_ship,
-        ':billing_street' => $billing_street,
-        ':billing_street2' => $billing_street2,
+        ':billing_line1' => $billing_line1,
+        ':billing_line2' => $billing_line2,
         ':billing_city' => $billing_city,
         ':billing_state' => $billing_state,
-        ':billing_zip' => $billing_zip,
-        ':shipping_street' => $shipping_street,
-        ':shipping_street2' => $shipping_street2,
+        ':billing_postal_code' => $billing_postal_code,
+        ':shipping_line1' => $shipping_line1,
+        ':shipping_line2' => $shipping_line2,
         ':shipping_city' => $shipping_city,
         ':shipping_state' => $shipping_state,
-        ':shipping_zip' => $shipping_zip,
+        ':shipping_postal_code' => $shipping_postal_code,
         ':password_hash' => $hash
     ]);
     return (int)$db->lastInsertId();

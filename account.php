@@ -30,11 +30,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (array_key_exists('billing_street', $_POST)) {
         $bill_street = normalizeScalar($_POST['billing_street'], 128, '');
     } else {
-        // Prefer the discrete DB column billing_line1, then billing_street,
-        // otherwise fall back to the first line of the legacy billing_address
-        $addr = $customer['billing_address'] ?? '';
-        $firstLine = strtok($addr, "\n") ?: '';
-        $bill_street = normalizeScalar($customer['billing_line1'] ?? $customer['billing_street'] ?? $firstLine, 128, $customer['billing_line1'] ?? $customer['billing_street'] ?? $firstLine);
+    // Prefer the discrete DB column billing_line1, then billing_street
+    $bill_street = normalizeScalar($customer['billing_line1'] ?? $customer['billing_street'] ?? '', 128, $customer['billing_line1'] ?? $customer['billing_street'] ?? '');
     }
     if (array_key_exists('billing_street2', $_POST)) {
         $bill_street2 = normalizeScalar($_POST['billing_street2'], 128, '');
@@ -63,10 +60,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (array_key_exists('shipping_street', $_POST)) {
         $ship_street = normalizeScalar($_POST['shipping_street'], 128, '');
     } else {
-        // Prefer discrete DB column shipping_line1, fall back to first line of shipping_address
-        $saddr = $customer['shipping_address'] ?? '';
-        $sfirst = strtok($saddr, "\n") ?: '';
-        $ship_street = normalizeScalar($customer['shipping_line1'] ?? $customer['shipping_street'] ?? $sfirst, 128, $customer['shipping_line1'] ?? $customer['shipping_street'] ?? $sfirst);
+    // Prefer discrete DB column shipping_line1
+    $ship_street = normalizeScalar($customer['shipping_line1'] ?? $customer['shipping_street'] ?? '', 128, $customer['shipping_line1'] ?? $customer['shipping_street'] ?? '');
     }
     if (array_key_exists('shipping_street2', $_POST)) {
         $ship_street2 = normalizeScalar($_POST['shipping_street2'], 128, '');
@@ -98,25 +93,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($sameBillingFlag) {
         $ship = $bill;
     }
-    // Build data for update
+    // Build data for update. Avoid sending the legacy concatenated
+    // billing_address/shipping_address when the database already uses
+    // discrete address columns (billing_line1 / billing_street etc.).
+    // This prevents the site from repeatedly storing a concatenated
+    // address and then having migration code propagate that back into
+    // the discrete columns.
     $data = [
         'name' => $name,
         'business_name' => $biz,
         'phone' => $phone,
-    // Persist discrete components as well as legacy concatenated field
-    'billing_address' => $bill,
-    'shipping_address' => $ship,
-    'billing_street' => $bill_street,
-    'billing_street2' => $bill_street2,
-    'billing_city' => $bill_city,
-    'billing_state' => $bill_state,
-    'billing_zip' => $bill_zip,
-    'shipping_street' => $ship_street,
-    'shipping_street2' => $ship_street2,
-    'shipping_city' => $ship_city,
-    'shipping_state' => $ship_state,
-    'shipping_zip' => $ship_zip
+        'billing_street' => $bill_street,
+        'billing_street2' => $bill_street2,
+        'billing_city' => $bill_city,
+        'billing_state' => $bill_state,
+        'billing_zip' => $bill_zip,
+        'shipping_street' => $ship_street,
+        'shipping_street2' => $ship_street2,
+        'shipping_city' => $ship_city,
+        'shipping_state' => $ship_state,
+        'shipping_zip' => $ship_zip
     ];
+    // If the DB lacks discrete address columns, include the legacy
+    // concatenated fields so older schemas continue to work.
+    $cols = getTableColumns('customers');
+    $hasDiscrete = in_array('billing_line1', $cols, true) || in_array('billing_street', $cols, true);
+    if (!$hasDiscrete) {
+        $data['billing_address'] = $bill;
+        $data['shipping_address'] = $ship;
+    }
     // Handle password change
     if ($newPass !== '') {
         if ($currentPass === '') {
@@ -176,20 +181,18 @@ include __DIR__ . '/includes/header.php';
     <p>Email:<br> <input type="email" value="<?= htmlspecialchars($customer['email']) ?>" disabled autocomplete="off"></p>
     <fieldset>
         <legend>Billing Address</legend>
-    <p>Street Address:<br><input type="text" name="billing_street" value="<?= htmlspecialchars($customer['billing_street'] ?? $customer['billing_address']) ?>" autocomplete="off"></p>
+    <p>Street Address:<br><input type="text" name="billing_street" value="<?= htmlspecialchars($customer['billing_line1'] ?? $customer['billing_street'] ?? '') ?>" autocomplete="off"></p>
     <p>Street Address 2:<br><input type="text" name="billing_street2" value="<?= htmlspecialchars($customer['billing_street2'] ?? '') ?>" autocomplete="off"></p>
         <p>City:<br><input type="text" name="billing_city" value="<?= htmlspecialchars($customer['billing_city'] ?? '') ?>" autocomplete="off"></p>
         <p>State:<br><input type="text" name="billing_state" value="<?= htmlspecialchars($customer['billing_state'] ?? '') ?>" autocomplete="off"></p>
     <p>Zip:<br><input type="text" name="billing_zip" value="<?= htmlspecialchars($customer['billing_postal_code'] ?? $customer['billing_zip'] ?? '') ?>" autocomplete="off"></p>
     </fieldset>
-    <?php
-    $sameBillingChecked = (trim($customer['shipping_address']) === trim($customer['billing_address']));
-    ?>
+    <?php $sameBillingChecked = (trim(($customer['shipping_line1'] ?? $customer['shipping_street'] ?? '')) === trim(($customer['billing_line1'] ?? $customer['billing_street'] ?? ''))); ?>
     <fieldset>
         <legend>Shipping Address</legend>
         <p><label><input type="checkbox" name="same_as_billing" id="account_same_billing" value="1" <?= $sameBillingChecked ? 'checked' : '' ?>> Same as billing</label></p>
         <div id="account_shipping_fields">
-            <p>Street Address:<br><input type="text" name="shipping_street" value="<?= htmlspecialchars($customer['shipping_street'] ?? $customer['shipping_address']) ?>" autocomplete="off"></p>
+            <p>Street Address:<br><input type="text" name="shipping_street" value="<?= htmlspecialchars($customer['shipping_line1'] ?? $customer['shipping_street'] ?? '') ?>" autocomplete="off"></p>
             <p>Street Address 2:<br><input type="text" name="shipping_street2" value="<?= htmlspecialchars($customer['shipping_street2'] ?? '') ?>" autocomplete="off"></p>
             <p>City:<br><input type="text" name="shipping_city" value="<?= htmlspecialchars($customer['shipping_city'] ?? '') ?>" autocomplete="off"></p>
             <p>State:<br><input type="text" name="shipping_state" value="<?= htmlspecialchars($customer['shipping_state'] ?? '') ?>" autocomplete="off"></p>

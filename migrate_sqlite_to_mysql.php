@@ -59,7 +59,7 @@ try {
     $mysql  = connectMysql();
     echo "Copying customers...\n";
     copyTable($sqlite, $mysql, 'customers', [
-        'id', 'name', 'business_name', 'phone', 'email', 'billing_address', 'shipping_address', 'password_hash', 'is_verified', 'verification_token', 'reset_token', 'reset_token_expires'
+        'id', 'name', 'business_name', 'phone', 'email', 'billing_line1', 'billing_line2', 'billing_city', 'billing_state', 'billing_postal_code', 'shipping_line1', 'shipping_line2', 'shipping_city', 'shipping_state', 'shipping_postal_code', 'password_hash', 'is_verified', 'verification_token', 'reset_token', 'reset_token_expires'
     ]);
     echo "Copying products...\n";
     copyTable($sqlite, $mysql, 'products', ['id','name','description','price']);

@@ -155,30 +155,10 @@ function migrateDatabase(PDO $db): void
         }
     }
 
-    // Migrate existing single-line billing_address/shipping_address into the
-    // new billing_street/shipping_street columns if they are currently empty.
-    // This preserves existing customer-entered address data while leaving the
-    // remaining new fields blank for customers to optionally fill later.
-    try {
-        $rows = $db->query('SELECT id, billing_address, shipping_address FROM customers')->fetchAll(PDO::FETCH_ASSOC);
-        $upd = $db->prepare('UPDATE customers SET billing_street = :bst, shipping_street = :sst WHERE id = :id');
-        foreach ($rows as $r) {
-            $bst = trim((string)($r['billing_address'] ?? '')) ?: null;
-            $sst = trim((string)($r['shipping_address'] ?? '')) ?: null;
-            if ($bst !== null || $sst !== null) {
-                // Only set if the new column is empty to avoid overwriting manual edits
-                $current = $db->prepare('SELECT billing_street, shipping_street FROM customers WHERE id = :id');
-                $current->execute([':id' => $r['id']]);
-                $cur = $current->fetch(PDO::FETCH_ASSOC);
-                $setB = ($cur && trim((string)($cur['billing_street'] ?? '')) === '') ? $bst : $cur['billing_street'];
-                $setS = ($cur && trim((string)($cur['shipping_street'] ?? '')) === '') ? $sst : $cur['shipping_street'];
-                $upd->execute([':bst' => $setB, ':sst' => $setS, ':id' => $r['id']]);
-            }
-        }
-    } catch (Exception $e) {
-        // Migration best-effort: log but do not abort initialization
-        error_log('Address migration warning: ' . $e->getMessage());
-    }
+    // Legacy single-line address migration removed — data should have been
+    // migrated separately before removing legacy columns. If you need to
+    // run a one-off migration, use a controlled script that maps the
+    // legacy fields into the discrete columns and verify results.
 
     // customers.reset_token column to store password reset tokens (hashed)
     if (!$columnExists('customers', 'reset_token')) {

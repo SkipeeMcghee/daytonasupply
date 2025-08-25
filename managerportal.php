@@ -209,13 +209,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $billField = 'c_bill_' . $id;
             $shipField = 'c_ship_' . $id;
             if (isset($_POST[$nameField], $_POST[$emailField])) {
+                // Expect discrete billing/shipping components named per-row
+                // e.g. c_bill_line1_123, c_bill_city_123 etc. If manager UI
+                // still posts a single legacy field, it will be ignored.
+                $billing_line1 = normalizeScalar($_POST['c_bill_line1_' . $id] ?? '', 255, '');
+                $billing_line2 = normalizeScalar($_POST['c_bill_line2_' . $id] ?? '', 255, '');
+                $billing_city = normalizeScalar($_POST['c_bill_city_' . $id] ?? '', 128, '');
+                $billing_state = normalizeScalar($_POST['c_bill_state_' . $id] ?? '', 64, '');
+                $billing_postal_code = normalizeScalar($_POST['c_bill_postal_' . $id] ?? '', 32, '');
+                $shipping_line1 = normalizeScalar($_POST['c_ship_line1_' . $id] ?? '', 255, '');
+                $shipping_line2 = normalizeScalar($_POST['c_ship_line2_' . $id] ?? '', 255, '');
+                $shipping_city = normalizeScalar($_POST['c_ship_city_' . $id] ?? '', 128, '');
+                $shipping_state = normalizeScalar($_POST['c_ship_state_' . $id] ?? '', 64, '');
+                $shipping_postal_code = normalizeScalar($_POST['c_ship_postal_' . $id] ?? '', 32, '');
                 updateCustomer($id, [
                     'name' => normalizeScalar($_POST[$nameField] ?? '', 128, ''),
                     'business_name' => normalizeScalar($_POST[$bizField] ?? '', 128, ''),
                     'phone' => normalizeScalar($_POST[$phoneField] ?? '', 32, ''),
                     'email' => normalizeScalar($_POST[$emailField] ?? '', 254, ''),
-                    'billing_address' => normalizeScalar($_POST[$billField] ?? '', 255, ''),
-                    'shipping_address' => normalizeScalar($_POST[$shipField] ?? '', 255, '')
+                    'billing_street' => $billing_line1,
+                    'billing_street2' => $billing_line2,
+                    'billing_city' => $billing_city,
+                    'billing_state' => $billing_state,
+                    'billing_zip' => $billing_postal_code,
+                    'shipping_street' => $shipping_line1,
+                    'shipping_street2' => $shipping_line2,
+                    'shipping_city' => $shipping_city,
+                    'shipping_state' => $shipping_state,
+                    'shipping_zip' => $shipping_postal_code
                 ]);
             }
         }
@@ -396,8 +417,8 @@ require_once __DIR__ . '/includes/header.php';
                     <td><?= htmlspecialchars($cust['business_name']) ?></td>
                     <td><?= htmlspecialchars($cust['phone']) ?></td>
                     <td><?= htmlspecialchars($cust['email']) ?></td>
-                    <td><?= htmlspecialchars(trim(($cust['billing_street'] ?? $cust['billing_address'] ?? '') . "\n" . ($cust['billing_street2'] ?? '') . "\n" . trim(($cust['billing_city'] ?? '') . ' ' . ($cust['billing_state'] ?? '') . ' ' . ($cust['billing_zip'] ?? '')))) ?></td>
-                    <td><?= htmlspecialchars(trim(($cust['shipping_street'] ?? $cust['shipping_address'] ?? '') . "\n" . ($cust['shipping_street2'] ?? '') . "\n" . trim(($cust['shipping_city'] ?? '') . ' ' . ($cust['shipping_state'] ?? '') . ' ' . ($cust['shipping_zip'] ?? '')))) ?></td>
+                    <td><?= htmlspecialchars(trim(($cust['billing_line1'] ?? $cust['billing_street'] ?? '') . "\n" . ($cust['billing_line2'] ?? $cust['billing_street2'] ?? '') . "\n" . trim(($cust['billing_city'] ?? '') . ' ' . ($cust['billing_state'] ?? '') . ' ' . ($cust['billing_postal_code'] ?? $cust['billing_zip'] ?? '')))) ?></td>
+                    <td><?= htmlspecialchars(trim(($cust['shipping_line1'] ?? $cust['shipping_street'] ?? '') . "\n" . ($cust['shipping_line2'] ?? $cust['shipping_street2'] ?? '') . "\n" . trim(($cust['shipping_city'] ?? '') . ' ' . ($cust['shipping_state'] ?? '') . ' ' . ($cust['shipping_postal_code'] ?? $cust['shipping_zip'] ?? '')))) ?></td>
                     <td>
                         <a class="mgr-btn mgr-verify" href="?verify_customer=<?= $cust['id'] ?>">Verify</a>
                         <a class="mgr-btn mgr-delete" href="?delete_customer=<?= $cust['id'] ?>" onclick="return confirm('Are you sure you want to delete this customer? This will remove all of their orders.');">Delete</a>

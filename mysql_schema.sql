@@ -14,9 +14,17 @@ CREATE TABLE IF NOT EXISTS customers (
     phone VARCHAR(50),
     -- limit email to 191 chars so the UNIQUE index fits within 767 bytes
     email VARCHAR(191) NOT NULL,
-    -- use TEXT for addresses to accommodate longer input
-    billing_address TEXT,
-    shipping_address TEXT,
+    -- discrete address columns (line1/line2/city/state/postal)
+    billing_line1 TEXT,
+    billing_line2 TEXT,
+    billing_city TEXT,
+    billing_state TEXT,
+    billing_postal_code TEXT,
+    shipping_line1 TEXT,
+    shipping_line2 TEXT,
+    shipping_city TEXT,
+    shipping_state TEXT,
+    shipping_postal_code TEXT,
     password_hash VARCHAR(255) NOT NULL,
     -- email verification status (0 = unverified, 1 = verified)
     is_verified TINYINT(1) DEFAULT 0,
