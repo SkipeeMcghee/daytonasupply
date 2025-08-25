@@ -114,14 +114,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'shipping_state' => $ship_state,
         'shipping_zip' => $ship_zip
     ];
-    // If the DB lacks discrete address columns, include the legacy
-    // concatenated fields so older schemas continue to work.
-    $cols = getTableColumns('customers');
-    $hasDiscrete = in_array('billing_line1', $cols, true) || in_array('billing_street', $cols, true);
-    if (!$hasDiscrete) {
-        $data['billing_address'] = $bill;
-        $data['shipping_address'] = $ship;
-    }
+    // We intentionally do not populate legacy concatenated fields here.
+    // The discrete columns (billing_line1, billing_line2, billing_postal_code,
+    // shipping_line1, shipping_line2, shipping_postal_code) are authoritative.
     // Handle password change
     if ($newPass !== '') {
         if ($currentPass === '') {

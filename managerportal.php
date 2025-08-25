@@ -457,8 +457,8 @@ require_once __DIR__ . '/includes/header.php';
                     <td><?= htmlspecialchars($cust['business_name']) ?></td>
                     <td><?= htmlspecialchars($cust['phone']) ?></td>
                     <td><?= htmlspecialchars($cust['email']) ?></td>
-                    <td><?= htmlspecialchars(trim(($cust['billing_street'] ?? $cust['billing_address'] ?? '') . "\n" . ($cust['billing_street2'] ?? '') . "\n" . trim(($cust['billing_city'] ?? '') . ' ' . ($cust['billing_state'] ?? '') . ' ' . ($cust['billing_zip'] ?? '')))) ?></td>
-                    <td><?= htmlspecialchars(trim(($cust['shipping_street'] ?? $cust['shipping_address'] ?? '') . "\n" . ($cust['shipping_street2'] ?? '') . "\n" . trim(($cust['shipping_city'] ?? '') . ' ' . ($cust['shipping_state'] ?? '') . ' ' . ($cust['shipping_zip'] ?? '')))) ?></td>
+                    <td><?= htmlspecialchars(trim(($cust['billing_line1'] ?? $cust['billing_street'] ?? '') . "\n" . ($cust['billing_line2'] ?? $cust['billing_street2'] ?? '') . "\n" . trim(($cust['billing_city'] ?? '') . ' ' . ($cust['billing_state'] ?? '') . ' ' . ($cust['billing_postal_code'] ?? $cust['billing_zip'] ?? '')))) ?></td>
+                    <td><?= htmlspecialchars(trim(($cust['shipping_line1'] ?? $cust['shipping_street'] ?? '') . "\n" . ($cust['shipping_line2'] ?? $cust['shipping_street2'] ?? '') . "\n" . trim(($cust['shipping_city'] ?? '') . ' ' . ($cust['shipping_state'] ?? '') . ' ' . ($cust['shipping_postal_code'] ?? $cust['shipping_zip'] ?? '')))) ?></td>
                     <td>
                         <a class="mgr-btn mgr-unverify" href="?unverify_customer=<?= $cust['id'] ?>">Unverify</a>
                         <a class="mgr-btn mgr-delete" href="?delete_customer=<?= $cust['id'] ?>" onclick="return confirm('Are you sure you want to delete this customer? This will remove all of their orders.');">Delete</a>

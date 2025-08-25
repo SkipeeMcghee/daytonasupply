@@ -52,7 +52,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $showForm) {
     if ($password !== $confirm) $errors[] = 'Passwords do not match.';
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = 'Invalid email address.';
     $sameBillingFlag = isset($_POST['same_as_billing']);
-    if ($sameBillingFlag) $ship = $bill;
+    if ($sameBillingFlag) {
+        $ship_street = $bill_street;
+        $ship_street2 = $bill_street2;
+        $ship_city = $bill_city;
+        $ship_state = $bill_state;
+        $ship_zip = $bill_zip;
+    }
     if ($recaptcha && empty($errors)) {
         try {
             $customerId = createCustomer([
