@@ -121,11 +121,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
     if (empty($errors)) {
-        updateCustomer($id, $data);
-        // Refresh session data
-        $_SESSION['customer'] = getCustomerById($id);
-        $customer = $_SESSION['customer'];
-        $messages[] = 'Your details have been updated.';
+        $res = updateCustomer($id, $data);
+        if ($res === false) {
+            $errors[] = 'Unable to update your details due to a server error. The admin has been notified.';
+            error_log('account.php: updateCustomer failed for id=' . $id . ' data=' . print_r($data, true));
+        } elseif ($res === 0) {
+            $messages[] = 'No changes were detected.';
+        } else {
+            // Refresh session data
+            $_SESSION['customer'] = getCustomerById($id);
+            $customer = $_SESSION['customer'];
+            $messages[] = 'Your details have been updated.';
+        }
     }
 }
 

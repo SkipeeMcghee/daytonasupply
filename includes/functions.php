@@ -47,30 +47,68 @@ if (is_readable($vendorAutoload)) {
 }
 
 // Optionally load local configuration containing environment variables.
-// This file can be created by administrators to override settings such as
-// COMPANY_EMAIL, SMTP credentials, and other custom values without
-// modifying the main codebase.  If the file does not exist it is
-// ignored.
 @include __DIR__ . '/config.local.php';
 
 // Ensure application timezone is set to local (Daytona / Eastern Time).
-// This prevents order times from being stored/displayed in UTC which
-// previously resulted in a four-hour offset for the owner.
-// Force application timezone to Eastern Time to avoid UTC/host mismatches.
-// This ensures order timestamps display in ET consistently.
 date_default_timezone_set('America/New_York');
 
-/**
- * Ensure the COMPANY_EMAIL environment variable is set.  Many parts of
- * the application rely on getenv('COMPANY_EMAIL') to determine where
- * order notification emails should be sent.  If it is not defined
- * externally (e.g. via the web server configuration) we default
- * to packinggenerals@gmail.com.  Using putenv() here means the
- * environment variable is available to subsequent code and library
- * calls without requiring additional configuration.
- */
+// Ensure COMPANY_EMAIL environment variable has a sensible default.
 if (!getenv('COMPANY_EMAIL')) {
     putenv('COMPANY_EMAIL=packinggenerals@gmail.com');
+}
+
+// Attempt to load Composer autoloader if PHPMailer and other vendor
+// packages were installed via composer.  This will register the
+// PHPMailer classes automatically.  If the autoloader file does not
+// exist, it is silently ignored and the fallback mail() function will
+// be used. (autoload handled below)
+/**
+ * Update customer information. Password will be updated only if provided.
+ *
+ * @param int $id
+ * @param array $data
+ * @return int|false Number of rows affected, 0 if no-op, or false on error.
+ */
+function updateCustomer(int $id, array $data)
+{
+    $db = getDb();
+    $fields = ['name', 'business_name', 'phone', 'email', 'billing_address', 'shipping_address', 'billing_street', 'billing_street2', 'billing_city', 'billing_state', 'billing_zip', 'shipping_street', 'shipping_street2', 'shipping_city', 'shipping_state', 'shipping_zip'];
+    $sets = [];
+    $params = [':id' => $id];
+    foreach ($fields as $field) {
+        if (isset($data[$field])) {
+            $sets[] = "$field = :$field";
+            $params[":" . $field] = $data[$field];
+        }
+    }
+    if (!empty($data['password'])) {
+        $sets[] = 'password_hash = :password_hash';
+        $params[':password_hash'] = password_hash($data['password'], PASSWORD_DEFAULT);
+    }
+    if (empty($sets)) {
+        // Nothing to update
+        return 0;
+    }
+    // If discrete address components are present, ensure legacy concatenated
+    // fields reflect the same primary street value to avoid data loss.
+    if (isset($params[':billing_street']) && (!isset($params[':billing_address']) || trim((string)$params[':billing_address']) === '')) {
+        $params[':billing_address'] = trim($params[':billing_street'] . "\n" . ($params[':billing_street2'] ?? '') . "\n" . trim(($params[':billing_city'] ?? '') . ' ' . ($params[':billing_state'] ?? '') . ' ' . ($params[':billing_zip'] ?? '')));
+        if (!in_array('billing_address = :billing_address', $sets, true)) $sets[] = 'billing_address = :billing_address';
+    }
+    if (isset($params[':shipping_street']) && (!isset($params[':shipping_address']) || trim((string)$params[':shipping_address']) === '')) {
+        $params[':shipping_address'] = trim($params[':shipping_street'] . "\n" . ($params[':shipping_street2'] ?? '') . "\n" . trim(($params[':shipping_city'] ?? '') . ' ' . ($params[':shipping_state'] ?? '') . ' ' . ($params[':shipping_zip'] ?? '')));
+        if (!in_array('shipping_address = :shipping_address', $sets, true)) $sets[] = 'shipping_address = :shipping_address';
+    }
+
+    $sql = 'UPDATE customers SET ' . implode(', ', $sets) . ' WHERE id = :id';
+    try {
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->rowCount();
+    } catch (Exception $e) {
+        error_log('updateCustomer error (id=' . $id . '): ' . $e->getMessage() . ' params=' . print_r($params, true));
+        return false;
+    }
 }
 
 /**
@@ -535,39 +573,7 @@ function getCustomerById(int $id): ?array
  * @param int $id
  * @param array $data
  */
-function updateCustomer(int $id, array $data): void
-{
-    $db = getDb();
-    $fields = ['name', 'business_name', 'phone', 'email', 'billing_address', 'shipping_address', 'billing_street', 'billing_street2', 'billing_city', 'billing_state', 'billing_zip', 'shipping_street', 'shipping_street2', 'shipping_city', 'shipping_state', 'shipping_zip'];
-    $sets = [];
-    $params = [':id' => $id];
-    foreach ($fields as $field) {
-        if (isset($data[$field])) {
-            $sets[] = "$field = :$field";
-            $params[":$field"] = $data[$field];
-        }
-    }
-    if (!empty($data['password'])) {
-        $sets[] = 'password_hash = :password_hash';
-        $params[':password_hash'] = password_hash($data['password'], PASSWORD_DEFAULT);
-    }
-    if ($sets) {
-        // If discrete address components are present, ensure legacy concatenated
-        // fields reflect the same primary street value to avoid data loss.
-        if (isset($params[':billing_street']) && (!isset($params[':billing_address']) || trim((string)$params[':billing_address']) === '')) {
-            $params[':billing_address'] = trim($params[':billing_street'] . "\n" . ($params[':billing_street2'] ?? '') . "\n" . trim(($params[':billing_city'] ?? '') . ' ' . ($params[':billing_state'] ?? '') . ' ' . ($params[':billing_zip'] ?? '')));
-            $sets[] = 'billing_address = :billing_address';
-        }
-        if (isset($params[':shipping_street']) && (!isset($params[':shipping_address']) || trim((string)$params[':shipping_address']) === '')) {
-            $params[':shipping_address'] = trim($params[':shipping_street'] . "\n" . ($params[':shipping_street2'] ?? '') . "\n" . trim(($params[':shipping_city'] ?? '') . ' ' . ($params[':shipping_state'] ?? '') . ' ' . ($params[':shipping_zip'] ?? '')));
-            $sets[] = 'shipping_address = :shipping_address';
-        }
-
-        $sql = 'UPDATE customers SET ' . implode(', ', $sets) . ' WHERE id = :id';
-        $stmt = $db->prepare($sql);
-        $stmt->execute($params);
-    }
-}
+// ...existing code... (duplicate older updateCustomer removed)
 
 /**
  * Save or update a product. If $id is null, a new record is created.
