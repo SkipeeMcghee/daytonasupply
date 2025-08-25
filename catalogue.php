@@ -126,11 +126,22 @@ $showMode = normalizeScalar($_GET['show'] ?? 'all', 32, 'all');
 $skuKey = normalizeScalar($_GET['sku'] ?? '', 64, '');
 
 // Determine which products to show
+// Strategy: always fetch the full "show all" product list and then
+// filter it in-memory when a search term is provided. This ensures the
+// search behaves as a client-side filter of the full catalogue and
+// avoids environment-specific database search differences on hosts.
 try {
+    // Load all products first (consistent with "Show All")
+    $products = getAllProducts();
+    // If a search term was provided, filter the loaded products in PHP.
     if ($search !== '') {
-        $products = getProductsBySearch($search);
-    } else {
-        $products = getAllProducts();
+        $term = $search; // already normalized by normalizeScalar
+        $products = array_values(array_filter($products, function($p) use ($term) {
+            $name = $p['name'] ?? '';
+            $desc = $p['description'] ?? '';
+            // Case-insensitive substring match against name or description
+            return (stripos($name, $term) !== false) || (stripos($desc, $term) !== false);
+        }));
     }
 } catch (Exception $e) {
     // Build a detailed message for diagnostics and include a short error reference

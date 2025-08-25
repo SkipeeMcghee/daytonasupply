@@ -1,0 +1,26 @@
+[2025-08-22T22:55:12+02:00] diagnose_server output:\n=== PHP INFO ===
+PHP SAPI: cli
+PHP version: 8.2.12
+Loaded extensions: Core, bcmath, calendar, ctype, date, filter, hash, iconv, json, SPL, pcre, random, readline, Reflection, session, standard, mysqlnd, tokenizer, zlib, libxml, dom, PDO, bz2, SimpleXML, xml, xmlreader, xmlwriter, openssl, curl, fileinfo, gettext, mbstring, exif, mysqli, pdo_mysql, pdo_sqlite, Phar, ftp
+
+=== ENVIRONMENT ===
+DB_DRIVER=<not set>
+DB_HOST=<not set>
+DB_NAME=<not set>
+DB_USER=<not set>
+DB_PASS=<not set>
+DB_PATH=<not set>
+COMPANY_EMAIL=<not set>
+SMTP_HOST=<not set>
+
+=== FILES ===
+data dir: C:\xampp\htdocs\daytonasupply\data exists=yes
+db file: C:\xampp\htdocs\daytonasupply\tools/../data/database.sqlite exists=yes
+db file perms: 0666
+
+=== BOOTSTRAP & SEARCH TEST ===
+Bootstrap: OK
+Running getProductsBySearch('BAT')...
+Search returned count: 14
+First product (summary): {"id":1431,"name":"BAT-1505","description":"Bowl Cleaner HCL AcidTHEO CHEM 430-0212"}
+
