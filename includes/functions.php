@@ -133,7 +133,24 @@ function updateCustomer(int $id, array $data)
     }
 
     $sql = 'UPDATE customers SET ' . implode(', ', $sets) . ' WHERE id = :id';
+    // Diagnostic: if updating billing_postal_code (posted as billing_zip),
+    // compare current DB value and the new value so we can see why it
+    // might not change (e.g., identical value or normalization differences).
     try {
+        if (isset($params[':billing_zip'])) {
+            try {
+                $col = $fieldMap['billing_zip'] ?? 'billing_zip';
+                // map to DB column used earlier
+                if ($col === 'billing_zip') $col = 'billing_postal_code';
+                $check = $db->prepare('SELECT ' . $col . ' FROM customers WHERE id = :id');
+                $check->execute([':id' => $id]);
+                $current = $check->fetchColumn();
+                $new = (string)$params[':billing_zip'];
+                error_log('updateCustomer debug: id=' . $id . ' column=' . $col . ' current=' . var_export($current, true) . ' new=' . var_export($new, true));
+            } catch (Exception $e) {
+                error_log('updateCustomer debug select error: ' . $e->getMessage());
+            }
+        }
         $stmt = $db->prepare($sql);
         $stmt->execute($params);
         return $stmt->rowCount();
