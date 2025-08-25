@@ -75,9 +75,38 @@ function updateCustomer(int $id, array $data)
     $fields = ['name', 'business_name', 'phone', 'email', 'billing_address', 'shipping_address', 'billing_street', 'billing_street2', 'billing_city', 'billing_state', 'billing_zip', 'shipping_street', 'shipping_street2', 'shipping_city', 'shipping_state', 'shipping_zip'];
     $sets = [];
     $params = [':id' => $id];
+    // Map form/legacy field names to actual DB column names found in the
+    // customers table. This allows the form to continue sending legacy
+    // keys while the DB uses different column names (for example
+    // billing_street -> billing_line1).
+    $fieldMap = [
+        'billing_street' => 'billing_line1',
+        'billing_street2' => 'billing_line2',
+        'billing_city' => 'billing_city',
+        'billing_state' => 'billing_state',
+        'billing_zip' => 'billing_postal_code',
+        'shipping_street' => 'shipping_line1',
+        'shipping_street2' => 'shipping_line2',
+        'shipping_city' => 'shipping_city',
+        'shipping_state' => 'shipping_state',
+        'shipping_zip' => 'shipping_postal_code',
+    ];
+
+    // Ensure we only attempt to update columns that actually exist in the DB
+    $existingCols = array_map('strval', getTableColumns('customers'));
+    $ignored = [];
     foreach ($fields as $field) {
         if (isset($data[$field])) {
-            $sets[] = "$field = :$field";
+            $col = $fieldMap[$field] ?? $field;
+            if (!in_array($col, $existingCols, true)) {
+                $ignored[] = $field . '->' . $col;
+                continue;
+            }
+            // Use the DB column name in the SET clause but keep the param
+            // name unique by using the original form field name as the
+            // parameter key. This prevents collisions and keeps logging
+            // readable.
+            $sets[] = "$col = :$field";
             $params[":" . $field] = $data[$field];
         }
     }
@@ -86,6 +115,9 @@ function updateCustomer(int $id, array $data)
         $params[':password_hash'] = password_hash($data['password'], PASSWORD_DEFAULT);
     }
     if (empty($sets)) {
+        if (!empty($ignored)) {
+            error_log('updateCustomer: ignored non-existent columns for customers: ' . implode(', ', $ignored));
+        }
         // Nothing to update
         return 0;
     }
@@ -121,6 +153,37 @@ function getAllProducts(): array
     $db = getDb();
     $stmt = $db->query('SELECT * FROM products ORDER BY id ASC');
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+/**
+ * Return list of columns for a table. Supports MySQL (SHOW COLUMNS) and SQLite (PRAGMA).
+ * @param string $table
+ * @return string[]
+ */
+function getTableColumns(string $table): array
+{
+    $db = getDb();
+    $driver = $db->getAttribute(PDO::ATTR_DRIVER_NAME);
+    try {
+        if ($driver === 'sqlite') {
+            $stmt = $db->query('PRAGMA table_info(' . $table . ')');
+            $cols = [];
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $cols[] = $row['name'];
+            }
+            return $cols;
+        }
+        // default to MySQL-compatible
+        $stmt = $db->query('SHOW COLUMNS FROM `' . $table . '`');
+        $cols = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $cols[] = $row['Field'];
+        }
+        return $cols;
+    } catch (Exception $e) {
+        error_log('getTableColumns error for ' . $table . ': ' . $e->getMessage());
+        return [];
+    }
 }
 
 /**
