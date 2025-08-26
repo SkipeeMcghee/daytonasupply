@@ -160,7 +160,7 @@ include __DIR__ . '/includes/header.php';
 ?>
 <section class="page-hero">
     <h1>My Account</h1>
-    <p class="lead">If you have no changes to make, go directly to the CATALOG</p>
+    <p class="lead">If you have no changes to make, go directly to the <a href="catalogue.php" class="proceed-btn">CATALOG</a></p>
 </section>
 <?php foreach ($messages as $msg): ?>
     <p class="success"><?= htmlspecialchars($msg) ?></p>
