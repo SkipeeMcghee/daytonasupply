@@ -1,0 +1,6 @@
+To: test+1756200020@example.local
+Subject: Verify your Daytona Supply account (CLI test)
+
+Hello CLI Test User,
+
+Please verify: http://localhost:8000/verify.php?token=adbb6c8d01b7bdefa13445e05bb90496

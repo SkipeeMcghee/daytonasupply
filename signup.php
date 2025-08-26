@@ -95,7 +95,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $showForm) {
                     "Please verify your email address by clicking the link below:\n\n" .
                     $verificationUrl . "\n\n" .
                     "If you did not sign up for an account, please ignore this message.";
-            sendEmail($email, 'Verify your Daytona Supply account', $body);
+            $sent = sendEmail($email, 'Verify your Daytona Supply account', $body);
+            if ($sent) {
+                error_log('signup: verification email sent to ' . $email . ' (customer id: ' . $customerId . ')');
+            } else {
+                // Log token and recipient to help diagnose delivery issues.
+                error_log('signup: FAILED to send verification email to ' . $email . ' (customer id: ' . $customerId . ') token=' . $token . ' body=' . substr($body, 0, 200));
+            }
             $_SESSION['signup_success'] = 'Registration successful! Please check your email to verify your account.';
             header('Location: signup.php');
             exit;
