@@ -98,7 +98,10 @@ if (!empty($_SESSION['cart'])) {
                 <th></th>
             </tr>
             <?php foreach ($cartItems as $item): ?>
-                <?php $prod = getProductById((int)$item['id']); $sku = $prod ? htmlspecialchars($prod['name']) : $item['id']; $description = $prod ? htmlspecialchars($prod['description'] ?? $prod['name']) : htmlspecialchars($item['name']); ?>
+                <?php $prod = getProductById((int)$item['id']);
+                      // Use the product 'name' field as the visible SKU/code.
+                      $sku = $prod ? htmlspecialchars($prod['name']) : $item['id'];
+                      $description = $prod ? htmlspecialchars($prod['description'] ?? $prod['name']) : htmlspecialchars($item['name']); ?>
                 <tr>
                     <td><?php echo $sku; ?></td>
                     <td><?php echo $description; ?></td>

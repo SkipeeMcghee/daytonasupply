@@ -37,7 +37,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     $taxAmount = $applyTax ? round($cartTotal * 0.065, 2) : 0.0;
     // Create order (include tax)
-    $orderId = createOrder((int)$customer['id'], $cart, $taxAmount);
+    try {
+        $orderId = createOrder((int)$customer['id'], $cart, $taxAmount);
+    } catch (Exception $e) {
+        // Don't expose raw DB errors to users; log and show friendly message
+        error_log('checkout createOrder error: ' . $e->getMessage());
+        $message = 'An error occurred while placing your order. Please try again or contact support.';
+        $orderId = null;
+    }
     // Prepare email to company
     $body = "A new purchase order has been placed.\n\n" .
             "Order ID: {$orderId}\n" .
@@ -92,7 +99,10 @@ foreach ($cart as $pid => $qty) {
             <th class="numeric">Price</th>
         </tr>
         <?php foreach ($items as $it): ?>
-            <?php $prod = getProductById((int)$it['id']); $sku = $prod ? htmlspecialchars($prod['name']) : htmlspecialchars($it['name']); $description = $prod ? htmlspecialchars($prod['description'] ?? $prod['name']) : htmlspecialchars($it['name']); ?>
+            <?php $prod = getProductById((int)$it['id']);
+                  // The product 'name' field is used as the visible SKU/code.
+                  $sku = $prod ? htmlspecialchars($prod['name']) : htmlspecialchars($it['name']);
+                  $description = $prod ? htmlspecialchars($prod['description'] ?? $prod['name']) : htmlspecialchars($it['name']); ?>
             <tr>
                 <td><?php echo $sku; ?></td>
                 <td><?php echo $description; ?></td>

@@ -30,12 +30,11 @@ try {
         $oldProducts[$row['name']] = (int)$row['id'];
     }
 
-    // Remove all existing products to prevent duplicates.  We'll also reset
-    // Remove all existing products to prevent duplicates.
-    $db->exec('DELETE FROM products');
-    // In MySQL, AUTO_INCREMENT will reset automatically if you use TRUNCATE
-    // Uncomment the following line if you want to reset IDs in MySQL:
-    // $db->exec('TRUNCATE TABLE products');
+    // Instead of deleting all products (which rewrites IDs and harms
+    // historical order data), perform upserts by product name. The
+    // project previously used a separate `sku` column; that column
+    // is being removed and we treat the `name` column as the stable
+    // identifier going forward.
 
     // Read inventory from JSON file
     $inventoryPath = __DIR__ . '/../data/inventory.json';
@@ -52,39 +51,32 @@ try {
         echo '<p>Failed to decode inventory JSON.</p>';
         exit;
     }
-    // Prepare insert statement for products
-    $stmt = $db->prepare('INSERT INTO products(name, description, price) VALUES(:name, :description, :price)');
-    // We'll build a mapping from product names to their new IDs so that
-    // we can update order_items rows that refer to old product IDs.  We
-    // cannot rely on the order of the JSON array to match previous IDs.
+    // Prepare statements for upsert: find by name, update, insert.
+    // We no longer rely on a separate `sku` column in the DB.
+    $stmtFindName = $db->prepare('SELECT id FROM products WHERE name = :name LIMIT 1');
+    $stmtUpdate  = $db->prepare('UPDATE products SET name = :name, description = :description, price = :price WHERE id = :id');
+    $stmtInsert  = $db->prepare('INSERT INTO products(name, description, price) VALUES(:name, :description, :price)');
+
     $newProducts = [];
     foreach ($items as $item) {
+        // Ignore any 'sku' field present in the JSON; use `name` as the
+        // canonical key for matching/upserting products.
         $name = $item['name'] ?? '';
         $description = $item['description'] ?? '';
         $price = isset($item['price']) ? (float)$item['price'] : 0;
-        $stmt->execute([
-            ':name' => $name,
-            ':description' => $description,
-            ':price' => $price
-        ]);
-        // Record the new ID keyed by product name
-        $newId = (int)$db->lastInsertId();
-        $newProducts[$name] = $newId;
-    }
 
-    // Update order_items to point to the new product IDs.  For each
-    // product name that existed previously and still exists in the JSON,
-    // set the product_id of matching order_items rows to the new ID.  This
-    // preserves the relationship between historical orders and the new
-    // product definitions.  If a name no longer exists in the new
-    // inventory we leave those order_items unchanged.
-    $stmtUpdate = $db->prepare('UPDATE order_items SET product_id = :newId WHERE product_id = :oldId');
-    foreach ($oldProducts as $name => $oldId) {
-        if (isset($newProducts[$name])) {
-            $stmtUpdate->execute([
-                ':newId' => $newProducts[$name],
-                ':oldId' => $oldId
-            ]);
+        $existingId = null;
+        if ($name !== '') {
+            $stmtFindName->execute([':name' => $name]);
+            $r = $stmtFindName->fetch(PDO::FETCH_ASSOC);
+            if ($r) $existingId = (int)$r['id'];
+        }
+        if ($existingId) {
+            $stmtUpdate->execute([':name' => $name, ':description' => $description, ':price' => $price, ':id' => $existingId]);
+            $newProducts[$name] = $existingId;
+        } else {
+            $stmtInsert->execute([':name' => $name, ':description' => $description, ':price' => $price]);
+            $newProducts[$name] = (int)$db->lastInsertId();
         }
     }
 

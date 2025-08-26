@@ -341,11 +341,26 @@ require_once __DIR__ . '/includes/header.php';
         <?php if (!empty($items)): ?>
             <?php $firstItem = true; foreach ($items as $it): ?>
                 <?php
-                    $prod = getProductById((int)$it['product_id']);
-                    $sku = $prod ? htmlspecialchars($prod['name']) : $it['product_id'];
-                    $desc = $prod ? htmlspecialchars($prod['description'] ?? $prod['name']) : 'Unknown product';
+                    // Prefer snapshot fields saved with the order item to prevent
+                    // historical orders from changing when products are updated.
                     $qty = (int)$it['quantity'];
-                    $rate = $prod ? (float)$prod['price'] : 0.0;
+                    $sku = htmlspecialchars($it['product_name'] ?? '');
+                    $pricePerUnit = isset($it['product_price']) ? (float)$it['product_price'] : null;
+                    if ($sku === '' || $pricePerUnit === null) {
+                        $prod = getProductById((int)$it['product_id']);
+                        if ($prod) {
+                            $sku = htmlspecialchars($prod['name']);
+                            $desc = htmlspecialchars($prod['description'] ?? $prod['name']);
+                            $pricePerUnit = (float)$prod['price'];
+                        } else {
+                            $sku = 'Unknown item';
+                            $desc = 'Unknown product';
+                            $pricePerUnit = 0.0;
+                        }
+                    } else {
+                        $desc = htmlspecialchars($it['product_description'] ?? $it['product_name']);
+                    }
+                    $rate = $pricePerUnit;
                     $price = $rate * $qty;
                     $orderTotal += $price;
                 ?>

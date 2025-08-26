@@ -264,11 +264,31 @@ include __DIR__ . '/includes/header.php';
                 <?php if (!empty($items)): ?>
                     <?php $firstItem = true; foreach ($items as $item): ?>
                         <?php
-                            $prod = getProductById((int)$item['product_id']);
-                            $sku = $prod ? htmlspecialchars($prod['name']) : $item['product_id'];
-                            $desc = $prod ? htmlspecialchars($prod['description'] ?? $prod['name']) : 'Unknown product';
+                            // Prefer snapshot fields stored on the order_items row.
+                            // If snapshots are missing (orders created before migration)
+                            // fall back to current product data.
                             $qty = (int)$item['quantity'];
-                            $rate = $prod ? (float)$prod['price'] : 0.0;
+                            $sku = htmlspecialchars($item['product_name'] ?? '');
+                            $pricePerUnit = isset($item['product_price']) ? (float)$item['product_price'] : null;
+                            if ($sku === '' || $pricePerUnit === null) {
+                                // Missing snapshot: fall back to current product record. Use
+                                // the product 'name' as the SKU/code for display. If the
+                                // product record is gone, show a helpful placeholder.
+                                $prod = getProductById((int)$item['product_id']);
+                                if ($prod) {
+                                    $sku = htmlspecialchars($prod['name']);
+                                    $desc = htmlspecialchars($prod['description'] ?? $prod['name']);
+                                    $pricePerUnit = (float)$prod['price'];
+                                } else {
+                                    $sku = 'Unknown item';
+                                    $desc = 'Unknown product';
+                                    $pricePerUnit = 0.0;
+                                }
+                            } else {
+                                // Use the snapshot description when available
+                                $desc = htmlspecialchars($item['product_description'] ?? $item['product_name']);
+                            }
+                            $rate = $pricePerUnit;
                             $price = $rate * $qty;
                             $orderTotal += $price;
                         ?>

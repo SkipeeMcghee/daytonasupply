@@ -287,14 +287,48 @@ function createOrder(int $customerId, array $cart, float $taxAmount = 0.0): int
             ':created_at' => date('c')
         ]);
         $orderId = (int)$db->lastInsertId();
-        // Insert order items
-        $insItem = $db->prepare('INSERT INTO order_items(order_id, product_id, quantity) VALUES(:order_id, :product_id, :quantity)');
-        foreach ($cart as $productId => $qty) {
-            $insItem->execute([
-                ':order_id' => $orderId,
-                ':product_id' => (int)$productId,
-                ':quantity' => (int)$qty
-            ]);
+        // Insert order items and snapshot product name/description/price
+        // if the order_items table contains those columns. Fall back to
+        // a minimal insert when the migration hasn't been applied yet.
+        $cols = array_map('strval', getTableColumns('order_items'));
+        $hasName = in_array('product_name', $cols, true);
+        $hasDesc = in_array('product_description', $cols, true);
+        $hasPrice = in_array('product_price', $cols, true);
+
+        if ($hasName || $hasDesc || $hasPrice) {
+            // Build dynamic insert based on available snapshot columns
+            $fields = ['order_id', 'product_id', 'quantity'];
+            $params = [':order_id', ':product_id', ':quantity'];
+            if ($hasName) { $fields[] = 'product_name'; $params[] = ':product_name'; }
+            if ($hasDesc) { $fields[] = 'product_description'; $params[] = ':product_description'; }
+            if ($hasPrice) { $fields[] = 'product_price'; $params[] = ':product_price'; }
+            $sql = 'INSERT INTO order_items(' . implode(',', $fields) . ') VALUES(' . implode(',', $params) . ')';
+            $insItem = $db->prepare($sql);
+            foreach ($cart as $productId => $qty) {
+                $prod = getProductById((int)$productId);
+                // Snapshot explicit mapping:
+                // - SKU/code visible to users is the product 'name' -> product_name
+                // - Description is the product 'description' -> product_description
+                // - Price is the product 'price' -> product_price
+                $pname = $prod ? ($prod['name'] ?? '') : '';
+                $pdesc = $prod ? ($prod['description'] ?? '') : '';
+                $pprice = $prod ? ((float)($prod['price'] ?? 0.0)) : 0.0;
+                $bind = [':order_id' => $orderId, ':product_id' => (int)$productId, ':quantity' => (int)$qty];
+                if ($hasName) $bind[':product_name'] = $pname;
+                if ($hasDesc) $bind[':product_description'] = $pdesc;
+                if ($hasPrice) $bind[':product_price'] = $pprice;
+                $insItem->execute($bind);
+            }
+        } else {
+            // Minimal legacy insert
+            $insItem = $db->prepare('INSERT INTO order_items(order_id, product_id, quantity) VALUES(:order_id, :product_id, :quantity)');
+            foreach ($cart as $productId => $qty) {
+                $insItem->execute([
+                    ':order_id' => $orderId,
+                    ':product_id' => (int)$productId,
+                    ':quantity' => (int)$qty
+                ]);
+            }
         }
         $db->commit();
         return $orderId;
