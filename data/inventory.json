@@ -11,7 +11,7 @@
   },
   {
     "name": "BAT-1505",
-    "description": "Bowl Cleaner HCL AcidTHEO CHEM 430-0212",
+    "description": "Bowl Cleaner HCL AcidTHEO CHEM",
     "price": 4.11
   },
   {
@@ -31,12 +31,12 @@
   },
   {
     "name": "BAT-1525",
-    "description": "Clorox\u00c2\u00ae Commercial Solutions Manual Toilet Bowl Cleaner with Bleach, Fresh Scent, 24 oz., 12/Carton",
+    "description": "Clorox® Commercial Solutions Manual Toilet Bowl Cleaner with Bleach, Fresh Scent, 24 oz., 12/Carton",
     "price": 65.59
   },
   {
     "name": "BAT-1526",
-    "description": "Clorox\u00c2\u00ae Commercial Solutions Manual Toilet Bowl Cleaner with Bleach, Fresh Scent, 24 oz.",
+    "description": "Clorox® Commercial Solutions Manual Toilet Bowl Cleaner with Bleach, Fresh Scent, 24 oz.",
     "price": 5.7
   },
   {
@@ -86,7 +86,7 @@
   },
   {
     "name": "BMA-1100",
-    "description": "Bubble Mailers Self Seal #00 5\" x 10\" 250/Case....# B852SS",
+    "description": "Bubble Mailers Self Seal #00 5\" x 10\" 250/Case",
     "price": 63.28
   },
   {
@@ -96,12 +96,12 @@
   },
   {
     "name": "BMA-1200",
-    "description": "Bubble Mailers Self Seal #0 6\" x 10\" 250/Case....",
+    "description": "Bubble Mailers Self Seal #0 6\" x 10\" 250/Case",
     "price": 70.48
   },
   {
     "name": "BMA-1201",
-    "description": "Bubble Mailers Self Seal #0 6\" x 10\" Singles....",
+    "description": "Bubble Mailers Self Seal #0 6\" x 10\" Singles",
     "price": 0.51
   },
   {
@@ -116,7 +116,7 @@
   },
   {
     "name": "BMA-1500",
-    "description": "Bubble Mailers Self Seal #3 8.5\" X 14.5\" 100/Case....new price 19.03 as of 10/15/17",
+    "description": "Bubble Mailers Self Seal #3 8.5\" X 14.5\" 100/Case",
     "price": 50.66
   },
   {
@@ -176,7 +176,7 @@
   },
   {
     "name": "BPA-1250",
-    "description": "Bubble 1/2\" x 250LF x 48\" Slit 12\" Perf 12\" 4 rolls/Bundle Industrial....PP 43.98",
+    "description": "Bubble 1/2\" x 250LF x 48\" Slit 12\" Perf 12\" 4 rolls/Bundle Industrial",
     "price": 119.99
   },
   {
@@ -202,7 +202,7 @@
   {
     "name": "BPA-1400",
     "description": "Bubble 1/2\" x 250LF x 48\" Slit 12\" Perf 12\" Anti Static 4 rolls/Bundle Industrial",
-    "price": 0.0
+    "price": 119.99
   },
   {
     "name": "BPA-3100",
@@ -216,7 +216,7 @@
   },
   {
     "name": "BPA-3150",
-    "description": "Bubble 3/16\" x 300LF x 48\" Slit 12\" Perf 12\" 4 rolls/Bundle Industrial....",
+    "description": "Bubble 3/16\" x 300LF x 48\" Slit 12\" Perf 12\" 4 rolls/Bundle Industrial",
     "price": 104.99
   },
   {
@@ -227,7 +227,7 @@
   {
     "name": "BPA-3275",
     "description": "Bubble 3/16\" x 300LF x 48\" Slit 24\" Perf 12\" Anti Static 2 rolls/Bundle Industrial",
-    "price": 0.0
+    "price": 104.99
   },
   {
     "name": "BPA-3300",
@@ -237,7 +237,7 @@
   {
     "name": "BPA-3350",
     "description": "Bubble 3/16\" x 500LF x 48\" Slit 12\" Perf 12\" Anti Static 4 rolls/Bundle",
-    "price": 0.0
+    "price": 159.99
   },
   {
     "name": "BPA-3400",
@@ -270,11 +270,6 @@
     "price": 79.99
   },
   {
-    "name": "BPA-5110",
-    "description": "TBA",
-    "price": 24.99
-  },
-  {
     "name": "BPA-5150",
     "description": "Bubble 5/16' x 188LF x 48' Slit 24' Perf 12' 2 rolls/Bundle Industrial",
     "price": 79.99
@@ -290,24 +285,9 @@
     "price": 79.99
   },
   {
-    "name": "BPA-5191",
-    "description": "TBA",
-    "price": 139.99
-  },
-  {
-    "name": "BPA-5195",
-    "description": "TBA",
-    "price": 39.99
-  },
-  {
     "name": "BPA-5200",
-    "description": "Bubble 5/16\" x 375LF x 48\" Slit 24\" Perf 12\" 2 rolls/Bundle Industrial....65.80",
+    "description": "Bubble 5/16\" x 375LF x 48\" Slit 24\" Perf 12\" 2 rolls/Bundle Industrial",
     "price": 139.99
-  },
-  {
-    "name": "BPA-5205",
-    "description": "TBA",
-    "price": 69.99
   },
   {
     "name": "BPA-5210",
@@ -386,22 +366,22 @@
   },
   {
     "name": "CLD-1010",
-    "description": "Cleaner Ajax Powder Oxygen Bleach 21oz Cost is per Can",
+    "description": "Cleaner Ajax Powder Oxygen Bleach 21oz can",
     "price": 1.84
   },
   {
     "name": "CLD-1525",
-    "description": "Cleaner Citrufoam Organic All Purpose 19ozPRICED PER CAN",
+    "description": "Cleaner Citrufoam Organic All Purpose 19oz can",
     "price": 5.41
   },
   {
     "name": "CLD-1530",
-    "description": "All Purpose foaming cleaner 20 oz PRICED PER CAN",
+    "description": "All Purpose foaming cleaner 20 oz can",
     "price": 5.41
   },
   {
     "name": "CLD-1975",
-    "description": "Cleaner Deodorizer Nilosol All Purpose QrtCASE/6 QUARTS DiscontinuedPRICED PER QUART",
+    "description": "Cleaner Deodorizer Nilosol All Purpose One Quart",
     "price": 11.32
   },
   {
@@ -510,33 +490,28 @@
     "price": 5.05
   },
   {
-    "name": "CLEARANCEBOX050514",
-    "description": "RSC 5.25 x 5.25 x 14.5 32ECT",
-    "price": 1.65
-  },
-  {
     "name": "DEO-3025",
-    "description": "Deodorizer Nilodew Dumpster Granules 2 x 8lbs/CaseFRT $17.62 Small Order Fee 20.00",
+    "description": "Deodorizer Nilodew Dumpster Granules 2 x 8lbs/Case",
     "price": 86.47
   },
   {
     "name": "DEO-3110",
-    "description": "Deodorizer Nilofresh Room & Carpet Odor NeutralizerPRICED PER EACH",
+    "description": "Deodorizer Nilofresh Room & Carpet Odor Neutralizer Single",
     "price": 6.49
   },
   {
     "name": "DEO-3115",
-    "description": "Deodorizer Nilosorb Moisture Absorbent 6 per caseFRT $10.50 casePRICED PER EACHcs3624frt",
+    "description": "Deodorizer Nilosorb Moisture Absorbent 6 per case",
     "price": 7.15
   },
   {
     "name": "DEO-3120",
-    "description": "Deodorizer Nilotron Full Release Smoke & Odor Neutralizing Fogger 6.25oz Can 12 Cans/Case..FRT 12",
+    "description": "Deodorizer Nilotron Full Release Smoke & Odor Neutralizing Fogger 6.25oz Can 12 Cans/Case",
     "price": 8.76
   },
   {
     "name": "DEO-3200",
-    "description": "Deodorizer Consume Nature's Way Digester Bacteria Enzyme....FR12-32BWBMR",
+    "description": "Deodorizer Consume Nature's Way Digester Bacteria Enzyme",
     "price": 6.13
   },
   {
@@ -601,18 +576,13 @@
   },
   {
     "name": "DIS-6770",
-    "description": "Clorox\u00c2\u00ae Disinfecting Wipes, Fresh Lavender Scent, 75 Wipes/Canister, 6 Canisters/Carton",
+    "description": "Clorox® Disinfecting Wipes, Fresh Lavender Scent, 75 Wipes/Canister, 6 Canisters/Carton",
     "price": 47.08
   },
   {
     "name": "DIS-6775",
-    "description": "Clorox\u00c2\u00ae Disinfecting Wipes, Lemon Fresh Scent, 75 Wipes/Canister, 6 Canisters/Carton..",
+    "description": "Clorox® Disinfecting Wipes, Lemon Fresh Scent, 75 Wipes/Canister, 6 Canisters/Carton",
     "price": 53.97
-  },
-  {
-    "name": "Fedex Shipping Label",
-    "description": "Fedex Shipping Label",
-    "price": 0.0
   },
   {
     "name": "FLO-1255",
@@ -701,17 +671,17 @@
   },
   {
     "name": "FLO-3310",
-    "description": "Mop Head Replacement Commercial Mop Head Yellow Cotton String Mop Replacement Head,6 Inch Heavy ...",
+    "description": "Mop Head Replacement Commercial Mop Head Yellow Cotton String Mop Replacement Head,6 Inch Heavy",
     "price": 18.3
   },
   {
     "name": "FLO-3311",
-    "description": "Rubbermaid Super Stitch\u00c2\u00ae Red Cotton Synthetic Fiber M 20 OZ Cleaning Wet Mop 5IN Headband ....WL61",
+    "description": "Rubbermaid Super Stitch® Red Cotton Synthetic Fiber M 20 OZ Cleaning Wet Mop 5IN Headband",
     "price": 15.98
   },
   {
     "name": "FLO-3315",
-    "description": "ABCO Looped End Mop, Wide Band, Blended with Blue Mesh Mop Tape, Large, Single..MUST BE BLUE OR ...",
+    "description": "ABCO Looped End Mop, Wide Band, Blended with Blue Mesh Mop Tape, Large, Single",
     "price": 15.99
   },
   {
@@ -721,7 +691,7 @@
   },
   {
     "name": "FLO-3320",
-    "description": "Rubbermaid Super Stitch\u00c2\u00ae Green Cotton Synthetic Fiber Cleaning Wet Mop 5IN Headband",
+    "description": "Rubbermaid Super Stitch® Green Cotton Synthetic Fiber Cleaning Wet Mop 5IN Headband",
     "price": 13.82
   },
   {
@@ -835,11 +805,6 @@
     "price": 45.6
   },
   {
-    "name": "FOO-1405",
-    "description": "Carrier 4 Cup No HandleHUH FLURRY W/HANDLE",
-    "price": 48.17
-  },
-  {
     "name": "FOO-2325",
     "description": "Cup Bistro 12oz Solo 1000/Case",
     "price": 108.27
@@ -851,12 +816,12 @@
   },
   {
     "name": "FOO-2925",
-    "description": "Cup Plastic 5oz 2500/CaseDART",
+    "description": "Cup Plastic 5oz 2500/Case",
     "price": 67.94
   },
   {
     "name": "FOO-2950",
-    "description": "Cup Plastic Clear 12oz 1000/CaseDART/CONEX",
+    "description": "Cup Plastic Clear 12oz 1000/Case",
     "price": 102.8
   },
   {
@@ -876,12 +841,12 @@
   },
   {
     "name": "FOO-4350",
-    "description": "Lid 1oz Portion Cup 2500/Case PL1",
+    "description": "Lid 1oz Portion Cup 2500/Case",
     "price": 62.41
   },
   {
     "name": "FOO-4500",
-    "description": "Lid 12oz Straw Slot 1000/CaseDART",
+    "description": "Lid 12oz Straw Slot 1000/Case",
     "price": 46.92
   },
   {
@@ -891,7 +856,7 @@
   },
   {
     "name": "FOO-5325",
-    "description": "Pad Soaker 4.5x7x40Grm White 2000/CaseGY2877",
+    "description": "Pad Soaker 4.5x7x40Grm White 2000/Case",
     "price": 35.63
   },
   {
@@ -905,18 +870,13 @@
     "price": 51.22
   },
   {
-    "name": "FOO-6800",
-    "description": "Mortons Salt 4lbs",
-    "price": 2.58
-  },
-  {
     "name": "FOO-6805",
     "description": "NJoy Pure Cane Sugar, 22 oz. Canisters, 3/Pack",
     "price": 7.64
   },
   {
     "name": "FOO-6810",
-    "description": "Coffee-mate\u00c2\u00ae  Original Powdered Coffee Creamer, 22 oz. Canister",
+    "description": "Coffee-mate®  Original Powdered Coffee Creamer, 22 oz. Canister",
     "price": 4.79
   },
   {
@@ -926,12 +886,12 @@
   },
   {
     "name": "FOO-8020",
-    "description": "Tray Market Foam 8.25 x 5.75 x 7/8' White 4/125 Case..GENPAK #2",
+    "description": "Tray Market Foam 8.25 x 5.75 x 7/8' White 4/125 Case",
     "price": 47.38
   },
   {
     "name": "FOO-8025",
-    "description": "Tray Market Foam 9 1/8x7.25x1/2' Rose 4/125/Case GENPAK #4S",
+    "description": "Tray Market Foam 9 1/8x7.25x1/2' Rose 4/125/Case",
     "price": 49.85
   },
   {
@@ -1020,18 +980,13 @@
     "price": 97.85
   },
   {
-    "name": "GLO-7100",
-    "description": "GLOVE SPLIT LEATHER PALMX-LARGE SELECT SHOULDER GRADE WITH RUBBERIZED SAFETY CUFF, STRIPED CANVA...",
-    "price": 6.02
-  },
-  {
     "name": "LIN-1025",
     "description": "Liner Low Density Heavy 24 x 33 1.5mil Black 15gal",
     "price": 43.5
   },
   {
     "name": "LIN-1035",
-    "description": "Liner Low Density Heavy 33 x 39 1.5mil Black 33gal 100/Case....",
+    "description": "Liner Low Density Heavy 33 x 39 1.5mil Black 33gal 100/Case",
     "price": 28.75
   },
   {
@@ -1061,7 +1016,7 @@
   },
   {
     "name": "LIN-3024",
-    "description": "Liner Hi Density 24 x 24 Clear 7-10gal 20 x 50 Rolls/Case OLD LIN-3025",
+    "description": "Liner Hi Density 24 x 24 Clear 7-10gal 20 x 50 Rolls/Case",
     "price": 34.8
   },
   {
@@ -1096,7 +1051,7 @@
   },
   {
     "name": "LIN-4025",
-    "description": "Liner Low Density 24 x 32 .5mil White 15gal 500/Case457-0190",
+    "description": "Liner Low Density 24 x 32 .5mil White 15gal 500/Case",
     "price": 40.74
   },
   {
@@ -1161,18 +1116,23 @@
   },
   {
     "name": "MDC-7510",
-    "description": "Mailer Literature 9 x 6 1/2 x 2 3/4' White 50/Bundle....FRT 11.36",
-    "price": 1.6
+    "description": "Corrugated Mailers, 10\" x 7\" x 3\", White, Bundle 50",
+    "price": 79.99
   },
   {
     "name": "MDC-7512",
-    "description": "Mailer Literature 11 1/8 x 8 3/4 x 2 White 50/Bundle....FRT 11.36",
+    "description": "Mailer Literature 11 1/8 x 8 3/4 x 2 White 50/Bundle",
     "price": 1.3
   },
   {
     "name": "MDC-7520",
     "description": "White Multi-Depth Bookfolds14 1/8x8 5/8x 1 50/bundle",
     "price": 0.67
+  },
+  {
+    "name": "NONSTOCK",
+    "description": "",
+    "price": 0.01
   },
   {
     "name": "OFF-1400",
@@ -1231,7 +1191,7 @@
   },
   {
     "name": "PAC-2005",
-    "description": "Envelopes Invoice Enclosed 4.5 x 5.5 1000/Case PL13....TP1880..BE 22",
+    "description": "Envelopes Invoice Enclosed 4.5 x 5.5 1000/Case",
     "price": 36.05
   },
   {
@@ -1241,7 +1201,7 @@
   },
   {
     "name": "PAC-2082",
-    "description": "W.B. Mason Co. Packing List Enclosed Panel Face Envelopes, 7\u00e2\u20ac\u009d x 5-1/2\u00e2\u20ac\u009d, Orange/Black ,1000/Case..",
+    "description": "Packing List Enclosed Panel Face Envelopes, 7\" x 5-1/2\", Orange/Black, 1000/Case",
     "price": 48.48
   },
   {
@@ -1271,7 +1231,7 @@
   },
   {
     "name": "PAC-2280",
-    "description": "Film Stretch 18\" 70 Gauge 1500' Single Roll....THIS IS 1 CASE",
+    "description": "Film Stretch 18\" 70 Gauge 1500' Single Roll",
     "price": 25.9
   },
   {
@@ -1321,7 +1281,7 @@
   },
   {
     "name": "PAC-2530",
-    "description": "Gel Pack 24ozFRT $69 PER PALLET",
+    "description": "Gel Pack 24oz",
     "price": 19.36
   },
   {
@@ -1341,7 +1301,7 @@
   },
   {
     "name": "PAC-3954",
-    "description": "Mailing Tubes 2' x 60' With End Caps 50/Case....FRT 44.15",
+    "description": "Mailing Tubes 2' x 60' With End Caps 50/Case",
     "price": 115.0
   },
   {
@@ -1431,12 +1391,12 @@
   },
   {
     "name": "PAC-4885",
-    "description": "Peanuts 20CF Bag White....",
+    "description": "Peanuts 20CF Bag White",
     "price": 46.28
   },
   {
     "name": "PAC-4890",
-    "description": "Peanuts 20CF Bag Pink Anti-Static....",
+    "description": "Peanuts 20CF Bag Pink Anti-Static",
     "price": 43.62
   },
   {
@@ -1476,7 +1436,7 @@
   },
   {
     "name": "PAC-6525",
-    "description": "Wrap Shrink 12' x 175' 6 Mil WhiteNEW PRICE 3/12--12+ 108.26",
+    "description": "Wrap Shrink 12' x 175' 6 Mil White",
     "price": 318.39
   },
   {
@@ -1485,8 +1445,13 @@
     "price": 81.89
   },
   {
+    "name": "Pack and Ship",
+    "description": "",
+    "price": 0.0
+  },
+  {
     "name": "PAD-2000",
-    "description": "Corrugated Pad 16.5 x 56.5 32ECT Kraft QTY 500gy.649",
+    "description": "Corrugated Pad 16.5 x 56.5 32ECT Kraft",
     "price": 1.85
   },
   {
@@ -1501,7 +1466,7 @@
   },
   {
     "name": "PAP-1965",
-    "description": "Dispenser 619 Wagon Wheel 3 Rolls..#80300",
+    "description": "Dispenser 619 Wagon Wheel 3 Rolls",
     "price": 46.35
   },
   {
@@ -1521,7 +1486,7 @@
   },
   {
     "name": "PAP-2075",
-    "description": "Dispenser Jr. Jumbo 9' Single Roll....pa888w",
+    "description": "Dispenser Jr. Jumbo 9' Single Roll",
     "price": 30.89
   },
   {
@@ -1567,11 +1532,11 @@
   {
     "name": "PAP-5972",
     "description": "Toilet Paper 3.5in x146ft 1ply white embossed 4.33in roll 1.61in core diameter 96 rolls/case",
-    "price": 0.00
+    "price": 94.99
   },
   {
     "name": "PAP-5975",
-    "description": "Tissue Toilet Jr. Jumbo 3' Core 800' Roll 2 Ply 12 Rolls/Case..",
+    "description": "Tissue Toilet Jr. Jumbo 3' Core 800' Roll 2 Ply 12 Rolls/Case",
     "price": 60.96
   },
   {
@@ -1591,7 +1556,7 @@
   },
   {
     "name": "PAP-6125",
-    "description": "Towels Multifold 483 9.125' x 9.5' Bleached 4000/Case ....",
+    "description": "Towels Multifold 483 9.125' x 9.5' Bleached 4000/Case",
     "price": 53.51
   },
   {
@@ -1641,18 +1606,13 @@
   },
   {
     "name": "PAP-6356",
-    "description": "Universal Hand Towel Roll, Notched, 8\" x 630 ft, Natural, 6 Rolls/Carton",
+    "description": "Universal Hand Towel Roll, Notched, 8\" x 800 ft, Natural, 6 Rolls/Carton",
     "price": 87.29
   },
   {
     "name": "PAP-6365",
     "description": "Kitchen Roll Towel Premium 100% Recycled, 2-Ply, White, 85 Sheets/Roll, 30 Rolls/Carton (2,550 Sheets)",
     "price": 49.99
-  },
-  {
-    "name": "PAP-6366",
-    "description": "Cheaper Paper Towels",
-    "price": 29.0
   },
   {
     "name": "PAP-6370",
@@ -1666,7 +1626,7 @@
   },
   {
     "name": "PAP-6380",
-    "description": "Towels Roll Hardwound 10' x 800' White 6 Rolls/CaseFITS EN-MOTION DISPENSERS",
+    "description": "Towels Roll Hardwound 10' x 800' White 6 Rolls/Case",
     "price": 77.65
   },
   {
@@ -1681,12 +1641,12 @@
   },
   {
     "name": "PAP-6725",
-    "description": "Kimtech\u00e2\u201e\u00a2 Kimwipes, Delicate Task Wipers, 4 2/5\" x 8 2/5\", 280/Box, 60 Boxes/Carton",
+    "description": "Kimtech™ Kimwipes, Delicate Task Wipers, 4 2/5\" x 8 2/5\", 280/Box, 60 Boxes/Carton",
     "price": 226.07
   },
   {
     "name": "PCO-7355",
-    "description": "Spray Wasp & Hornet 12x15oz Cans/CasePRICE IS PER CAN",
+    "description": "Spray Wasp & Hornet 15oz Can",
     "price": 6.13
   },
   {
@@ -1716,12 +1676,12 @@
   },
   {
     "name": "POL-2215",
-    "description": "Bags Poly Layflat 4 x 5 2mil 1000/Case....4lbs FRT 11.63",
+    "description": "Bags Poly Layflat 4 x 5 2mil 1000/Case",
     "price": 18.03
   },
   {
     "name": "POL-2550",
-    "description": "Bags Poly Layflat 8 x10 2mil 1000/CaseFRT12",
+    "description": "Bags Poly Layflat 8 x10 2mil 1000/Case",
     "price": 71.87
   },
   {
@@ -1741,7 +1701,7 @@
   },
   {
     "name": "POL-2610",
-    "description": "Bags Poly Layflat 3 x 6 3mil 1000/Case4.2lbs FRT 10",
+    "description": "Bags Poly Layflat 3 x 6 3mil 1000/Case4.2lbs",
     "price": 21.63
   },
   {
@@ -1751,17 +1711,17 @@
   },
   {
     "name": "POL-3345",
-    "description": "Bags Poly Layflat 3 x 3 4mil 1000/CaseFRT 7.80",
+    "description": "Bags Poly Layflat 3 x 3 4mil 1000/Case",
     "price": 25.49
   },
   {
     "name": "POL-3346",
-    "description": "Bags Poly Layflat 3 x 4 4mil 1000/CaseFRT 8.40",
+    "description": "Bags Poly Layflat 3 x 4 4mil 1000/Case",
     "price": 25.85
   },
   {
     "name": "POL-3416",
-    "description": "Bags Poly Layflat 10 x 15 4mil 1000/CaseFRT28",
+    "description": "Bags Poly Layflat 10 x 15 4mil 1000/Case",
     "price": 141.05
   },
   {
@@ -1771,12 +1731,12 @@
   },
   {
     "name": "POL-3471",
-    "description": "Bags Poly Layflat 24 x 24 4mil 250/CaseFRT 22.16",
+    "description": "Bags Poly Layflat 24 x 24 4mil 250/Case",
     "price": 128.74
   },
   {
     "name": "POL-5115",
-    "description": "Bags Poly Reclosable 2' x 3' 2mil 1000/CaseFRT 9.36",
+    "description": "Bags Poly Reclosable 2' x 3' 2mil 1000/Case",
     "price": 20.09
   },
   {
@@ -1801,7 +1761,7 @@
   },
   {
     "name": "POL-5174",
-    "description": "Bags Poly Reclosable 5 x 7 2mil 1000/Case....FRT 13.28",
+    "description": "Bags Poly Reclosable 5 x 7 2mil 1000/Case",
     "price": 35.13
   },
   {
@@ -1816,7 +1776,7 @@
   },
   {
     "name": "POL-6208",
-    "description": "Bags Poly Reclosable 6 x 10 2mil 1000/CaseFRT13",
+    "description": "Bags Poly Reclosable 6 x 10 2mil 1000/Case",
     "price": 42.23
   },
   {
@@ -1851,7 +1811,7 @@
   },
   {
     "name": "POL-6375",
-    "description": "Bags Poly Reclosable 13 x 18 3mil 500/CaseWT 29 FRT 28.00",
+    "description": "Bags Poly Reclosable 13 x 18 3mil 500/Case",
     "price": 94.76
   },
   {
@@ -1921,7 +1881,7 @@
   },
   {
     "name": "RAG-3200",
-    "description": "Microfiber Cleaning Cloths-50PK (12in.x 12in.)..",
+    "description": "Microfiber Cleaning Cloths-50PK (12in.x 12in.)",
     "price": 25.39
   },
   {
@@ -2020,6 +1980,11 @@
     "price": 0.52
   },
   {
+    "name": "SBO-1190",
+    "description": "RSC 6 x 4 x 3",
+    "price": 0.72
+  },
+  {
     "name": "SBO-1200",
     "description": "RSC 6 x 4 x 4 32ECT",
     "price": 0.53
@@ -2116,6 +2081,11 @@
   },
   {
     "name": "SBO-1806",
+    "description": "RSC 9 x 6 x 3",
+    "price": 0.42
+  },
+  {
+    "name": "SBO-1806",
     "description": "RSC 9 x 6 x 3 32ECT 25/Bundle",
     "price": 0.84
   },
@@ -2168,6 +2138,11 @@
     "name": "SBO-2120",
     "description": "RSC 10 x 10 x 4 32ECT 25/Bundle",
     "price": 0.99
+  },
+  {
+    "name": "SBO-2122",
+    "description": "RSC 10 x 10 x 6 32ECT 25/Bundle",
+    "price": 0.95
   },
   {
     "name": "SBO-2125",
@@ -2360,6 +2335,11 @@
     "price": 2.0
   },
   {
+    "name": "SBO-3195",
+    "description": "RSC 13 x 13 x 3",
+    "price": 2.32
+  },
+  {
     "name": "SBO-3200",
     "description": "RSC 13 x 13 x 6 32 ECT 25/Bundle",
     "price": 2.15
@@ -2450,6 +2430,11 @@
     "price": 3.1
   },
   {
+    "name": "SBO-3730",
+    "description": "RSC 15 x 15 x 10",
+    "price": 3.13
+  },
+  {
     "name": "SBO-3750",
     "description": "RSC 15 x 15 x 15 32ECT 25/Bundle",
     "price": 2.82
@@ -2501,7 +2486,7 @@
   },
   {
     "name": "SBO-4140",
-    "description": "RSC 16 3/8 x 12 5/8 x 12 5/8 32ECT Printed Moving 1.5 Book Box",
+    "description": "RSC 16 3/8 x 12 5/8 x 12 5/8 32ECT Printed Moving 1.5 Book Box 25/Bundle",
     "price": 2.33
   },
   {
@@ -2541,12 +2526,12 @@
   },
   {
     "name": "SBO-4600",
-    "description": "RSC 18 x 8 x 8 32ECT 25/Bundle$ 0.70",
+    "description": "RSC 18 x 8 x 8 32ECT 25/Bundle",
     "price": 2.4
   },
   {
     "name": "SBO-4700",
-    "description": "RSC 18 x 12 x 7 32ECT 25/Bundle$ 0.70",
+    "description": "RSC 18 x 12 x 7 32ECT 25/Bundle",
     "price": 2.87
   },
   {
@@ -2561,7 +2546,7 @@
   },
   {
     "name": "SBO-4715",
-    "description": "RSC 18 x 12 x 12 48ECT 15/Bundle#HD1812DW",
+    "description": "RSC 18 x 12 x 12 48ECT 15/Bundle",
     "price": 3.83
   },
   {
@@ -2626,7 +2611,7 @@
   },
   {
     "name": "SBO-4970",
-    "description": "RSC 18 1/8 x 18 x 16 32ECT 3.0 Printed Moving Box 15/Bundle",
+    "description": "RSC 18 1/8 x 18 x 16 32ECT 3.0 Printed Moving Medium Box 15/Bundle",
     "price": 3.77
   },
   {
@@ -2831,17 +2816,17 @@
   },
   {
     "name": "SBO-6360",
-    "description": "RSC 24 x 18 x 18 32ECT Printed 20/Bundle",
+    "description": "RSC 24 x 18 x 18 32ECT Printed Moving Large Box 15/Bundle",
     "price": 4.85
   },
   {
     "name": "SBO-6365",
-    "description": "RSC 24 x 18 x 18 32ECT Unprinted 15/Bundle..",
+    "description": "RSC 24 x 18 x 18 32ECT Unprinted 15/Bundle",
     "price": 4.47
   },
   {
     "name": "SBO-6370",
-    "description": "RSC 24 x 20 x 12 32ECT 10/Bundle..",
+    "description": "RSC 24 x 20 x 12 32ECT 10/Bundle",
     "price": 5.5
   },
   {
@@ -3092,16 +3077,11 @@
   {
     "name": "SBO-7910",
     "description": "Mirror Box Expandable 4 Piece Box",
-    "price": 0.0
-  },
-  {
-    "name": "SBO-7911",
-    "description": "Mirror Box Expandable 4 Piece Box",
     "price": 9.07
   },
   {
     "name": "SBO-8298",
-    "description": "Record Storage Lids 16 1/2 x 12 1/2 x 311/13/19 DISCONTINUED BY VICTORY",
+    "description": "Record Storage Lids 16 1/2 x 12 1/2 x 3",
     "price": 1.13
   },
   {
@@ -3115,13 +3095,18 @@
     "price": 15.61
   },
   {
+    "name": "Services",
+    "description": "",
+    "price": 0.0
+  },
+  {
     "name": "SFC-1025",
-    "description": "Corrugated Roll Single Faced 6\" x 250LF....vp470",
+    "description": "Corrugated Roll Single Faced 6\" x 250LF",
     "price": 18.8
   },
   {
     "name": "SFC-1050",
-    "description": "Corrugated Roll Single Faced 12\" x 250LF....",
+    "description": "Corrugated Roll Single Faced 12\" x 250LF",
     "price": 36.55
   },
   {
@@ -3136,7 +3121,7 @@
   },
   {
     "name": "SFC-4025",
-    "description": "Corrugated Roll Single Faced 60' x 250LF....",
+    "description": "Corrugated Roll Single Faced 60' x 250LF",
     "price": 177.45
   },
   {
@@ -3156,7 +3141,7 @@
   },
   {
     "name": "SHT-1100",
-    "description": "Corrugated Sheet 48 x 96 48ECT DW48ECT",
+    "description": "Corrugated Sheet 48 x 96 48ECT DW48ECT DW",
     "price": 13.71
   },
   {
@@ -3201,7 +3186,7 @@
   },
   {
     "name": "SOA-2010",
-    "description": "Soap Dispenser Foam GoJo ADX Black/Chrome..8888-06",
+    "description": "Soap Dispenser Foam GoJo ADX Black/Chrome",
     "price": 8.24
   },
   {
@@ -3216,7 +3201,7 @@
   },
   {
     "name": "SOA-2520",
-    "description": "Soap Foam GoJo ADX Luxury Antibacterial 3 x 1250ml/Case..437-0920",
+    "description": "Soap Foam GoJo ADX Luxury Antibacterial 3 x 1250ml/Case",
     "price": 89.99
   },
   {
@@ -3226,12 +3211,12 @@
   },
   {
     "name": "SOA-3015",
-    "description": "GOJO FMX-12? Green Certified Foam Hand, Hair & Body Wash - Refills",
+    "description": "Green Certified Foam Hand, Hair & Body Wash - Refills",
     "price": 73.13
   },
   {
     "name": "SOA-3020",
-    "description": "Soap Foam GoJo FMX Luxury Antibacterial  3 x 1250ml/Case..CG #GJ5161",
+    "description": "Soap Foam GoJo FMX Luxury Antibacterial  3 x 1250ml/Case",
     "price": 90.0
   },
   {
@@ -3281,47 +3266,47 @@
   },
   {
     "name": "SOB-1800",
-    "description": "RSC 9.75 x 5.75 x 7.25 32ECT 25/BundleWILL ONLY ACCEPT +/- 10%",
+    "description": "RSC 9.75 x 5.75 x 7.25 32ECT 25/Bundle",
     "price": 0.7
   },
   {
     "name": "SOB-2355",
-    "description": "RSC 11.25 x 8.75 x 2.5 32ECT 25/Bundlescored @1.5USE DAYTONA SUPPLY BMC AND REORDER STAMP",
+    "description": "RSC 11.25 x 8.75 x 2.5 32ECT 25/Bundle",
     "price": 1.0
   },
   {
     "name": "SOB-2395",
-    "description": "RSC 11 7/16 x 4 11/16 x 7 5/16 32ECT 25/Bundle PALLET 1,100USE DAYTONA SUPPLY BMC AND REORDER STAMP",
+    "description": "RSC 11 7/16 x 4 11/16 x 7 5/16 32ECT 25/Bundle",
     "price": 0.59
   },
   {
     "name": "SOB-2405",
-    "description": "RSC 11 7/16 x 6 1316 x 7 5/16 32ECT 25/Bundle PALLET 1,000USE DAYTONA SUPPLY BMC AND REORDER STAMP",
+    "description": "RSC 11 7/16 x 6 1316 x 7 5/16 32ECT 25/Bundle",
     "price": 0.71
   },
   {
     "name": "SOB-2775",
-    "description": "RSC 11 x 8 x 28 32ECT 25/BundleUSE DAYTONA SUPPLY BMC AND REORDER STAMP",
+    "description": "RSC 11 x 8 x 28 32ECT 25/Bundle",
     "price": 2.68
   },
   {
     "name": "SOB-3840",
-    "description": "RSC 15 x 12 x 4 32ECT 25/Bundle#15124",
+    "description": "RSC 15 x 12 x 4 32ECT 25/Bundle",
     "price": 1.55
   },
   {
     "name": "SOB-4795",
-    "description": "FOL 18 x 14 x 28 350# DWPRINTED 2 PANELCOMPLETE PARACHUTE SOLUTIONSWILL ONLY ACCEPT =/- 10%USE D...",
+    "description": "FOL 18 x 14 x 28 350# DW PRINTED 2 PANEL",
     "price": 11.51
   },
   {
     "name": "SOB-4796",
-    "description": "FOL 18 x 14 x 28 350# DWUNPRINTEDwill only accept +/- 10%ALWAYS USE DAYTONA SUPPLY BMC AND REORD...",
+    "description": "FOL 18 x 14 x 28 350# DW UNPRINTED",
     "price": 9.72
   },
   {
     "name": "SOB-4905",
-    "description": "FOL 18 x 14 x 32 350# DWPRINTED 2 PANELCOMPLETE PARACHUTE SOLUTIONSWILL ONLY ACCEPT =/- 10%USE D...",
+    "description": "FOL 18 x 14 x 32 350# DWPRINTED 2 PANEL",
     "price": 12.47
   },
   {
@@ -3341,7 +3326,7 @@
   },
   {
     "name": "SOB-7865",
-    "description": "RSC 42 1/8 x 13 5/8 x 17 3/8 48ECTWILL ONLY ACCEPT =/- 10%USE DAYTONA SUPPLY CERT AND REORDER ST...",
+    "description": "RSC 42 1/8 x 13 5/8 x 17 3/8 48ECT",
     "price": 8.15
   },
   {
@@ -3356,7 +3341,7 @@
   },
   {
     "name": "SPS-8755",
-    "description": "Pad Scrub Nylon 10/PackPP 547-0142 --3.82 PER 10 / 60 PER CASE",
+    "description": "Pad Scrub Nylon 10/Pack",
     "price": 10.2
   },
   {
@@ -3366,7 +3351,7 @@
   },
   {
     "name": "TAP-2037",
-    "description": "Tape Carton Sealing 2\" x 110yd 1.9mil 6/Pack....9.36 PP",
+    "description": "Tape Carton Sealing 2\" x 110yd 1.9mil 6/Pack",
     "price": 18.2
   },
   {
@@ -3406,7 +3391,7 @@
   },
   {
     "name": "TAP-2328",
-    "description": "Tape Hot Melt 2\" x 1000yds 6 Rolls/Case..2\" CANTECH TAPE",
+    "description": "Tape Hot Melt 2\" x 1000yds 6 Rolls/Case",
     "price": 148.32
   },
   {
@@ -3436,7 +3421,7 @@
   },
   {
     "name": "TAP-3180",
-    "description": "Tape Carton Sealing OPP 3'' x 72yd 3.2mil..24 Rolls/Case..OPP 32 AW CLEAR..24 PER CASE",
+    "description": "Tape Carton Sealing OPP 3'' x 72yd 3.2mil 24 Rolls/Case",
     "price": 140.24
   },
   {
@@ -3451,12 +3436,12 @@
   },
   {
     "name": "TAP-3550",
-    "description": "Tape Dispenser 3\" Hand Held....TP  EC338  / ET388",
+    "description": "Tape Dispenser 3\" Hand Held",
     "price": 33.35
   },
   {
     "name": "TAP-3560",
-    "description": "Tape Dispenser Replacement Blade 3\" Tape333806S  (EA) REPLACEMENT PART3' BLADE  (302/306/338/389MP)",
+    "description": "Tape Dispenser Replacement Blade 3\"",
     "price": 3.5
   },
   {
