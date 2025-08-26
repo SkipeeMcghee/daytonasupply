@@ -83,16 +83,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $ship_zip = normalizeScalar($customer['shipping_zip'] ?? '', 16, $customer['shipping_zip'] ?? '');
     }
-    $ship = $ship_street;
-    if ($ship_street2 !== '') $ship .= "\n" . $ship_street2;
-    if ($ship_city || $ship_state || $ship_zip) $ship .= "\n" . trim("$ship_city $ship_state $ship_zip");
-    $newPass = (string)($_POST['password'] ?? '');
-    $currentPass = (string)($_POST['current_password'] ?? '');
-    // If the user checked the same_as_billing box, copy billing to shipping
+    // Do not build a legacy concatenated shipping string. Use discrete components.
+    // If the user checked the same_as_billing box, copy the discrete billing
+    // components into the shipping fields so they are saved into the
+    // canonical columns (shipping_line1 / shipping_line2 / shipping_postal_code).
     $sameBillingFlag = isset($_POST['same_as_billing']);
     if ($sameBillingFlag) {
-        $ship = $bill;
+        $ship_street = $bill_street;
+        $ship_street2 = $bill_street2;
+        $ship_city = $bill_city;
+        $ship_state = $bill_state;
+        $ship_zip = $bill_zip;
     }
+    $newPass = (string)($_POST['password'] ?? '');
+    $currentPass = (string)($_POST['current_password'] ?? '');
     // Build data for update. Avoid sending the legacy concatenated
     // billing_address/shipping_address when the database already uses
     // discrete address columns (billing_line1 / billing_street etc.).
