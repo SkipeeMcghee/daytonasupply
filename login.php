@@ -11,6 +11,8 @@ if (isset($_SESSION['customer'])) {
 }
 
 $error = '';
+$flash = $_SESSION['flash'] ?? null;
+unset($_SESSION['flash']);
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Normalize inputs to a reasonable length to prevent abuse
     $email = normalizeScalar($_POST['email'] ?? '', 254, '');
@@ -39,13 +41,22 @@ include __DIR__ . '/includes/header.php';
     <h1>Login</h1>
     <p class="lead">Enter your Email address and Password into the fields below, then click the LOGIN button.</p>
 </section>
+<?php if (!empty($flash)): ?>
+    <p style="color:<?= $flash['type'] === 'success' ? 'green' : 'red' ?>"><?= htmlspecialchars($flash['msg']) ?></p>
+<?php endif; ?>
 <?php if (!empty($error)): ?>
     <p style="color:red"><?= htmlspecialchars($error) ?></p>
+<?php endif; ?>
+<?php if (!empty($error) && $error === 'Please verify your email address before logging in.'): ?>
+    <form method="post" action="resend_verification.php" style="display:block; margin-bottom:12px;">
+        <input type="hidden" name="email" value="<?= htmlspecialchars($_SESSION['flash_email'] ?? ($_POST['email'] ?? '')) ?>">
+        <button type="submit" class="muted-btn action-btn small">Resend verification email</button>
+    </form>
 <?php endif; ?>
 <form method="post" action="login.php" class="vertical-form">
     <p>Email:<br><input type="email" name="email" required></p>
     <p>Password:<br><input type="password" name="password" required></p>
-    <p><button type="submit">LOGIN</button></p>
+    <p><button type="submit" class="proceed-btn">LOGIN</button></p>
 </form>
 <p><a href="forgot_password.php">Forgot your password?</a></p>
 <p>Don't have an account? <a href="signup.php">Sign up</a></p>

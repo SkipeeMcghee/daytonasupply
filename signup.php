@@ -147,7 +147,7 @@ include __DIR__ . '/includes/header.php';
         <p>Password:<br><input type="password" name="password" required></p>
         <p>Confirm Password:<br><input type="password" name="confirm" required></p>
         <input type="hidden" id="g-recaptcha-response" name="g-recaptcha-response">
-        <p><button type="submit">Create Account</button></p>
+    <p><button type="submit" class="proceed-btn">Create Account</button></p>
     </form>
     <script>
     document.addEventListener('DOMContentLoaded', function() {

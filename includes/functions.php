@@ -433,6 +433,63 @@ function setCustomerVerification(int $customerId, string $token): void
 }
 
 /**
+ * Attempt to resend a verification email to the given customer email.
+ * Enforces a throttle of 1 resend per hour per account.
+ * Returns an array with keys: ok (bool) and message (string).
+ */
+function resendVerificationToCustomerByEmail(string $email): array
+{
+    $email = trim($email);
+    if ($email === '') return ['ok' => false, 'message' => 'Please provide an email address.'];
+    $customer = getCustomerByEmail($email);
+    if (!$customer) {
+        // Don't reveal whether the address exists to callers; but since
+        // this function is intended for a user who already attempted to
+        // login, be slightly informative.
+        return ['ok' => false, 'message' => 'No account found for that email address.'];
+    }
+    if (!empty($customer['is_verified']) && (int)$customer['is_verified'] === 1) {
+        return ['ok' => false, 'message' => 'This account is already verified. You can log in.'];
+    }
+
+    $db = getDb();
+    $existingCols = array_map('strval', getTableColumns('customers'));
+    $now = time();
+    // If the verification_sent_at column exists, enforce the 1/hour cap
+    if (in_array('verification_sent_at', $existingCols, true) && !empty($customer['verification_sent_at'])) {
+        $last = strtotime($customer['verification_sent_at']);
+        if ($last !== false && ($now - $last) < 3600) {
+            $remaining = 3600 - ($now - $last);
+            $mins = ceil($remaining / 60);
+            return ['ok' => false, 'message' => "You can only resend once per hour. Please wait $mins minute(s) and try again."];
+        }
+    }
+
+    // Generate a fresh token and store it
+    $token = generateVerificationToken();
+    setCustomerVerification((int)$customer['id'], $token);
+    // Update verification_sent_at if the column exists; if not, ignore
+    if (in_array('verification_sent_at', $existingCols, true)) {
+        $upd = $db->prepare('UPDATE customers SET verification_sent_at = :sent WHERE id = :id');
+        $upd->execute([':sent' => date('c'), ':id' => $customer['id']]);
+    }
+
+    // Compose verification email body (same format as signup)
+    $verifyLink = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . dirname($_SERVER['REQUEST_URI'] ?? '/') . '/verify.php?token=' . urlencode($token);
+    $body = "Hello " . ($customer['name'] ?? '') . ",\n\n";
+    $body .= "Please verify your Daytona Supply account by clicking the link below:\n\n";
+    $body .= $verifyLink . "\n\n";
+    $body .= "If you did not sign up, please ignore this message.";
+
+    $subject = 'Verify your Daytona Supply account';
+    $sent = sendEmail($customer['email'], $subject, $body);
+    if ($sent) {
+        return ['ok' => true, 'message' => 'Verification email resent. Please check your inbox.'];
+    }
+    return ['ok' => false, 'message' => 'Failed to send verification email. Please try again later.'];
+}
+
+/**
  * Verify a customer using the provided token.  If the token matches a
  * customer who has not yet been verified, the customer's is_verified
  * flag is set to 1 and their verification_token is cleared.  The
