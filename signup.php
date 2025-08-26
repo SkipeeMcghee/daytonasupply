@@ -2,6 +2,9 @@
 session_start();
 $successMessage = '';
 $showForm = true;
+$show_resend_top = false;
+// Keep a prefill email for the resend button if needed
+$prefill_resend_email = '';
 if (isset($_SESSION['signup_success'])) {
     $successMessage = $_SESSION['signup_success'];
     unset($_SESSION['signup_success']);
@@ -60,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $showForm) {
         $ship_zip = $bill_zip;
     }
     if ($recaptcha && empty($errors)) {
-        try {
+    try {
             $customerId = createCustomer([
                 'name' => $name,
                 'business_name' => $biz,
@@ -107,12 +110,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $showForm) {
             exit;
         } catch (Exception $e) {
             $errors[] = $e->getMessage();
+            // If the error is that the email already exists and the account
+            // is not verified yet, show a resend verification button at the
+            // top of the signup page so the user can request a new link.
+            if (stripos($e->getMessage(), 'Email already registered') !== false) {
+                $prefill_resend_email = $email;
+                $_SESSION['flash_email'] = $email; // used by resend form prefill
+                // Check if account exists and is unverified
+                $existing = getCustomerByEmail($email);
+                if ($existing && (empty($existing['is_verified']) || (int)$existing['is_verified'] === 0)) {
+                    $show_resend_top = true;
+                }
+            }
         }
     }
 }
 include __DIR__ . '/includes/header.php';
 ?>
 <h1>Sign Up</h1>
+<?php if (!empty($show_resend_top)): ?>
+    <div style="margin:0.5em 0;padding:0.5em;border-radius:6px;background:#fff;box-shadow:0 6px 18px rgba(0,0,0,0.04);">
+        <p style="margin:0 0 0.4em 0;color:#222;">It looks like an account already exists for <strong><?= htmlspecialchars($prefill_resend_email) ?></strong> but it hasn't been verified yet.</p>
+        <form method="post" action="resend_verification.php" style="margin:0;">
+            <input type="hidden" name="email" value="<?= htmlspecialchars($prefill_resend_email) ?>">
+            <button type="submit" class="muted-btn action-btn small">Resend verification email</button>
+        </form>
+    </div>
+<?php endif; ?>
 <?php if (!empty($successMessage)): ?>
     <div class="message"><?= htmlspecialchars($successMessage) ?></div>
 <?php else: ?>

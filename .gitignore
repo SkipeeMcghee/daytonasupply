@@ -8,6 +8,9 @@ tmp/
 cache/
 assets/cache/
 
+# Development email output (written by sendEmail dev fallback)
+data/emails/
+
 # User uploads (if added in the future)
 uploads/
 
