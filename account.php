@@ -173,7 +173,7 @@ include __DIR__ . '/includes/header.php';
     </ul>
 <?php endif; ?>
 <h2>Your Details</h2>
-<form method="post" action="account.php" class="vertical-form">
+<form id="account_form" method="post" action="account.php" class="vertical-form">
     <p>Name:<br> <input type="text" name="name" value="<?= htmlspecialchars($customer['name']) ?>" required autocomplete="off"></p>
     <p>Business Name:<br> <input type="text" name="business_name" value="<?= htmlspecialchars($customer['business_name']) ?>" autocomplete="off"></p>
     <p>Phone:<br> <input type="text" name="phone" value="<?= htmlspecialchars($customer['phone']) ?>" autocomplete="off"></p>

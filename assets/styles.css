@@ -87,6 +87,28 @@ button:hover {
     margin-bottom: 1em;
 }
 
+/* Make signup form inputs approximately twice as wide for better usability */
+#signup_form input[type="text"],
+#signup_form input[type="email"],
+#signup_form input[type="password"],
+#signup_form input[type="number"],
+#signup_form textarea, #signup_form select {
+    width: 680px; /* approx twice the default in many layouts */
+    max-width: 100%; /* remain responsive on small screens */
+    box-sizing: border-box;
+}
+
+/* Make My Account form inputs approximately twice as wide as default */
+#account_form input[type="text"],
+#account_form input[type="email"],
+#account_form input[type="password"],
+#account_form input[type="number"],
+#account_form textarea, #account_form select {
+    width: 680px;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
 /* Home hero styles */
 .home-hero { margin: 1.25em 0; }
 .home-hero .hero-inner { display:flex; gap:1.25em; align-items:center; }

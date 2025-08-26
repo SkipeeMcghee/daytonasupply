@@ -114,7 +114,7 @@ include __DIR__ . '/includes/header.php';
     <?php if (!empty($errors)): ?>
         <ul class="error"><?php foreach ($errors as $err): ?><li><?= htmlspecialchars($err) ?></li><?php endforeach; ?></ul>
     <?php endif; ?>
-    <form method="post" action="signup.php" class="vertical-form">
+    <form id="signup_form" method="post" action="signup.php" class="vertical-form">
         <p>Name:<br><input type="text" name="name" required value="<?= isset($name) ? htmlspecialchars($name) : '' ?>"></p>
         <p>Business Name:<br><input type="text" name="business_name" value="<?= isset($biz) ? htmlspecialchars($biz) : '' ?>"></p>
         <p>Phone:<br><input type="text" name="phone" value="<?= isset($phone) ? htmlspecialchars($phone) : '' ?>"></p>
