@@ -247,7 +247,7 @@ include __DIR__ . '/includes/header.php';
         <fieldset>
             <legend>Billing Address</legend>
             <p>Street Address:<br><input type="text" name="billing_street" required value="<?= isset($bill_street) ? htmlspecialchars($bill_street) : '' ?>" autocomplete="off"></p>
-            <p>Street Address 2:<br><input type="text" name="billing_street2" required value="<?= isset($bill_street2) ? htmlspecialchars($bill_street2) : '' ?>" autocomplete="off"></p>
+            <p>Street Address 2:<br><input type="text" name="billing_street2" value="<?= isset($bill_street2) ? htmlspecialchars($bill_street2) : '' ?>" autocomplete="off"></p>
             <p>City:<br><input type="text" name="billing_city" required value="<?= isset($bill_city) ? htmlspecialchars($bill_city) : '' ?>" autocomplete="off"></p>
             <p>State:<br><input type="text" name="billing_state" required value="<?= isset($bill_state) ? htmlspecialchars($bill_state) : '' ?>" autocomplete="off"></p>
             <p>Zip:<br><input type="text" name="billing_zip" required value="<?= isset($bill_zip) ? htmlspecialchars($bill_zip) : '' ?>" autocomplete="off"></p>
@@ -257,7 +257,7 @@ include __DIR__ . '/includes/header.php';
             <p><label><input type="checkbox" name="same_as_billing" id="signup_same_billing" value="1" <?= isset($_POST['same_as_billing']) ? 'checked' : '' ?>> Same as billing</label></p>
             <div id="signup_shipping_fields">
                 <p>Street Address:<br><input type="text" name="shipping_street" required value="<?= isset($ship_street) ? htmlspecialchars($ship_street) : '' ?>" autocomplete="off"></p>
-                <p>Street Address 2:<br><input type="text" name="shipping_street2" required value="<?= isset($ship_street2) ? htmlspecialchars($ship_street2) : '' ?>" autocomplete="off"></p>
+                <p>Street Address 2:<br><input type="text" name="shipping_street2" value="<?= isset($ship_street2) ? htmlspecialchars($ship_street2) : '' ?>" autocomplete="off"></p>
                 <p>City:<br><input type="text" name="shipping_city" required value="<?= isset($ship_city) ? htmlspecialchars($ship_city) : '' ?>" autocomplete="off"></p>
                 <p>State:<br><input type="text" name="shipping_state" required value="<?= isset($ship_state) ? htmlspecialchars($ship_state) : '' ?>" autocomplete="off"></p>
                 <p>Zip:<br><input type="text" name="shipping_zip" required value="<?= isset($ship_zip) ? htmlspecialchars($ship_zip) : '' ?>" autocomplete="off"></p>
