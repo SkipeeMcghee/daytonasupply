@@ -424,9 +424,9 @@ require_once __DIR__ . '/includes/header.php';
         </div>
         <div style="margin-bottom:8px;">
             <small>Sort list:</small>
-            <a href="#" class="action-btn small sort-btn" data-target="unverified_table" data-sort="original">Original</a>
-            <a href="#" class="action-btn small sort-btn" data-target="unverified_table" data-sort="name">Name</a>
-            <a href="#" class="action-btn small sort-btn" data-target="unverified_table" data-sort="business">Business</a>
+            <button type="button" class="action-btn small sort-btn" data-target="unverified_table" data-sort="original">Original</button>
+            <button type="button" class="action-btn small sort-btn" data-target="unverified_table" data-sort="name">Name</button>
+            <button type="button" class="action-btn small sort-btn" data-target="unverified_table" data-sort="business">Business</button>
         </div>
     <table id="unverified_table" class="admin-table">
             <tr><th><input type="checkbox" id="selectAllUnverified"></th><th>Name</th><th>Business</th><th>Phone</th><th>Email</th><th>Billing</th><th>Shipping</th><th>Actions</th></tr>
@@ -473,15 +473,18 @@ require_once __DIR__ . '/includes/header.php';
     }
     // Sorting utilities for customer lists
     (function(){
-        // add original order index to each row
+        // add original order index to each data row (skip header rows that use <th>)
         function annotateOriginal(tableId) {
             var t = document.getElementById(tableId);
             if (!t) return;
             var rows = t.querySelectorAll('tbody > tr');
             if (!rows.length) rows = t.querySelectorAll('tr');
             for (var i = 0; i < rows.length; i++) {
-                if (!rows[i].dataset) rows[i].dataset = {};
-                rows[i].dataset.origIndex = i;
+                var r = rows[i];
+                // skip header rows which contain <th>
+                if (r.querySelector && r.querySelector('th')) continue;
+                if (!r.dataset) r.dataset = {};
+                r.dataset.origIndex = r.dataset.origIndex || i;
             }
         }
         function getCellText(row, colIndex) {
@@ -494,8 +497,8 @@ require_once __DIR__ . '/includes/header.php';
             if (!t) return;
             var tbody = t.tBodies[0] || t;
             var rows = Array.prototype.slice.call(tbody.querySelectorAll('tr'));
-            // header row may be first; ensure we sort only data rows that contain a checkbox in first cell
-            rows = rows.filter(function(r){ return r.querySelector('input[type="checkbox"]') || r.querySelector('td'); });
+            // header row may be first; ensure we sort only actual data rows (skip rows that contain <th>)
+            rows = rows.filter(function(r){ if (r.querySelector && r.querySelector('th')) return false; return r.querySelector('td') !== null; });
             // determine column indices: checkbox(0), name(1), business(2)
             if (mode === 'original') {
                 rows.sort(function(a,b){ return (a.dataset.origIndex||0) - (b.dataset.origIndex||0); });
@@ -549,9 +552,9 @@ require_once __DIR__ . '/includes/header.php';
         </div>
         <div style="margin-bottom:8px;">
             <small>Sort list:</small>
-            <a href="#" class="action-btn small sort-btn" data-target="verified_table" data-sort="original">Original</a>
-            <a href="#" class="action-btn small sort-btn" data-target="verified_table" data-sort="name">Name</a>
-            <a href="#" class="action-btn small sort-btn" data-target="verified_table" data-sort="business">Business</a>
+            <button type="button" class="action-btn small sort-btn" data-target="verified_table" data-sort="original">Original</button>
+            <button type="button" class="action-btn small sort-btn" data-target="verified_table" data-sort="name">Name</button>
+            <button type="button" class="action-btn small sort-btn" data-target="verified_table" data-sort="business">Business</button>
         </div>
         <table id="verified_table" class="admin-table">
             <tr><th><input type="checkbox" id="selectAllVerified"></th><th>Name</th><th>Business</th><th>Phone</th><th>Email</th><th>Billing</th><th>Shipping</th><th>Actions</th></tr>

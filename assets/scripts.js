@@ -72,4 +72,41 @@ document.addEventListener('DOMContentLoaded', function() {
 			}
 		}
 	});
+
+	// Global delegated handler for manager-portal sort buttons.
+	// This ensures clicks on .sort-btn will not navigate/submit and will
+	// sort the target table client-side even if inline scripts or markup differ.
+	document.body.addEventListener('click', function(e) {
+		var el = e.target;
+		// allow click on inner text nodes or children by walking up
+		while (el && el !== document.body && !el.classList) el = el.parentNode;
+		if (!el || !el.classList) return;
+		if (el.classList.contains('sort-btn')) {
+			e.preventDefault();
+			var target = el.dataset.target;
+			var mode = el.dataset.sort;
+			if (!target || !mode) return;
+			var t = document.getElementById(target);
+			if (!t) return;
+			var tbody = t.tBodies && t.tBodies[0] ? t.tBodies[0] : t;
+			var rows = Array.prototype.slice.call(tbody.querySelectorAll('tr'));
+			// annotate original index if missing (skip header rows containing <th>)
+			rows.forEach(function(r, i){ if (r.querySelector && r.querySelector('th')) return; if (!r.dataset || typeof r.dataset.origIndex === 'undefined') r.dataset = r.dataset || {}, r.dataset.origIndex = r.dataset.origIndex || i; });
+			// filter to data rows (skip header rows that contain <th>)
+			rows = rows.filter(function(r){ if (r.querySelector && r.querySelector('th')) return false; return r.querySelector('td') !== null; });
+			function getCellText(row, col) { var cells = row.children; return (cells && cells.length > col) ? cells[col].innerText.trim().toLowerCase() : ''; }
+			if (mode === 'original') {
+				rows.sort(function(a,b){ return (a.dataset.origIndex||0) - (b.dataset.origIndex||0); });
+			} else if (mode === 'name') {
+				rows.sort(function(a,b){ return getCellText(a,1).localeCompare(getCellText(b,1)); });
+			} else if (mode === 'business') {
+				rows.sort(function(a,b){ return getCellText(a,2).localeCompare(getCellText(b,2)); });
+			}
+			rows.forEach(function(r){ tbody.appendChild(r); });
+			// set button active visual
+			document.querySelectorAll('.sort-btn[data-target="' + target + '"]').forEach(function(b){
+				if (b.dataset.sort === mode) { b.style.transform = 'translateY(1px)'; b.style.boxShadow = ''; } else { b.style.transform = ''; b.style.boxShadow = '0 6px 18px rgba(0,0,0,0.12)'; }
+			});
+		}
+	}, false);
 });
