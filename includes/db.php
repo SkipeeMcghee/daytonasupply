@@ -178,6 +178,12 @@ function migrateDatabase(PDO $db): void
         $stmtIns = $db->prepare('INSERT INTO admin(password_hash) VALUES(:hash)');
         $stmtIns->execute([':hash' => $defaultHash]);
     }
+    // Ensure signup_attempts table exists to record per-IP signup attempts
+    $db->exec('CREATE TABLE IF NOT EXISTS signup_attempts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ip TEXT NOT NULL,
+        attempted_at TEXT NOT NULL
+    )');
 }
 
 /**

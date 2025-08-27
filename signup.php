@@ -16,9 +16,25 @@ require_once __DIR__ . '/includes/functions.php';
 $title = 'Sign Up';
 $errors = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $showForm) {
+    // Per-IP rate limiting: allow 3 signup attempts per rolling hour
+    try {
+        $db = getDb();
+        $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+        $oneHourAgo = date('c', time() - 3600);
+        $stmt = $db->prepare('SELECT COUNT(*) FROM signup_attempts WHERE ip = :ip AND attempted_at >= :since');
+        $stmt->execute([':ip' => $ip, ':since' => $oneHourAgo]);
+        $recent = (int)$stmt->fetchColumn();
+        if ($recent >= 3) {
+            $errors[] = 'Too many signup attempts from your IP address. Please try again later.';
+        }
+    } catch (Exception $e) {
+        // If the DB check fails for any reason, log and continue (do not block signups)
+        error_log('signup rate limit check failed: ' . $e->getMessage());
+    }
     $name    = normalizeScalar($_POST['name'] ?? '', 128, '');
     $biz     = normalizeScalar($_POST['business_name'] ?? '', 128, '');
     $phone   = normalizeScalar($_POST['phone'] ?? '', 32, '');
+    $honeypot = normalizeScalar($_POST['hp_field'] ?? '', 128, '');
     $email   = normalizeScalar($_POST['email'] ?? '', 254, '');
     // billing discrete components
     $bill_street = normalizeScalar($_POST['billing_street'] ?? '', 128, '');
@@ -52,6 +68,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $showForm) {
     if ($name === '' || $email === '' || $password === '') {
         $errors[] = 'Name, email and password are required.';
     }
+    // Honeypot should be empty; if filled, treat as bot submission
+    if ($honeypot !== '') {
+        $errors[] = 'Bot detected.';
+    }
+    // Require business name and phone and billing fields
+    if ($biz === '') $errors[] = 'Business name is required.';
+    if ($phone === '') $errors[] = 'Phone number is required.';
+    if ($bill_street === '' || $bill_city === '' || $bill_state === '' || $bill_zip === '') {
+        $errors[] = 'Billing address (street, city, state, zip) is required.';
+    }
     if ($password !== $confirm) $errors[] = 'Passwords do not match.';
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = 'Invalid email address.';
     $sameBillingFlag = isset($_POST['same_as_billing']);
@@ -62,8 +88,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $showForm) {
         $ship_state = $bill_state;
         $ship_zip = $bill_zip;
     }
+    // If shipping is not same as billing, require shipping fields
+    if (!$sameBillingFlag) {
+        if ($ship_street === '' || $ship_city === '' || $ship_state === '' || $ship_zip === '') {
+            $errors[] = 'Shipping address (street, city, state, zip) is required.';
+        }
+    }
+    // Normalize phone to digits and require exactly 10 digits for US numbers
+    $phone_digits = preg_replace('/\D+/', '', $phone);
+    if (strlen($phone_digits) !== 10) {
+        $errors[] = 'Phone number must be a 10-digit US number.';
+    } else {
+        // store normalized phone (optional)
+        $phone = $phone_digits;
+    }
+    // Validate US ZIP: 5 digits or 5-4 format
+    $zip_to_check = $bill_zip;
+    if (!preg_match('/^\d{5}(-\d{4})?$/', $zip_to_check)) {
+        $errors[] = 'Billing ZIP code must be a US ZIP (12345 or 12345-6789).';
+    }
+    // If shipping distinct, validate shipping zip as US ZIP
+    if (!$sameBillingFlag) {
+        if (!preg_match('/^\d{5}(-\d{4})?$/', $ship_zip)) {
+            $errors[] = 'Shipping ZIP code must be a US ZIP (12345 or 12345-6789).';
+        }
+    }
     if ($recaptcha && empty($errors)) {
     try {
+            // Record this signup attempt (successful validation path reaches DB insert below)
+            try {
+                if (!isset($db)) $db = getDb();
+                $ins = $db->prepare('INSERT INTO signup_attempts(ip, attempted_at) VALUES(:ip, :at)');
+                $ins->execute([':ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown', ':at' => date('c')]);
+            } catch (Exception $_e) {
+                error_log('failed to record signup_attempt: ' . $_e->getMessage());
+            }
             $customerId = createCustomer([
                 'name' => $name,
                 'business_name' => $biz,
@@ -109,6 +168,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $showForm) {
             header('Location: signup.php');
             exit;
         } catch (Exception $e) {
+            // On exception (e.g., duplicate email), still record the attempt to avoid retries
+            try {
+                if (!isset($db)) $db = getDb();
+                $ins = $db->prepare('INSERT INTO signup_attempts(ip, attempted_at) VALUES(:ip, :at)');
+                $ins->execute([':ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown', ':at' => date('c')]);
+            } catch (Exception $_e) {
+                // swallow
+            }
             $errors[] = $e->getMessage();
             // If the error is that the email already exists and the account
             // is not verified yet, show a resend verification button at the
@@ -145,27 +212,32 @@ include __DIR__ . '/includes/header.php';
         <ul class="error"><?php foreach ($errors as $err): ?><li><?= htmlspecialchars($err) ?></li><?php endforeach; ?></ul>
     <?php endif; ?>
     <form id="signup_form" method="post" action="signup.php" class="vertical-form">
+        <!-- Honeypot field to trap bots; visible in markup but hidden off-screen -->
+        <div style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;">
+            <label for="hp_field">Leave this field empty</label>
+            <input type="text" name="hp_field" id="hp_field" autocomplete="off" tabindex="-1" value="">
+        </div>
         <p>Name:<br><input type="text" name="name" required value="<?= isset($name) ? htmlspecialchars($name) : '' ?>"></p>
-        <p>Business Name:<br><input type="text" name="business_name" value="<?= isset($biz) ? htmlspecialchars($biz) : '' ?>"></p>
-        <p>Phone:<br><input type="text" name="phone" value="<?= isset($phone) ? htmlspecialchars($phone) : '' ?>"></p>
+        <p>Business Name:<br><input type="text" name="business_name" required value="<?= isset($biz) ? htmlspecialchars($biz) : '' ?>"></p>
+        <p>Phone:<br><input type="text" name="phone" required value="<?= isset($phone) ? htmlspecialchars($phone) : '' ?>"></p>
         <p>Email:<br><input type="email" name="email" required value="<?= isset($email) ? htmlspecialchars($email) : '' ?>"></p>
         <fieldset>
             <legend>Billing Address</legend>
-            <p>Street Address:<br><input type="text" name="billing_street" value="<?= isset($bill_street) ? htmlspecialchars($bill_street) : '' ?>" autocomplete="off"></p>
-            <p>Street Address 2:<br><input type="text" name="billing_street2" value="<?= isset($bill_street2) ? htmlspecialchars($bill_street2) : '' ?>" autocomplete="off"></p>
-            <p>City:<br><input type="text" name="billing_city" value="<?= isset($bill_city) ? htmlspecialchars($bill_city) : '' ?>" autocomplete="off"></p>
-            <p>State:<br><input type="text" name="billing_state" value="<?= isset($bill_state) ? htmlspecialchars($bill_state) : '' ?>" autocomplete="off"></p>
-            <p>Zip:<br><input type="text" name="billing_zip" value="<?= isset($bill_zip) ? htmlspecialchars($bill_zip) : '' ?>" autocomplete="off"></p>
+            <p>Street Address:<br><input type="text" name="billing_street" required value="<?= isset($bill_street) ? htmlspecialchars($bill_street) : '' ?>" autocomplete="off"></p>
+            <p>Street Address 2:<br><input type="text" name="billing_street2" required value="<?= isset($bill_street2) ? htmlspecialchars($bill_street2) : '' ?>" autocomplete="off"></p>
+            <p>City:<br><input type="text" name="billing_city" required value="<?= isset($bill_city) ? htmlspecialchars($bill_city) : '' ?>" autocomplete="off"></p>
+            <p>State:<br><input type="text" name="billing_state" required value="<?= isset($bill_state) ? htmlspecialchars($bill_state) : '' ?>" autocomplete="off"></p>
+            <p>Zip:<br><input type="text" name="billing_zip" required value="<?= isset($bill_zip) ? htmlspecialchars($bill_zip) : '' ?>" autocomplete="off"></p>
         </fieldset>
         <fieldset>
             <legend>Shipping Address</legend>
             <p><label><input type="checkbox" name="same_as_billing" id="signup_same_billing" value="1" <?= isset($_POST['same_as_billing']) ? 'checked' : '' ?>> Same as billing</label></p>
             <div id="signup_shipping_fields">
-                <p>Street Address:<br><input type="text" name="shipping_street" value="<?= isset($ship_street) ? htmlspecialchars($ship_street) : '' ?>" autocomplete="off"></p>
-                <p>Street Address 2:<br><input type="text" name="shipping_street2" value="<?= isset($ship_street2) ? htmlspecialchars($ship_street2) : '' ?>" autocomplete="off"></p>
-                <p>City:<br><input type="text" name="shipping_city" value="<?= isset($ship_city) ? htmlspecialchars($ship_city) : '' ?>" autocomplete="off"></p>
-                <p>State:<br><input type="text" name="shipping_state" value="<?= isset($ship_state) ? htmlspecialchars($ship_state) : '' ?>" autocomplete="off"></p>
-                <p>Zip:<br><input type="text" name="shipping_zip" value="<?= isset($ship_zip) ? htmlspecialchars($ship_zip) : '' ?>" autocomplete="off"></p>
+                <p>Street Address:<br><input type="text" name="shipping_street" required value="<?= isset($ship_street) ? htmlspecialchars($ship_street) : '' ?>" autocomplete="off"></p>
+                <p>Street Address 2:<br><input type="text" name="shipping_street2" required value="<?= isset($ship_street2) ? htmlspecialchars($ship_street2) : '' ?>" autocomplete="off"></p>
+                <p>City:<br><input type="text" name="shipping_city" required value="<?= isset($ship_city) ? htmlspecialchars($ship_city) : '' ?>" autocomplete="off"></p>
+                <p>State:<br><input type="text" name="shipping_state" required value="<?= isset($ship_state) ? htmlspecialchars($ship_state) : '' ?>" autocomplete="off"></p>
+                <p>Zip:<br><input type="text" name="shipping_zip" required value="<?= isset($ship_zip) ? htmlspecialchars($ship_zip) : '' ?>" autocomplete="off"></p>
             </div>
         </fieldset>
         <p>Password:<br><input type="password" name="password" required></p>
