@@ -15,6 +15,17 @@ require_once __DIR__ . '/includes/functions.php';
 
 $title = 'Sign Up';
 $errors = [];
+// Ensure a per-session randomized honeypot field name to prevent attackers
+// from trivially adding a known field name in their client HTML to bypass.
+if (session_status() === PHP_SESSION_ACTIVE && empty($_SESSION['hp_name'])) {
+    try {
+        $_SESSION['hp_name'] = 'hp_' . bin2hex(random_bytes(6));
+    } catch (Exception $e) {
+        $_SESSION['hp_name'] = 'hp_' . bin2hex(substr(md5(uniqid('', true)), 0, 6));
+    }
+    // Record the form render time to enforce a minimum human interaction delay
+    $_SESSION['signup_form_ts'] = time();
+}
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $showForm) {
     // Per-IP rate limiting: allow 3 signup attempts per rolling hour
     try {
@@ -34,7 +45,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $showForm) {
     $name    = normalizeScalar($_POST['name'] ?? '', 128, '');
     $biz     = normalizeScalar($_POST['business_name'] ?? '', 128, '');
     $phone   = normalizeScalar($_POST['phone'] ?? '', 32, '');
-    $honeypot = normalizeScalar($_POST['hp_field'] ?? '', 128, '');
+    // Read honeypot using the per-session randomized name when available.
+    $hpName = $_SESSION['hp_name'] ?? 'hp_field';
+    $honeypot = normalizeScalar($_POST[$hpName] ?? $_POST['hp_field'] ?? '', 128, '');
     $email   = normalizeScalar($_POST['email'] ?? '', 254, '');
     // billing discrete components
     $bill_street = normalizeScalar($_POST['billing_street'] ?? '', 128, '');
@@ -71,6 +84,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $showForm) {
     // Honeypot should be empty; if filled, treat as bot submission
     if ($honeypot !== '') {
         $errors[] = 'Bot detected.';
+    }
+    // Minimum time check: require the form to have been open for at least 3 seconds
+    if (!empty($_SESSION['signup_form_ts'])) {
+        $elapsed = time() - (int)$_SESSION['signup_form_ts'];
+        if ($elapsed < 3) {
+            $errors[] = 'Form submitted too quickly. Please take a moment and try again.';
+        }
     }
     // Require business name and phone and billing fields
     if ($biz === '') $errors[] = 'Business name is required.';
@@ -212,10 +232,13 @@ include __DIR__ . '/includes/header.php';
         <ul class="error"><?php foreach ($errors as $err): ?><li><?= htmlspecialchars($err) ?></li><?php endforeach; ?></ul>
     <?php endif; ?>
     <form id="signup_form" method="post" action="signup.php" class="vertical-form">
-        <!-- Honeypot field to trap bots; visible in markup but hidden off-screen -->
+        <!-- Honeypot field to trap bots; name randomized per session to avoid simple bypass -->
         <div style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;">
-            <label for="hp_field">Leave this field empty</label>
-            <input type="text" name="hp_field" id="hp_field" autocomplete="off" tabindex="-1" value="">
+            <?php $hpName = $_SESSION['hp_name'] ?? 'hp_field'; ?>
+            <label for="<?= htmlspecialchars($hpName) ?>">Leave this field empty</label>
+            <input type="text" name="<?= htmlspecialchars($hpName) ?>" id="<?= htmlspecialchars($hpName) ?>" autocomplete="off" tabindex="-1" value="">
+            <!-- Fallback timestamp in case session data is lost for server-side minimum time check -->
+            <input type="hidden" name="signup_ts" value="<?= time() ?>">
         </div>
         <p>Name:<br><input type="text" name="name" required value="<?= isset($name) ? htmlspecialchars($name) : '' ?>"></p>
         <p>Business Name:<br><input type="text" name="business_name" required value="<?= isset($biz) ? htmlspecialchars($biz) : '' ?>"></p>

@@ -163,7 +163,8 @@ function updateCustomer(int $id, array $data)
 function getAllProducts(): array
 {
     $db = getDb();
-    $stmt = $db->query('SELECT * FROM products ORDER BY id ASC');
+    // Always return products ordered by name (our SKU) for consistent UI ordering
+    $stmt = $db->query('SELECT * FROM products ORDER BY name ASC');
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
