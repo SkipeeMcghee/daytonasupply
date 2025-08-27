@@ -423,7 +423,7 @@ require_once __DIR__ . '/includes/header.php';
             <button type="submit" name="mass_delete_unverified" onclick="return confirmMassDelete();" style="background:#dc3545;color:#fff;padding:8px 16px;border:none;border-radius:4px;font-weight:600;">Delete Selected</button>
         </div>
         <table class="admin-table">
-            <tr><th><input type="checkbox" id="selectAllUnverified"></th><th>ID</th><th>Name</th><th>Business</th><th>Phone</th><th>Email</th><th>Billing</th><th>Shipping</th><th>Actions</th></tr>
+            <tr><th><input type="checkbox" id="selectAllUnverified"></th><th>Name</th><th>Business</th><th>Phone</th><th>Email</th><th>Billing</th><th>Shipping</th><th>Actions</th></tr>
             <?php foreach ($unverifiedCustomers as $cust): ?>
                 <?php
                     $billDisplay = trim((
@@ -439,7 +439,6 @@ require_once __DIR__ . '/includes/header.php';
                 ?>
                 <tr>
                     <td><input type="checkbox" name="unverified_ids[]" value="<?= $cust['id'] ?>"></td>
-                    <td><?= $cust['id'] ?></td>
                     <td><?= htmlspecialchars($cust['name']) ?></td>
                     <td><?= htmlspecialchars($cust['business_name']) ?></td>
                     <td><?= htmlspecialchars($cust['phone']) ?></td>
@@ -453,7 +452,7 @@ require_once __DIR__ . '/includes/header.php';
                 </tr>
             <?php endforeach; ?>
             <?php if (empty($unverifiedCustomers)): ?>
-                <tr><td colspan="9">No unverified customers found.</td></tr>
+                <tr><td colspan="8">No unverified customers found.</td></tr>
             <?php endif; ?>
         </table>
     </form>
@@ -475,7 +474,7 @@ require_once __DIR__ . '/includes/header.php';
             <button type="submit" name="bulk_delete_verified" onclick="return confirm('Delete all selected verified customers? This cannot be undone.');" style="background:#dc3545;color:#fff;padding:8px 16px;border:none;border-radius:4px;font-weight:600;">Delete Selected</button>
         </div>
         <table class="admin-table">
-            <tr><th><input type="checkbox" id="selectAllVerified"></th><th>ID</th><th>Name</th><th>Business</th><th>Phone</th><th>Email</th><th>Billing</th><th>Shipping</th><th>Actions</th></tr>
+            <tr><th><input type="checkbox" id="selectAllVerified"></th><th>Name</th><th>Business</th><th>Phone</th><th>Email</th><th>Billing</th><th>Shipping</th><th>Actions</th></tr>
             <?php foreach ($verifiedCustomers as $cust): ?>
                 <?php
                     $billDisplay = trim((
@@ -491,7 +490,6 @@ require_once __DIR__ . '/includes/header.php';
                 ?>
                 <tr>
                     <td><input type="checkbox" name="verified_ids[]" value="<?= $cust['id'] ?>"></td>
-                    <td><?= $cust['id'] ?></td>
                     <td><?= htmlspecialchars($cust['name']) ?></td>
                     <td><?= htmlspecialchars($cust['business_name']) ?></td>
                     <td><?= htmlspecialchars($cust['phone']) ?></td>
@@ -505,7 +503,7 @@ require_once __DIR__ . '/includes/header.php';
                 </tr>
             <?php endforeach; ?>
             <?php if (empty($verifiedCustomers)): ?>
-                <tr><td colspan="9">No verified customers found.</td></tr>
+                <tr><td colspan="8">No verified customers found.</td></tr>
             <?php endif; ?>
         </table>
     </form>
@@ -535,7 +533,7 @@ require_once __DIR__ . '/includes/header.php';
                 <tr><td colspan="5">No products found.</td></tr>
             <?php endif; ?>
         </table>
-        <p><button type="submit">Save Product Changes</button></p>
+    <p><button type="submit" class="proceed-btn">Save Product Changes</button></p>
     </form>
     <h4>Add Product</h4>
     <form method="post" action="">
@@ -543,7 +541,7 @@ require_once __DIR__ . '/includes/header.php';
         <p>Name: <input type="text" name="name" required></p>
         <p>Description: <input type="text" name="description"></p>
         <p>Price: <input type="number" step="0.01" name="price" required></p>
-        <p><button type="submit">Add Product</button></p>
+    <p><button type="submit" class="proceed-btn">Add Product</button></p>
     </form>
 </section>
 <?php include __DIR__ . '/includes/footer.php'; ?>
