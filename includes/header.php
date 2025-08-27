@@ -33,6 +33,11 @@ $adminLoggedIn = isset($_SESSION['admin']);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo isset($title) ? htmlspecialchars($title) : 'Daytona Supply'; ?></title>
+    <!-- Favicon: use DaytonaSupplyDSlogo if available -->
+    <?php $favPath = __DIR__ . '/../assets/images/DaytonaSupplyDSlogo.png'; ?>
+    <?php $favUrlVer = file_exists($favPath) ? filemtime($favPath) : time(); ?>
+    <link rel="icon" type="image/png" href="assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $favUrlVer; ?>">
+    <link rel="apple-touch-icon" href="assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $favUrlVer; ?>">
     <!-- Use a relative path for the stylesheet. Append file modification time to bust client caches when the file changes -->
     <?php $cssPath = __DIR__ . '/../assets/styles.css'; ?>
     <link rel="stylesheet" href="assets/styles.css?v=<?php echo file_exists($cssPath) ? filemtime($cssPath) : time(); ?>">
