@@ -97,9 +97,17 @@ try {
         $oldById[(int)$r['id']] = $r;
     }
     // Create a new products table and insert rows ordered by name so ids are sequential
-    $db->exec('CREATE TABLE IF NOT EXISTS products_new (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, description TEXT, price REAL NOT NULL)');
-    // Clear any existing rows in products_new to ensure deterministic IDs
-    $db->exec('DELETE FROM products_new');
+    $driver = $db->getAttribute(PDO::ATTR_DRIVER_NAME);
+    if ($driver === 'sqlite') {
+        $db->exec('CREATE TABLE IF NOT EXISTS products_new (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, description TEXT, price REAL NOT NULL)');
+        // Clear any existing rows in products_new to ensure deterministic IDs
+        $db->exec('DELETE FROM products_new');
+    } else {
+        // MySQL / MariaDB: ensure a compatible table definition
+        $db->exec('CREATE TABLE IF NOT EXISTS products_new (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255) NOT NULL, description TEXT, price DOUBLE NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
+        // Truncate to remove any existing rows
+        $db->exec('TRUNCATE TABLE products_new');
+    }
     // Insert rows from the inventory JSON in alphabetical order by name
     usort($items, function($a, $b) { return strcasecmp($a['name'] ?? '', $b['name'] ?? ''); });
     $insNew = $db->prepare('INSERT INTO products_new(name, description, price) VALUES(:name, :description, :price)');
@@ -124,9 +132,54 @@ try {
             }
         }
     }
-    // Swap tables: drop old products and rename products_new
-    $db->exec('DROP TABLE products');
-    $db->exec('ALTER TABLE products_new RENAME TO products');
+    // Swap tables: for SQLite drop and rename, for MySQL use RENAME TABLE then drop old
+    if ($driver === 'sqlite') {
+        // SQLite: temporarily disable foreign keys for the swap
+        $db->exec('PRAGMA foreign_keys = OFF');
+        $db->exec('DROP TABLE products');
+        $db->exec('ALTER TABLE products_new RENAME TO products');
+        $db->exec('PRAGMA foreign_keys = ON');
+    } else {
+    // MySQL/MariaDB: perform a safer swap. First ensure no external
+    // foreign key references to this database's products table exist
+    // (cross-schema references can cause DROP/RENAME to fail).
+    $currentDb = $db->query('SELECT DATABASE()')->fetchColumn();
+    $fkCheck = $db->prepare(
+        'SELECT TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME, CONSTRAINT_NAME
+         FROM information_schema.KEY_COLUMN_USAGE
+         WHERE REFERENCED_TABLE_SCHEMA = :db AND REFERENCED_TABLE_NAME = "products"'
+    );
+    $fkCheck->execute([':db' => $currentDb]);
+    $externalFks = [];
+    while ($r = $fkCheck->fetch(PDO::FETCH_ASSOC)) {
+        // If a referencing table is in a different schema, collect it
+        if ($r['TABLE_SCHEMA'] !== $currentDb) {
+            $externalFks[] = $r;
+        }
+    }
+    if (count($externalFks) > 0) {
+        $db->rollBack();
+        echo '<p>Cannot update inventory because foreign key references to <code>products</code> exist in other databases. Please remove or update those references and try again.</p>';
+        exit;
+    }
+
+    // Temporarily disable foreign key checks for the atomic swap
+    $db->exec('SET FOREIGN_KEY_CHECKS = 0');
+    // Use a timestamped backup name to avoid collisions with previous runs
+    $ts = preg_replace('/[^0-9]/', '', date('Ymd_His')) . '_' . getmypid();
+    $oldName = 'products_old_' . $ts;
+    // If a previous run left a table with this exact name, remove it
+    $db->exec('DROP TABLE IF EXISTS ' . $oldName);
+    // Atomically rename tables: products -> products_old_<ts>, products_new -> products
+    $db->exec('RENAME TABLE products TO ' . $oldName . ', products_new TO products');
+    // Try to drop the old table created by the rename; if it fails leave it in place
+    try {
+        $db->exec('DROP TABLE IF EXISTS ' . $oldName);
+    } catch (Exception $_) {
+        // Keep the backup table for manual inspection; do not abort the update
+    }
+    $db->exec('SET FOREIGN_KEY_CHECKS = 1');
+    }
 
     $db->commit();
     // Redirect back to the manager portal once done
