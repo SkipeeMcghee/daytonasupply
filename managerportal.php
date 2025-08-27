@@ -418,11 +418,17 @@ require_once __DIR__ . '/includes/header.php';
     <!-- Unverified/Pending Customers (top) -->
     <h4>Unverified / Pending Customers</h4>
     <form method="post" action="" id="bulkUnverifiedForm">
-        <div style="margin-bottom:10px;display:flex;gap:10px;">
+        <div style="margin-bottom:10px;display:flex;gap:10px;align-items:center;">
             <button type="submit" name="bulk_verify" onclick="return confirm('Verify all selected customers?');" style="background:#198754;color:#fff;padding:8px 16px;border:none;border-radius:4px;font-weight:600;">Verify Selected</button>
             <button type="submit" name="mass_delete_unverified" onclick="return confirmMassDelete();" style="background:#dc3545;color:#fff;padding:8px 16px;border:none;border-radius:4px;font-weight:600;">Delete Selected</button>
         </div>
-        <table class="admin-table">
+        <div style="margin-bottom:8px;">
+            <small>Sort list:</small>
+            <a href="#" class="action-btn small sort-btn" data-target="unverified_table" data-sort="original">Original</a>
+            <a href="#" class="action-btn small sort-btn" data-target="unverified_table" data-sort="name">Name</a>
+            <a href="#" class="action-btn small sort-btn" data-target="unverified_table" data-sort="business">Business</a>
+        </div>
+    <table id="unverified_table" class="admin-table">
             <tr><th><input type="checkbox" id="selectAllUnverified"></th><th>Name</th><th>Business</th><th>Phone</th><th>Email</th><th>Billing</th><th>Shipping</th><th>Actions</th></tr>
             <?php foreach ($unverifiedCustomers as $cust): ?>
                 <?php
@@ -465,6 +471,74 @@ require_once __DIR__ . '/includes/header.php';
     function confirmMassDelete() {
         return confirm('Are you sure you want to delete all selected unverified customers? This cannot be undone.');
     }
+    // Sorting utilities for customer lists
+    (function(){
+        // add original order index to each row
+        function annotateOriginal(tableId) {
+            var t = document.getElementById(tableId);
+            if (!t) return;
+            var rows = t.querySelectorAll('tbody > tr');
+            if (!rows.length) rows = t.querySelectorAll('tr');
+            for (var i = 0; i < rows.length; i++) {
+                if (!rows[i].dataset) rows[i].dataset = {};
+                rows[i].dataset.origIndex = i;
+            }
+        }
+        function getCellText(row, colIndex) {
+            var cells = row.children;
+            if (!cells || cells.length <= colIndex) return '';
+            return cells[colIndex].innerText.trim().toLowerCase();
+        }
+        function sortTable(tableId, mode) {
+            var t = document.getElementById(tableId);
+            if (!t) return;
+            var tbody = t.tBodies[0] || t;
+            var rows = Array.prototype.slice.call(tbody.querySelectorAll('tr'));
+            // header row may be first; ensure we sort only data rows that contain a checkbox in first cell
+            rows = rows.filter(function(r){ return r.querySelector('input[type="checkbox"]') || r.querySelector('td'); });
+            // determine column indices: checkbox(0), name(1), business(2)
+            if (mode === 'original') {
+                rows.sort(function(a,b){ return (a.dataset.origIndex||0) - (b.dataset.origIndex||0); });
+            } else if (mode === 'name') {
+                rows.sort(function(a,b){ return getCellText(a,1).localeCompare(getCellText(b,1)); });
+            } else if (mode === 'business') {
+                rows.sort(function(a,b){ return getCellText(a,2).localeCompare(getCellText(b,2)); });
+            }
+            // append rows in new order
+            for (var i = 0; i < rows.length; i++) tbody.appendChild(rows[i]);
+        }
+        function setActiveButton(targetTable, mode) {
+            var buttons = document.querySelectorAll('.sort-btn[data-target="' + targetTable + '"]');
+            buttons.forEach(function(b){
+                if (b.dataset.sort === mode) {
+                    b.style.transform = 'translateY(1px)';
+                    b.style.boxShadow = '';
+                } else {
+                    b.style.transform = '';
+                    b.style.boxShadow = '0 6px 18px rgba(0,0,0,0.12)';
+                }
+            });
+        }
+        // initialize for unverified and verified
+        annotateOriginal('unverified_table');
+        annotateOriginal('verified_table');
+        // Select all verified checkboxes
+        var selectAllVerified = document.getElementById('selectAllVerified');
+        if (selectAllVerified) selectAllVerified.onclick = function() {
+            var boxes = document.querySelectorAll('input[name="verified_ids[]"]');
+            for (var i = 0; i < boxes.length; i++) boxes[i].checked = this.checked;
+        };
+        // bind click handlers
+        document.querySelectorAll('.sort-btn').forEach(function(btn){
+                btn.addEventListener('click', function(e){
+                    e.preventDefault();
+                    var tableId = this.dataset.target;
+                    var mode = this.dataset.sort;
+                    sortTable(tableId, mode);
+                    setActiveButton(tableId, mode);
+                });
+            });
+    })();
     </script>
     <!-- Verified Customers (below) -->
     <h4>Verified Customers</h4>
@@ -473,7 +547,13 @@ require_once __DIR__ . '/includes/header.php';
             <button type="submit" name="bulk_unverify" onclick="return confirm('Unverify all selected customers?');" style="background:#ffc107;color:#000;padding:8px 16px;border:none;border-radius:4px;font-weight:600;">Unverify Selected</button>
             <button type="submit" name="bulk_delete_verified" onclick="return confirm('Delete all selected verified customers? This cannot be undone.');" style="background:#dc3545;color:#fff;padding:8px 16px;border:none;border-radius:4px;font-weight:600;">Delete Selected</button>
         </div>
-        <table class="admin-table">
+        <div style="margin-bottom:8px;">
+            <small>Sort list:</small>
+            <a href="#" class="action-btn small sort-btn" data-target="verified_table" data-sort="original">Original</a>
+            <a href="#" class="action-btn small sort-btn" data-target="verified_table" data-sort="name">Name</a>
+            <a href="#" class="action-btn small sort-btn" data-target="verified_table" data-sort="business">Business</a>
+        </div>
+        <table id="verified_table" class="admin-table">
             <tr><th><input type="checkbox" id="selectAllVerified"></th><th>Name</th><th>Business</th><th>Phone</th><th>Email</th><th>Billing</th><th>Shipping</th><th>Actions</th></tr>
             <?php foreach ($verifiedCustomers as $cust): ?>
                 <?php

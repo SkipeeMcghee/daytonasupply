@@ -72,13 +72,13 @@ form {
 }
 button {
     padding: 0.5em 1em;
-    background: #004080;
+    background: #333333; /* dark gray for visibility */
     color: white;
     border: none;
     cursor: pointer;
 }
 button:hover {
-    background: #003060;
+    background: #222222;
 }
 .message {
     padding: 0.5em;
@@ -167,19 +167,17 @@ footer {
     padding:6px 10px;
     border-radius:6px;
     text-decoration:none;
-    background:#bfbfbf; /* darker */
-    color:#000;
+    background:#333333; /* dark gray */
+    color:#fff;
     font-weight:600;
     display:inline-block;
     box-shadow:0 6px 18px rgba(0,0,0,0.12);
 }
 .view-btn:hover { box-shadow:0 8px 20px rgba(0,0,0,0.14); }
 .view-btn.active {
-/* Added message (non-intrusive) */
-.added-msg { font-weight:700; box-shadow: 0 6px 18px rgba(0,0,0,0.12); }
     box-shadow:none;
     transform:translateY(1px);
-    background:#e9e9e9;
+    background:#2a2a2a;
 }
 
 /* SKU filter buttons */
@@ -197,8 +195,8 @@ footer {
 .sku-btn.active { box-shadow:none; transform:translateY(1px); background:#3b3f44; }
 
 /* Proceed to cart button used in catalogue lead */
-.proceed-btn { display:inline-block; padding:6px 8px; background:#0d6efd; color:#fff; border-radius:6px; text-decoration:none; font-weight:700; font-size:0.9rem; margin-left:6px; }
-.proceed-btn:hover { background:#0b5ed7; }
+.proceed-btn { display:inline-block; padding:6px 8px; background:#333333; color:#fff; border-radius:6px; text-decoration:none; font-weight:700; font-size:0.9rem; margin-left:6px; }
+.proceed-btn:hover { background:#222222; }
 
 /* Muted variant for less-prominent actions (gray background) */
 .muted-btn {
@@ -301,7 +299,7 @@ footer {
 }
 
 /* Action button styles used in manager portal */
-.action-btn { padding:6px 8px; border-radius:4px; color:#fff; text-decoration:none; font-weight:600; display:inline-block; margin-right:6px; }
+.action-btn { padding:6px 8px; border-radius:4px; color:#fff; text-decoration:none; font-weight:600; display:inline-block; margin-right:6px; background:#333333; }
 .action-approve { background:#198754; }
 .action-reject { background:#dc3545; }
 .action-archive { background:#0d6efd; }
@@ -309,7 +307,7 @@ footer {
 .action-btn.small { padding:4px 6px; font-size:0.9em; }
 
 /* Manager small control buttons for customer/product rows */
-.mgr-btn { display:inline-block; padding:4px 6px; border-radius:4px; color:#fff; text-decoration:none; font-weight:700; font-size:0.85em; margin-right:6px; }
+.mgr-btn { display:inline-block; padding:4px 6px; border-radius:4px; color:#fff; text-decoration:none; font-weight:700; font-size:0.85em; margin-right:6px; background:#333333; }
 .mgr-verify { background:#198754; } /* green */
 .mgr-unverify { background:#ffc107; color:#000; } /* yellow */
 .mgr-delete { background:#dc3545; } /* red */
