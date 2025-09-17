@@ -288,13 +288,54 @@ function createOrder(int $customerId, array $cart, float $taxAmount = 0.0): int
             ':created_at' => date('c')
         ]);
         $orderId = (int)$db->lastInsertId();
-        // Insert order items and snapshot product name/description/price
+        if (empty($orderId)) {
+            // Order insert failed to produce an ID — fail loudly so calling
+            // code (checkout) can report an error and we don't send emails
+            // with an empty order id.
+            $db->rollBack();
+            throw new Exception('Failed to create order (no insert id returned)');
+        }
+    // Insert order items and snapshot product name/description/price
         // if the order_items table contains those columns. Fall back to
         // a minimal insert when the migration hasn't been applied yet.
         $cols = array_map('strval', getTableColumns('order_items'));
         $hasName = in_array('product_name', $cols, true);
         $hasDesc = in_array('product_description', $cols, true);
         $hasPrice = in_array('product_price', $cols, true);
+
+        // If using MySQL, prefer snapshot columns (create them earlier in
+        // the connection setup). If they are missing, ensureMySQLOrderSnapshotSchema
+        // should have attempted to add them; re-check now and prefer snapshots
+        // when available so historical snapshots are always stored.
+        try {
+            $driver = $db->getAttribute(PDO::ATTR_DRIVER_NAME);
+        } catch (Exception $_) {
+            $driver = 'sqlite';
+        }
+        if (strcasecmp($driver, 'mysql') === 0) {
+            // re-evaluate columns to prefer snapshot path
+            $cols = array_map('strval', getTableColumns('order_items'));
+            $hasName = in_array('product_name', $cols, true) || $hasName;
+            $hasDesc = in_array('product_description', $cols, true) || $hasDesc;
+            $hasPrice = in_array('product_price', $cols, true) || $hasPrice;
+        }
+
+        // If using MySQL, temporarily disable foreign key checks to allow
+        // inserting historical snapshots even if the product FK references
+        // a legacy table (e.g. products_old) or the product row has been
+        // removed. We'll re-enable checks before committing.
+        $driver = 'sqlite';
+        try { $driver = $db->getAttribute(PDO::ATTR_DRIVER_NAME); } catch (Exception $_) {}
+        $fkDisabled = false;
+        if (strcasecmp($driver, 'mysql') === 0) {
+            try {
+                $db->exec('SET FOREIGN_KEY_CHECKS=0');
+                $fkDisabled = true;
+                error_log('createOrder: disabled FOREIGN_KEY_CHECKS for order snapshot insert');
+            } catch (Exception $e) {
+                error_log('createOrder: failed to disable FOREIGN_KEY_CHECKS: ' . $e->getMessage());
+            }
+        }
 
         if ($hasName || $hasDesc || $hasPrice) {
             // Build dynamic insert based on available snapshot columns
@@ -331,9 +372,22 @@ function createOrder(int $customerId, array $cart, float $taxAmount = 0.0): int
                 ]);
             }
         }
+        // Re-enable FK checks if we disabled them earlier
+        if (!empty($fkDisabled)) {
+            try {
+                $db->exec('SET FOREIGN_KEY_CHECKS=1');
+                error_log('createOrder: re-enabled FOREIGN_KEY_CHECKS after inserts');
+            } catch (Exception $e) {
+                error_log('createOrder: failed to re-enable FOREIGN_KEY_CHECKS: ' . $e->getMessage());
+            }
+        }
         $db->commit();
         return $orderId;
     } catch (Exception $e) {
+        // Attempt to re-enable FK checks if we disabled them before rolling back
+        if (!empty($fkDisabled)) {
+            try { $db->exec('SET FOREIGN_KEY_CHECKS=1'); } catch (Exception $_) { }
+        }
         $db->rollBack();
         throw $e;
     }

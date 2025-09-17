@@ -1,0 +1,12 @@
+[2025-09-17T18:42:40+02:00] getDb mysql connection failed (c7f35c37b9b1): SQLSTATE[HY000] [1045] Access denied for user 'brian'@'localhost' (using password: YES)
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(49): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\tools\check_mysql_schema.php(12): getDb()
+#2 {main}
+[2025-09-17T18:49:53+02:00] getDb mysql connection failed (195491b6f45b): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(56): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\tools\check_mysql_schema.php(12): getDb()
+#2 {main}
+[2025-09-17T18:51:22+02:00] getDb mysql connection failed (ab4a5ec80e4a): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(56): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\tools\check_mysql_schema.php(12): getDb()
+#2 {main}

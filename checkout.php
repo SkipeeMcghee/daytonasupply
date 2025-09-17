@@ -54,14 +54,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ($taxAmount > 0 ? ("Tax: $" . number_format($taxAmount, 2) . "\n") : "") .
             "Total: $" . number_format($cartTotal + $taxAmount, 2) . "\n\n" .
             "Please review and approve this order in the manager portal.";
-    // Send email to company
-    $companyEmail = getenv('COMPANY_EMAIL') ?: 'packinggenerals@gmail.com';
-    if ($companyEmail) {
-        sendEmail($companyEmail, 'New Purchase Order #' . $orderId, $body);
+    // Only send email and clear cart if order creation succeeded
+    if (!empty($orderId)) {
+        // Send email to company
+        $companyEmail = getenv('COMPANY_EMAIL') ?: 'packinggenerals@gmail.com';
+        if ($companyEmail) {
+            sendEmail($companyEmail, 'New Purchase Order #' . $orderId, $body);
+        }
+        // Clear cart
+        $_SESSION['cart'] = [];
+        $message = 'Thank you! Your order has been submitted and is awaiting approval. You will receive an email reply shortly.';
+    } else {
+        // No order ID — report a friendly failure
+        $message = 'An error occurred while placing your order. Please try again or contact support.';
     }
-    // Clear cart
-    $_SESSION['cart'] = [];
-    $message = 'Thank you! Your order has been submitted and is awaiting approval. You will receive an email reply shortly.';
 }
 
 // Build order summary

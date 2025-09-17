@@ -27,15 +27,30 @@
 function getDb(): PDO
 {
     static $db = null;
+    // Global fallback reason recorded when MySQL is requested but fails.
+    if (!array_key_exists('DB_FALLBACK_REASON', $GLOBALS)) {
+        $GLOBALS['DB_FALLBACK_REASON'] = null;
+    }
     if ($db !== null) {
         return $db;
     }
-    // Determine which database driver to use.  Default to SQLite for
-    // development, but allow MySQL by setting the DB_DRIVER
-    // environment variable to "mysql" and providing DB_HOST, DB_NAME,
-    // DB_USER and DB_PASS.  For SQLite, DB_PATH can override the
-    // location of the database file.
-    $driver = getenv('DB_DRIVER') ?: 'sqlite';
+    // Load local environment overrides (if present) early so they affect
+    // getenv() calls below. This file should use putenv() to set DB_*
+    // variables when you need to force MySQL for web and CLI processes.
+    $localCfg = __DIR__ . '/config.local.php';
+    if (is_readable($localCfg)) {
+        require_once $localCfg;
+    }
+    // Determine whether to use MySQL or SQLite. Default to SQLite for
+    // development. However, prefer MySQL when DB_DRIVER=mysql is set or
+    // when DB_HOST/DB_NAME/DB_USER are provided (common in production).
+    $driver = getenv('DB_DRIVER') ?: '';
+    $hasMySqlEnv = (getenv('DB_HOST') || getenv('DB_NAME') || getenv('DB_USER'));
+    if ($driver === '' && $hasMySqlEnv) {
+        // Prefer MySQL when core env vars are present
+        $driver = 'mysql';
+    }
+    if ($driver === '') $driver = 'sqlite';
     if (strcasecmp($driver, 'mysql') === 0) {
         // Connect to MySQL
         $host = getenv('DB_HOST') ?: 'localhost';
@@ -54,20 +69,32 @@ function getDb(): PDO
             // Use associative arrays by default for consistency
             $db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
             // For MySQL we expect that the schema has been created ahead of time
+            // Ensure order/order_items snapshot columns exist in MySQL so
+            // historical order snapshots are recorded when creating orders.
+            try {
+                ensureMySQLOrderSnapshotSchema($db);
+            } catch (Exception $schemaEx) {
+                // Log but allow connection to proceed; createOrder will fail if
+                // schema is not suitable. We log to help diagnostics.
+                error_log('ensureMySQLOrderSnapshotSchema error: ' . $schemaEx->getMessage());
+            }
             return $db;
         } catch (Exception $e) {
-            // Log the MySQL connection failure and continue to SQLite fallback
+            // Log the MySQL connection failure and record fallback reason.
             $errorRef = null;
             try { $errorRef = bin2hex(random_bytes(6)); } catch (Exception $_) { $errorRef = substr(md5(uniqid('', true)), 0, 12); }
             $msg = '[' . date('c') . '] getDb mysql connection failed (' . $errorRef . '): ' . $e->getMessage() . "\n" . $e->getTraceAsString() . "\n";
             error_log($msg);
-            // Try to persist to project-level locations for diagnosis
+            // Persist to project-level locations for diagnosis
             $candidates = [__DIR__ . '/../data/logs', __DIR__ . '/../data', __DIR__];
             foreach ($candidates as $dir) {
                 if (!is_dir($dir)) @mkdir($dir, 0755, true);
                 @file_put_contents(rtrim($dir, '\\/').'/catalogue_errors.log', $msg, FILE_APPEND | LOCK_EX);
             }
-            // Fall back to SQLite by continuing below
+            // Record fallback reason so other code can detect temporary fallback
+            $GLOBALS['DB_FALLBACK_REASON'] = $msg;
+            error_log('getDb: falling back to SQLite due to MySQL error (see catalogue_errors.log)');
+            // Continue to the SQLite fallback below so the app remains usable.
         }
     }
     // Default: SQLite
@@ -184,6 +211,52 @@ function migrateDatabase(PDO $db): void
         ip TEXT NOT NULL,
         attempted_at TEXT NOT NULL
     )');
+}
+
+/**
+ * Ensure the MySQL schema contains necessary snapshot columns for orders
+ * and order_items so historical snapshots are preserved. This is a
+ * best-effort helper and will only run for MySQL connections.
+ */
+function ensureMySQLOrderSnapshotSchema(PDO $db): void
+{
+    $driver = $db->getAttribute(PDO::ATTR_DRIVER_NAME);
+    if (strcasecmp($driver, 'mysql') !== 0) return;
+    // Ensure orders table exists
+    $db->exec("CREATE TABLE IF NOT EXISTS orders (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        customer_id INT NOT NULL,
+        status VARCHAR(64) NOT NULL,
+        total DECIMAL(12,2) NOT NULL,
+        created_at DATETIME NOT NULL,
+        archived TINYINT DEFAULT 0
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    // Ensure order_items table exists and has snapshot columns
+    $db->exec("CREATE TABLE IF NOT EXISTS order_items (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        order_id INT NOT NULL,
+        product_id INT NOT NULL,
+        quantity INT NOT NULL,
+        product_name VARCHAR(255),
+        product_description TEXT,
+        product_price DECIMAL(12,2),
+        CONSTRAINT fk_order_items_order FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    // Ensure snapshot columns exist (ALTER if necessary)
+    $cols = [];
+    $stmt = $db->query("SHOW COLUMNS FROM order_items");
+    while ($r = $stmt->fetch(PDO::FETCH_ASSOC)) { $cols[] = $r['Field']; }
+    if (!in_array('product_name', $cols, true)) {
+        $db->exec("ALTER TABLE order_items ADD COLUMN product_name VARCHAR(255) NULL");
+    }
+    if (!in_array('product_description', $cols, true)) {
+        $db->exec("ALTER TABLE order_items ADD COLUMN product_description TEXT NULL");
+    }
+    if (!in_array('product_price', $cols, true)) {
+        $db->exec("ALTER TABLE order_items ADD COLUMN product_price DECIMAL(12,2) NULL");
+    }
 }
 
 /**
