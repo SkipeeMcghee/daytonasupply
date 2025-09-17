@@ -227,7 +227,8 @@ function ensureMySQLOrderSnapshotSchema(PDO $db): void
         id INT AUTO_INCREMENT PRIMARY KEY,
         customer_id INT NOT NULL,
         status VARCHAR(64) NOT NULL,
-        total DECIMAL(12,2) NOT NULL,
+    total DECIMAL(12,2) NOT NULL,
+    po_number VARCHAR(255) NULL,
         created_at DATETIME NOT NULL,
         archived TINYINT DEFAULT 0
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
@@ -295,7 +296,8 @@ function initDatabase(PDO $db): void
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         customer_id INTEGER NOT NULL,
         status TEXT NOT NULL,
-        total REAL NOT NULL,
+    total REAL NOT NULL,
+    po_number TEXT,
         created_at TEXT NOT NULL,
         FOREIGN KEY(customer_id) REFERENCES customers(id)
     )');

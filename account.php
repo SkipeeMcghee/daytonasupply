@@ -246,8 +246,8 @@ include __DIR__ . '/includes/header.php';
     <?php foreach ($orders as $order): ?>
         <?php $items = getOrderItems((int)$order['id']); $orderTotal = 0.0; ?>
         <div class="order-group">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                <div><strong>Order #<?= $order['id']; ?></strong> — <?= htmlspecialchars(date('n/j/Y g:i A', strtotime($order['created_at']))); ?></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <div><strong>Order #<?= $order['id']; ?></strong> — <?= htmlspecialchars(date('n/j/Y g:i A', strtotime($order['created_at']))); ?><?php if (!empty($order['po_number'])): ?> <span class="order-po">PO: <?= htmlspecialchars($order['po_number']) ?></span><?php endif; ?></div>
                 <div><span class="order-toggle" data-order="<?= $order['id']; ?>">Collapse</span></div>
             </div>
             <table class="account-table order-items" data-order="<?= $order['id']; ?>">

@@ -36,9 +36,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
     $taxAmount = $applyTax ? round($cartTotal * 0.065, 2) : 0.0;
+    // Collect optional PO number
+    $poNumber = isset($_POST['po_number']) ? trim((string)$_POST['po_number']) : null;
     // Create order (include tax)
     try {
-        $orderId = createOrder((int)$customer['id'], $cart, $taxAmount);
+        $orderId = createOrder((int)$customer['id'], $cart, $taxAmount, $poNumber);
     } catch (Exception $e) {
         // Don't expose raw DB errors to users; log and show friendly message
         error_log('checkout createOrder error: ' . $e->getMessage());
@@ -47,8 +49,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     // Prepare email to company
     $body = "A new purchase order has been placed.\n\n" .
-            "Order ID: {$orderId}\n" .
-            "Customer: {$customer['name']} ({$customer['email']})\n\n" .
+            ( !empty($orderId) ? "Order ID: {$orderId}\n" : "Order ID: (not created)\n" ) .
+            "Customer: {$customer['name']} ({$customer['email']})\n" .
+            ( !empty($poNumber) ? "PO Number: {$poNumber}\n" : "" ) .
+            "\n" .
             "Items:\n" . implode("\n", $itemsDesc) . "\n\n" .
             "Subtotal: $" . number_format($cartTotal, 2) . "\n" .
             ($taxAmount > 0 ? ("Tax: $" . number_format($taxAmount, 2) . "\n") : "") .
@@ -59,7 +63,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Send email to company
         $companyEmail = getenv('COMPANY_EMAIL') ?: 'packinggenerals@gmail.com';
         if ($companyEmail) {
-            sendEmail($companyEmail, 'New Purchase Order #' . $orderId, $body);
+            $subject = 'New Purchase Order #' . $orderId;
+            if (!empty($poNumber)) $subject .= ' (PO: ' . $poNumber . ')';
+            sendEmail($companyEmail, $subject, $body);
         }
         // Clear cart
         $_SESSION['cart'] = [];
@@ -131,7 +137,8 @@ foreach ($cart as $pid => $qty) {
         </tr>
     </table>
     <form method="post" action="" id="checkout-form">
-        <p><label><input type="checkbox" name="apply_tax" id="apply_tax" value="1"> Apply sales tax (6.5%)</label></p>
+    <p><label><input type="checkbox" name="apply_tax" id="apply_tax" value="1"> Apply sales tax (6.5%)</label></p>
+    <p><label>PO Number (optional): <input type="text" name="po_number" value="<?php echo htmlspecialchars($_POST['po_number'] ?? ''); ?>" maxlength="255"></label></p>
         <p class="lead" id="checkout-lead">Once you click on PLACE ORDER, the request is received at our Order Desk for review and fulfillment.  You will receive a confirmation Email when your order has been accepted. Sales Tax applies unless you have a valid Sales Tax Exemption Form on file with us.</p>
         <p><button type="submit" class="proceed-btn">Place Order</button></p>
     </form>

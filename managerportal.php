@@ -317,7 +317,7 @@ require_once __DIR__ . '/includes/header.php';
     <?php foreach ($orders as $order): ?>
     <div id="order-<?php echo $order['id']; ?>" class="order-group">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-    <div><strong>Order #<?php echo $order['id']; ?></strong> — <?php echo htmlspecialchars(date('n/j/Y g:i A', strtotime($order['created_at']))); ?> by <?php echo htmlspecialchars((getCustomerById((int)$order['customer_id'])['name'] ?? 'Unknown')); ?></div>
+    <div><strong>Order #<?php echo $order['id']; ?></strong> — <?php echo htmlspecialchars(date('n/j/Y g:i A', strtotime($order['created_at']))); ?><?php if (!empty($order['po_number'])): ?> <span class="order-po">PO: <?php echo htmlspecialchars($order['po_number']); ?></span><?php endif; ?> by <?php echo htmlspecialchars((getCustomerById((int)$order['customer_id'])['name'] ?? 'Unknown')); ?></div>
         <div><span class="order-toggle" data-order="<?php echo $order['id']; ?>">Collapse</span></div>
     </div>
     <table class="admin-table order-items" data-order="<?php echo $order['id']; ?>">

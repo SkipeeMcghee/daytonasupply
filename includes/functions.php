@@ -262,7 +262,7 @@ function getProductById(int $id): ?array
  * @param array $cart Map of product IDs to quantities
  * @return int Newly created order ID
  */
-function createOrder(int $customerId, array $cart, float $taxAmount = 0.0): int
+function createOrder(int $customerId, array $cart, float $taxAmount = 0.0, ?string $poNumber = null): int
 {
     $db = getDb();
     $db->beginTransaction();
@@ -280,11 +280,12 @@ function createOrder(int $customerId, array $cart, float $taxAmount = 0.0): int
             $total += $taxAmount;
         }
         // Insert order
-        $insOrder = $db->prepare('INSERT INTO orders(customer_id, status, total, created_at) VALUES(:customer_id, :status, :total, :created_at)');
+        $insOrder = $db->prepare('INSERT INTO orders(customer_id, status, total, po_number, created_at) VALUES(:customer_id, :status, :total, :po_number, :created_at)');
         $insOrder->execute([
             ':customer_id' => $customerId,
             ':status' => 'Pending',
             ':total' => $total,
+            ':po_number' => $poNumber,
             ':created_at' => date('c')
         ]);
         $orderId = (int)$db->lastInsertId();
@@ -993,19 +994,26 @@ function updateOrderStatus(int $orderId, string $status, ?string $managerNote = 
     ]);
     // Send a notification email to the customer about the status change
     try {
-        // Fetch order with customer info
-        $query = $db->prepare('SELECT o.id, o.status, c.name AS customer_name, c.email AS customer_email FROM orders o JOIN customers c ON o.customer_id = c.id WHERE o.id = :id');
+        // Fetch order with customer info and PO number
+        $query = $db->prepare('SELECT o.id, o.status, o.po_number, c.name AS customer_name, c.email AS customer_email FROM orders o JOIN customers c ON o.customer_id = c.id WHERE o.id = :id');
         $query->execute([':id' => $orderId]);
         $order = $query->fetch(PDO::FETCH_ASSOC);
         if ($order && !empty($order['customer_email'])) {
             $to = $order['customer_email'];
-            $subj = 'Your Order #' . $order['id'] . ' has been updated';
+            // Include PO number in the subject when present for quick reference
+            $poText = (!empty($order['po_number'])) ? ' (PO: ' . $order['po_number'] . ')' : '';
+            $subj = 'Your Order #' . $order['id'] . ' has been updated' . $poText;
+
             $msg = "Hello " . $order['customer_name'] . ",\n\n" .
-                   "Your order #" . $order['id'] . " has been " . strtolower($status) . ".\n\n" .
-                   "You can log in to your account to view the details.\n\n";
+                   "Your order #" . $order['id'] . (!empty($poText) ? ' — PO: ' . $order['po_number'] : '') . " has been " . strtolower($status) . ".\n";
+
+            // If the manager left a note, place it directly under the status line
             if ($managerNote && trim($managerNote) !== '') {
-                $msg .= "Message from our team:\n" . trim($managerNote) . "\n\n";
+                $msg .= "\nMessage from our team:\n" . trim($managerNote) . "\n";
             }
+
+            // Continue with account login prompt and thank-you footer
+            $msg .= "\nYou can log in to your account to view the details.\n\n";
             $msg .= "Thank you for shopping with us.";
             sendEmail($to, $subj, $msg);
         }
