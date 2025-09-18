@@ -27,45 +27,85 @@ $loggedIn = isset($_SESSION['customer']);
 // Check if admin logged in
 $adminLoggedIn = isset($_SESSION['admin']);
 ?>
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
     <title><?php echo isset($title) ? htmlspecialchars($title) : 'Daytona Supply'; ?></title>
-    <!-- Favicon: use DaytonaSupplyDSlogo if available -->
-    <?php $favPath = __DIR__ . '/../assets/images/DaytonaSupplyDSlogo.png'; ?>
-    <?php $favUrlVer = file_exists($favPath) ? filemtime($favPath) : time(); ?>
-    <link rel="icon" type="image/png" href="assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $favUrlVer; ?>">
-    <link rel="apple-touch-icon" href="assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $favUrlVer; ?>">
-    <!-- Use a relative path for the stylesheet. Append file modification time to bust client caches when the file changes -->
+    <meta name="description" content="<?php echo isset($metaDescription) ? htmlspecialchars($metaDescription) : 'Daytona Supply — local packaging and janitorial supplier.'; ?>">
+    <link rel="canonical" href="<?php echo (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . ($_SERVER['REQUEST_URI'] ?? '/'); ?>">
+    <meta property="og:title" content="Daytona Supply">
+    <meta property="og:description" content="Local B2B packaging & janitorial supplies">
+    <meta name="twitter:card" content="summary_large_image">
     <?php $cssPath = __DIR__ . '/../assets/styles.css'; ?>
     <link rel="stylesheet" href="assets/styles.css?v=<?php echo file_exists($cssPath) ? filemtime($cssPath) : time(); ?>">
 </head>
 <body>
-<header>
-    <div class="site-brand">
-        <a href="index.php">
-            <img src="assets/images/Logowhite.png" alt="Daytona Supply" class="site-logo">
-        </a>
-    </div>
-    <nav>
-        <ul class="nav">
-            <!-- Use relative links so navigation works regardless of the base directory -->
-            <li><a href="index.php">Home</a></li>
-            <li><a href="catalogue.php">Catalog</a></li>
-            <li><a id="cart-link" href="cart.php">Cart (<span id="cart-count"><?php echo $cartCount; ?></span>)</a></li>
-            <?php if ($loggedIn): ?>
-                <li><a href="account.php">My Account</a></li>
-                <li><a href="logout.php">Logout</a></li>
-            <?php else: ?>
-                <li><a href="signup.php">Sign Up</a></li>
-                <li><a href="login.php">Login</a></li>
-            <?php endif; ?>
-            <?php if ($adminLoggedIn): ?>
-                <li><a href="managerportal.php">Manager Portal</a></li>
-            <?php endif; ?>
-        </ul>
-    </nav>
-</header>
-<main>
+    <header class="site-header" role="banner">
+        <div class="header-inner container">
+            <div class="brand" style="margin-right:auto; margin-left:0;">
+                <a href="/" aria-label="Daytona Supply home">
+                    <img src="assets/images/Logowhite.png" alt="Daytona Supply" class="logo">
+                </a>
+            </div>
+            <div class="search-wrap">
+                <form role="search" action="catalogue.php" method="get" class="search-form">
+                    <label for="search-input" class="sr-only">Search products</label>
+                    <!-- use `search` param to match catalogue.php's parameter name -->
+                    <input id="search-input" name="search" type="search" placeholder="Search SKUs, items, categories" aria-label="Search products">
+                    <button class="search-btn" aria-label="Search">Search</button>
+                </form>
+            </div>
+                <div class="header-actions">
+                    <a class="action link-phone" href="tel:3867887009">Call: (386) 788-7009</a>
+                    <?php if ($loggedIn): ?>
+                        <div class="has-account action" tabindex="0" aria-haspopup="true" aria-expanded="false">
+                            <a class="account-link" href="account.php">My Account</a>
+                            <div class="account-menu" role="menu" aria-label="Account menu">
+                                <a role="menuitem" href="logout.php">Log out</a>
+                            </div>
+                        </div>
+                    <?php else: ?>
+                        <a class="action" href="login.php">Login / Register</a>
+                    <?php endif; ?>
+                    <!-- Nav cart button (upper-right) -->
+                    <a class="nav-cart action" href="cart.php" id="cart-link" aria-label="View cart">Cart (<span id="cart-count"><?php echo $cartCount; ?></span>)</a>
+                </div>
+        </div>
+
+        <nav class="main-nav" role="navigation" aria-label="Primary">
+            <div class="container nav-inner">
+                <button id="nav-toggle" class="nav-toggle" aria-expanded="false" aria-controls="nav-menu" aria-label="Toggle navigation"><span class="sr-only">Menu</span></button>
+                <div id="nav-menu" class="nav-menu" hidden>
+                    <ul class="nav-cats">
+                        <?php
+                        // Load shared SKU filters and groups. returns ['filters'=>..., 'groups'=>...]
+                        $skuData = @include __DIR__ . '/sku_filters.php';
+                        $skuFilters = is_array($skuData) && isset($skuData['filters']) ? $skuData['filters'] : [];
+                        $skuGroups = is_array($skuData) && isset($skuData['groups']) ? $skuData['groups'] : [];
+                        ?>
+                        <li class="has-mega products-item"><a class="cat-btn" href="catalogue.php">Products</a>
+                            <div class="mega" role="menu">
+                                <?php foreach ($skuGroups as $groupLabel => $labels): ?>
+                                    <div class="mega-col">
+                                        <h4><?php echo htmlspecialchars($groupLabel); ?></h4>
+                                        <ul>
+                                            <?php foreach ($labels as $label): if (!isset($skuFilters[$label])) continue; ?>
+                                                <?php $url = 'catalogue.php?sku=' . urlencode($label); ?>
+                                                <li><a href="<?php echo htmlspecialchars($url); ?>"><?php echo htmlspecialchars($label); ?></a></li>
+                                            <?php endforeach; ?>
+                                        </ul>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </li>
+                        <li><a href="about.php">About Us</a></li>
+                        <li><a href="contact.php">Contact Us</a></li>
+                        <!-- Removed All Products and Partner as requested -->
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <main>

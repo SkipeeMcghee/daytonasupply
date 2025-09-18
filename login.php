@@ -37,27 +37,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $title = 'Login';
 include __DIR__ . '/includes/header.php';
 ?>
-<section class="page-hero">
-    <h1>Login</h1>
-    <p class="lead">Enter your Email address and Password into the fields below, then click the LOGIN button.</p>
-</section>
-<?php if (!empty($flash)): ?>
-    <p style="color:<?= $flash['type'] === 'success' ? 'green' : 'red' ?>"><?= htmlspecialchars($flash['msg']) ?></p>
-<?php endif; ?>
-<?php if (!empty($error)): ?>
-    <p style="color:red"><?= htmlspecialchars($error) ?></p>
-<?php endif; ?>
-<?php if (!empty($error) && $error === 'Please verify your email address before logging in.'): ?>
-    <form method="post" action="resend_verification.php" style="display:block; margin-bottom:12px;">
-        <input type="hidden" name="email" value="<?= htmlspecialchars($_SESSION['flash_email'] ?? ($_POST['email'] ?? '')) ?>">
-        <button type="submit" class="muted-btn action-btn small">Resend verification email</button>
-    </form>
-<?php endif; ?>
-<form method="post" action="login.php" class="vertical-form">
-    <p>Email:<br><input type="email" name="email" required></p>
-    <p>Password:<br><input type="password" name="password" required></p>
-    <p><button type="submit" class="proceed-btn">LOGIN</button></p>
-</form>
-<p><a href="forgot_password.php">Forgot your password?</a></p>
-<p>Don't have an account? <a href="signup.php">Sign up</a></p>
+<main class="login-page" id="content" role="main">
+    <section class="login-card" aria-labelledby="login-heading">
+        <h1 id="login-heading">Sign in to your account</h1>
+        <p class="login-sub">Access your account to order, view invoices, and manage your catalog.</p>
+
+        <?php if (!empty($flash)): ?>
+                <p style="color:<?= $flash['type'] === 'success' ? 'green' : 'red' ?>"><?= htmlspecialchars($flash['msg']) ?></p>
+        <?php endif; ?>
+        <?php if (!empty($error)): ?>
+                <p style="color:red"><?= htmlspecialchars($error) ?></p>
+        <?php endif; ?>
+        <?php if (!empty($error) && $error === 'Please verify your email address before logging in.'): ?>
+                <form method="post" action="resend_verification.php" style="display:block; margin-bottom:12px;">
+                        <input type="hidden" name="email" value="<?= htmlspecialchars($_SESSION['flash_email'] ?? ($_POST['email'] ?? '')) ?>">
+                        <button type="submit" class="muted-btn action-btn small">Resend verification email</button>
+                </form>
+        <?php endif; ?>
+
+        <form method="post" class="vertical-form" action="login.php">
+            <div class="form-row">
+                <label for="login_email">Email</label>
+                <div class="field"><input id="login_email" type="email" name="email" required autocomplete="email"></div>
+            </div>
+            <div class="form-row">
+                <label for="login_password">Password</label>
+                <div class="field"><input id="login_password" type="password" name="password" required autocomplete="current-password"></div>
+            </div>
+            <button type="submit" class="btn-primary">Sign in</button>
+
+            <div class="alt-actions"></div>
+        </form>
+
+        <div class="login-helpers" role="group" aria-label="login actions">
+            <a class="forgot-link" href="forgot_password.php">Forgot your password?</a>
+
+            <div class="signup-helper">
+                <span>Don't have an account?</span>
+                <form method="post" action="signup.php" style="display:inline; margin:0;">
+                    <input type="hidden" name="from_login" value="1">
+                    <button type="submit" class="signup-trigger">Sign up</button>
+                </form>
+            </div>
+        </div>
+    </section>
+</main>
 <?php include __DIR__ . '/includes/footer.php'; ?>

@@ -116,8 +116,12 @@ function getDb(): PDO
         }
         initDatabase($db);
     }
-    // Always run migrations to ensure schema is up to date for SQLite
-    migrateDatabase($db);
+    // Run migrations only when the DB was just created, or when explicitly
+    // requested via RUN_MIGRATIONS=1. Avoiding migrations on every request
+    // prevents repeated PRAGMA/ALTER operations that slow response times.
+    if ($initNeeded || getenv('RUN_MIGRATIONS') === '1') {
+        migrateDatabase($db);
+    }
     return $db;
 }
 

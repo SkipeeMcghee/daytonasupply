@@ -155,49 +155,96 @@ usort($orders, function($a, $b) {
     $tb = strtotime($b['created_at'] ?? '');
     return $tb <=> $ta; // newest first
 });
-$title = 'My Account';
+$title = 'Your Account';
 include __DIR__ . '/includes/header.php';
 ?>
-<section class="page-hero">
-    <h1>My Account</h1>
-    <p class="lead">If you have no changes to make, go directly to the <a href="catalogue.php" class="proceed-btn">CATALOG</a></p>
+<section class="page-hero centered">
+    <h1>Your Account</h1>
+    <p class="lead">If you have no changes to make, go directly to the <a href="catalogue.php" class="proceed-btn btn-catalog">CATALOG</a></p>
 </section>
-<?php foreach ($messages as $msg): ?>
-    <p class="success"><?= htmlspecialchars($msg) ?></p>
-<?php endforeach; ?>
-<?php if (!empty($errors)): ?>
-    <ul class="error">
-        <?php foreach ($errors as $err): ?>
-            <li><?= htmlspecialchars($err) ?></li>
+<div class="login-page">
+    <div class="login-card form-card">
+
+        <?php foreach ($messages as $msg): ?>
+                <p class="success"><?= htmlspecialchars($msg) ?></p>
         <?php endforeach; ?>
-    </ul>
-<?php endif; ?>
-<h2>Your Details</h2>
-<form id="account_form" method="post" action="account.php" class="vertical-form">
-    <p>Name:<br> <input type="text" name="name" value="<?= htmlspecialchars($customer['name']) ?>" required autocomplete="off"></p>
-    <p>Business Name:<br> <input type="text" name="business_name" value="<?= htmlspecialchars($customer['business_name']) ?>" autocomplete="off"></p>
-    <p>Phone:<br> <input type="text" name="phone" value="<?= htmlspecialchars($customer['phone']) ?>" autocomplete="off"></p>
-    <p>Email:<br> <input type="email" value="<?= htmlspecialchars($customer['email']) ?>" disabled autocomplete="off"></p>
-    <fieldset>
-        <legend>Billing Address</legend>
-    <p>Street Address:<br><input type="text" name="billing_street" value="<?= htmlspecialchars($customer['billing_line1'] ?? $customer['billing_street'] ?? '') ?>" autocomplete="off"></p>
-    <p>Street Address 2:<br><input type="text" name="billing_street2" value="<?= htmlspecialchars($customer['billing_street2'] ?? '') ?>" autocomplete="off"></p>
-        <p>City:<br><input type="text" name="billing_city" value="<?= htmlspecialchars($customer['billing_city'] ?? '') ?>" autocomplete="off"></p>
-        <p>State:<br><input type="text" name="billing_state" value="<?= htmlspecialchars($customer['billing_state'] ?? '') ?>" autocomplete="off"></p>
-    <p>Zip:<br><input type="text" name="billing_zip" value="<?= htmlspecialchars($customer['billing_postal_code'] ?? $customer['billing_zip'] ?? '') ?>" autocomplete="off"></p>
-    </fieldset>
-    <?php $sameBillingChecked = (trim(($customer['shipping_line1'] ?? $customer['shipping_street'] ?? '')) === trim(($customer['billing_line1'] ?? $customer['billing_street'] ?? ''))); ?>
-    <fieldset>
-        <legend>Shipping Address</legend>
-        <p><label><input type="checkbox" name="same_as_billing" id="account_same_billing" value="1" <?= $sameBillingChecked ? 'checked' : '' ?>> Same as billing</label></p>
-        <div id="account_shipping_fields">
-            <p>Street Address:<br><input type="text" name="shipping_street" value="<?= htmlspecialchars($customer['shipping_line1'] ?? $customer['shipping_street'] ?? '') ?>" autocomplete="off"></p>
-            <p>Street Address 2:<br><input type="text" name="shipping_street2" value="<?= htmlspecialchars($customer['shipping_street2'] ?? '') ?>" autocomplete="off"></p>
-            <p>City:<br><input type="text" name="shipping_city" value="<?= htmlspecialchars($customer['shipping_city'] ?? '') ?>" autocomplete="off"></p>
-            <p>State:<br><input type="text" name="shipping_state" value="<?= htmlspecialchars($customer['shipping_state'] ?? '') ?>" autocomplete="off"></p>
-            <p>Zip:<br><input type="text" name="shipping_zip" value="<?= htmlspecialchars($customer['shipping_postal_code'] ?? $customer['shipping_zip'] ?? '') ?>" autocomplete="off"></p>
-        </div>
-    </fieldset>
+        <?php if (!empty($errors)): ?>
+                <ul class="error">
+                        <?php foreach ($errors as $err): ?>
+                                <li><?= htmlspecialchars($err) ?></li>
+                        <?php endforeach; ?>
+                </ul>
+        <?php endif; ?>
+
+        <h2>Your Details</h2>
+        <form id="account_form" method="post" action="account.php" class="vertical-form">
+                <div class="form-grid cols-2">
+                    <div class="form-row">
+                        <label>Name
+                            <input type="text" name="name" value="<?= htmlspecialchars($customer['name']) ?>" required autocomplete="off">
+                        </label>
+                    </div>
+                    <div class="form-row">
+                        <label>Business Name
+                            <input type="text" name="business_name" value="<?= htmlspecialchars($customer['business_name']) ?>" autocomplete="off">
+                        </label>
+                    </div>
+                    <div class="form-row">
+                        <label>Phone
+                            <input type="text" name="phone" value="<?= htmlspecialchars($customer['phone']) ?>" autocomplete="off">
+                        </label>
+                    </div>
+                    <div class="form-row">
+                        <label>Email
+                            <input type="email" value="<?= htmlspecialchars($customer['email']) ?>" disabled autocomplete="off">
+                        </label>
+                    </div>
+                </div>
+
+                <fieldset>
+                        <legend>Billing Address</legend>
+                        <div class="form-grid">
+                            <div class="form-row">
+                                <label>Street Address
+                                    <textarea name="billing_street" class="autosize"><?= htmlspecialchars($customer['billing_line1'] ?? $customer['billing_street'] ?? '') ?></textarea>
+                                </label>
+                            </div>
+                            <div class="form-row">
+                                <label>Street Address 2
+                                    <input type="text" name="billing_street2" value="<?= htmlspecialchars($customer['billing_street2'] ?? '') ?>" autocomplete="off">
+                                </label>
+                            </div>
+                            <div class="compact-inline">
+                                <label>City<input type="text" name="billing_city" value="<?= htmlspecialchars($customer['billing_city'] ?? '') ?>" autocomplete="off"></label>
+                                <label>State<input type="text" name="billing_state" value="<?= htmlspecialchars($customer['billing_state'] ?? '') ?>" autocomplete="off"></label>
+                                <label>Zip<input type="text" name="billing_zip" value="<?= htmlspecialchars($customer['billing_postal_code'] ?? $customer['billing_zip'] ?? '') ?>" autocomplete="off"></label>
+                            </div>
+                        </div>
+                </fieldset>
+                <?php $sameBillingChecked = (trim(($customer['shipping_line1'] ?? $customer['shipping_street'] ?? '')) === trim(($customer['billing_line1'] ?? $customer['billing_street'] ?? ''))); ?>
+                <fieldset>
+                        <legend>Shipping Address</legend>
+                        <p><label><input type="checkbox" name="same_as_billing" id="account_same_billing" value="1" <?= $sameBillingChecked ? 'checked' : '' ?>> Same as billing</label></p>
+                        <div id="account_shipping_fields">
+                                <div class="form-grid">
+                                    <div class="form-row">
+                                        <label>Street Address
+                                            <textarea name="shipping_street" class="autosize"><?= htmlspecialchars($customer['shipping_line1'] ?? $customer['shipping_street'] ?? '') ?></textarea>
+                                        </label>
+                                    </div>
+                                    <div class="form-row">
+                                        <label>Street Address 2
+                                            <input type="text" name="shipping_street2" value="<?= htmlspecialchars($customer['shipping_street2'] ?? '') ?>" autocomplete="off">
+                                        </label>
+                                    </div>
+                                    <div class="compact-inline">
+                                        <label>City<input type="text" name="shipping_city" value="<?= htmlspecialchars($customer['shipping_city'] ?? '') ?>" autocomplete="off"></label>
+                                        <label>State<input type="text" name="shipping_state" value="<?= htmlspecialchars($customer['shipping_state'] ?? '') ?>" autocomplete="off"></label>
+                                        <label>Zip<input type="text" name="shipping_zip" value="<?= htmlspecialchars($customer['shipping_postal_code'] ?? $customer['shipping_zip'] ?? '') ?>" autocomplete="off"></label>
+                                    </div>
+                                </div>
+                        </div>
+                </fieldset>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         var checkbox = document.getElementById('account_same_billing');
@@ -232,95 +279,102 @@ include __DIR__ . '/includes/header.php';
         setShipping(checkbox.checked);
     });
     </script>
-    <hr>
-    <section style="margin-top:2em;">
-        <h3>Change your password</h3>
-        <p>Current Password: <input type="password" name="current_password" autocomplete="new-password"></p>
-        <p>New Password (leave blank to keep current): <input type="password" name="password" autocomplete="new-password"></p>
-    </section>
-    <p><button type="submit" class="proceed-btn">Save Changes</button></p>
-</form>
+        <hr>
+        <section style="margin-top:2em;">
+            <h3>Change your password</h3>
+            <p>Current Password: <input type="password" name="current_password" autocomplete="new-password"></p>
+            <p>New Password (leave blank to keep current): <input type="password" name="password" autocomplete="new-password"></p>
+        </section>
+        <p><button type="submit" class="btn-primary">Save Changes</button></p>
+    </form>
 
-<h2>Your Orders</h2>
-<?php if (!empty($orders)): ?>
-    <?php foreach ($orders as $order): ?>
-        <?php $items = getOrderItems((int)$order['id']); $orderTotal = 0.0; ?>
-        <div class="order-group">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-            <div><strong>Order #<?= $order['id']; ?></strong> — <?= htmlspecialchars(date('n/j/Y g:i A', strtotime($order['created_at']))); ?><?php if (!empty($order['po_number'])): ?> <span class="order-po">PO: <?= htmlspecialchars($order['po_number']) ?></span><?php endif; ?></div>
-                <div><span class="order-toggle" data-order="<?= $order['id']; ?>">Collapse</span></div>
-            </div>
-            <table class="account-table order-items" data-order="<?= $order['id']; ?>">
-                <tr>
-                    <th>Order ID</th>
-                    <th>Date</th>
-                    <th>SKU</th>
-                    <th>Description</th>
-                    <th class="numeric">Quantity</th>
-                    <th class="numeric">Rate</th>
-                    <th class="numeric">Price</th>
-                    <th>Status</th>
-                </tr>
-                <?php if (!empty($items)): ?>
-                    <?php $firstItem = true; foreach ($items as $item): ?>
-                        <?php
-                            // Prefer snapshot fields stored on the order_items row.
-                            // If snapshots are missing (orders created before migration)
-                            // fall back to current product data.
-                            $qty = (int)$item['quantity'];
-                            $sku = htmlspecialchars($item['product_name'] ?? '');
-                            $pricePerUnit = isset($item['product_price']) ? (float)$item['product_price'] : null;
-                            if ($sku === '' || $pricePerUnit === null) {
-                                // Missing snapshot: fall back to current product record. Use
-                                // the product 'name' as the SKU/code for display. If the
-                                // product record is gone, show a helpful placeholder.
-                                $prod = getProductById((int)$item['product_id']);
-                                if ($prod) {
-                                    $sku = htmlspecialchars($prod['name']);
-                                    $desc = htmlspecialchars($prod['description'] ?? $prod['name']);
-                                    $pricePerUnit = (float)$prod['price'];
-                                } else {
-                                    $sku = 'Unknown item';
-                                    $desc = 'Unknown product';
-                                    $pricePerUnit = 0.0;
-                                }
-                            } else {
-                                // Use the snapshot description when available
-                                $desc = htmlspecialchars($item['product_description'] ?? $item['product_name']);
-                            }
-                            $rate = $pricePerUnit;
-                            $price = $rate * $qty;
-                            $orderTotal += $price;
-                        ?>
-                        <tr>
-                            <?php if ($firstItem): ?>
-                                <td><?= $order['id']; ?></td>
-                                <td><?= htmlspecialchars(date('n/j/Y g:i A', strtotime($order['created_at']))); ?></td>
-                            <?php else: ?>
-                                <td></td>
-                                <td></td>
-                            <?php endif; ?>
-                            <td><?= htmlspecialchars($sku); ?></td>
-                            <td><?= $desc; ?></td>
-                            <td class="numeric"><?= $qty; ?></td>
-                            <td class="numeric">$<?= number_format($rate, 2); ?></td>
-                            <td class="numeric">$<?= number_format($price, 2); ?></td>
-                            <td></td>
-                        </tr>
-                        <?php $firstItem = false; ?>
-                    <?php endforeach; ?>
-                    <tr class="order-total-row">
-                        <td colspan="6" style="text-align:right"><strong>Total:</strong></td>
-                        <td class="numeric"><strong>$<?= number_format($orderTotal, 2); ?></strong></td>
-                        <td><?= htmlspecialchars($order['status']); ?></td>
+    </div>
+</div>
+
+<div class="orders-wrap container">
+    <h2 style="margin-top:1.5rem;">Your Orders</h2>
+    <?php if (!empty($orders)): ?>
+        <?php foreach ($orders as $order): ?>
+            <?php $items = getOrderItems((int)$order['id']); $orderTotal = 0.0; ?>
+            <div class="order-group">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <div><strong>Order #<?= $order['id']; ?></strong> — <?= htmlspecialchars(date('n/j/Y g:i A', strtotime($order['created_at']))); ?><?php if (!empty($order['po_number'])): ?> <span class="order-po">PO: <?= htmlspecialchars($order['po_number']) ?></span><?php endif; ?></div>
+                    <div><span class="order-toggle" data-order="<?= $order['id']; ?>" aria-expanded="true">Collapse</span></div>
+                </div>
+                <table class="account-table order-items" data-order="<?= $order['id']; ?>">
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Date</th>
+                        <th>SKU</th>
+                        <th>Description</th>
+                        <th class="numeric">Quantity</th>
+                        <th class="numeric">Rate</th>
+                        <th class="numeric">Price</th>
+                        <th>Status</th>
                     </tr>
-                <?php else: ?>
-                    <tr><td colspan="8">No items for order #<?= $order['id']; ?></td></tr>
-                <?php endif; ?>
-            </table>
-        </div>
-    <?php endforeach; ?>
-<?php else: ?>
-    <p>You have not placed any orders.</p>
-<?php endif; ?>
+                    <?php if (!empty($items)): ?>
+                        <?php $firstItem = true; foreach ($items as $item): ?>
+                            <?php
+                                // Prefer snapshot fields stored on the order_items row.
+                                // If snapshots are missing (orders created before migration)
+                                // fall back to current product data.
+                                $qty = (int)$item['quantity'];
+                                $sku = htmlspecialchars($item['product_name'] ?? '');
+                                $pricePerUnit = isset($item['product_price']) ? (float)$item['product_price'] : null;
+                                if ($sku === '' || $pricePerUnit === null) {
+                                    // Missing snapshot: fall back to current product record. Use
+                                    // the product 'name' as the SKU/code for display. If the
+                                    // product record is gone, show a helpful placeholder.
+                                    $prod = getProductById((int)$item['product_id']);
+                                    if ($prod) {
+                                        $sku = htmlspecialchars($prod['name']);
+                                        $desc = htmlspecialchars($prod['description'] ?? $prod['name']);
+                                        $pricePerUnit = (float)$prod['price'];
+                                    } else {
+                                        $sku = 'Unknown item';
+                                        $desc = 'Unknown product';
+                                        $pricePerUnit = 0.0;
+                                    }
+                                } else {
+                                    // Use the snapshot description when available
+                                    $desc = htmlspecialchars($item['product_description'] ?? $item['product_name']);
+                                }
+                                $rate = $pricePerUnit;
+                                $price = $rate * $qty;
+                                $orderTotal += $price;
+                            ?>
+                            <tr>
+                                <?php if ($firstItem): ?>
+                                    <td><?= $order['id']; ?></td>
+                                    <td><?= htmlspecialchars(date('n/j/Y g:i A', strtotime($order['created_at']))); ?></td>
+                                <?php else: ?>
+                                    <td></td>
+                                    <td></td>
+                                <?php endif; ?>
+                                <td><?= htmlspecialchars($sku); ?></td>
+                                <td><?= $desc; ?></td>
+                                <td class="numeric"><?= $qty; ?></td>
+                                <td class="numeric">$<?= number_format($rate, 2); ?></td>
+                                <td class="numeric">$<?= number_format($price, 2); ?></td>
+                                <td></td>
+                            </tr>
+                            <?php $firstItem = false; ?>
+                        <?php endforeach; ?>
+                        <tr class="order-total-row">
+                            <td colspan="6" style="text-align:right"><strong>Total:</strong></td>
+                            <td class="numeric"><strong>$<?= number_format($orderTotal, 2); ?></strong></td>
+                            <td><?= htmlspecialchars($order['status']); ?></td>
+                        </tr>
+                    <?php else: ?>
+                        <tr><td colspan="8">No items for order #<?= $order['id']; ?></td></tr>
+                    <?php endif; ?>
+                </table>
+            </div>
+        <?php endforeach; ?>
+    <?php else: ?>
+        <p>You have not placed any orders.</p>
+    <?php endif; ?>
+
+  </div>
+</div>
 <?php include __DIR__ . '/includes/footer.php'; ?>

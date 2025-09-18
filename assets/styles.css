@@ -1,230 +1,265 @@
-/* Minimal styling for Daytona Supply demo */
-body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    background: #f9f9f9;
+/* Daytona Supply — modern responsive styles (mobile-first) */
+:root{
+  --brand:#004080;
+  --accent:#0d6efd;
+  --muted:#6c757d;
+  --bg:#f7f8fb;
+  --card:#ffffff;
+  --text:#0b2238;
+  --radius:10px;
+  --container:1200px;
 }
-header {
-    background: #004080;
-    color: white;
-    padding: 1em;
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,"Noto Sans",sans-serif;
+  color:var(--text);
+  background:var(--bg);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
 }
-/* Site logo in header */
-.site-brand { display:flex; align-items:center; justify-content:flex-start; margin-bottom:0.6em; margin-left:0.25em; }
-.site-logo { height:88px; width:auto; display:block; }
+.container{max-width:var(--container);margin:0 auto;padding:0 16px}
+.sr-only{position:absolute!important;height:1px;width:1px;overflow:hidden;clip:rect(1px,1px,1px,1px);white-space:nowrap;border:0;padding:0;margin:-1px}
 
-@media (max-width: 768px) {
-    .site-logo { height:72px; }
-}
-header .nav {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    gap: 1em;
-}
-header .nav a {
-    color: white;
-    text-decoration: none;
-}
-main {
-    padding: 1em;
-}
-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-table th, table td {
-    border: 1px solid #ccc;
-    padding: 0.5em;
-}
-table th {
-    background: #eee;
-}
-/* Numeric alignment for currency and quantity */
-td.numeric, th.numeric {
-    text-align: right;
-    white-space: nowrap;
-}
+/* Header */
+.site-header{background:var(--brand);border-bottom:1px solid rgba(255,255,255,0.08);position:sticky;top:0;z-index:50}
+.header-inner{display:flex;align-items:center;gap:12px;padding:12px 0}
+.brand{display:flex;align-items:center;margin-left:0}
+.brand .logo{height:44px;width:auto;filter:brightness(0) invert(1);display:block}
+.search-wrap{flex:1}
+.search-form{display:flex;gap:8px}
+.search-form input[type=search]{flex:1;padding:10px 12px;border:1px solid #d7e1ea;border-radius:8px;font-size:clamp(14px,1.6vw,16px)}
+.search-btn{background:var(--brand);color:#fff;border:none;padding:10px 14px;border-radius:8px;font-weight:700}
+.header-actions{display:flex;gap:10px;align-items:center}
+/* Header action links should be visible on the brand background */
+.header-actions .action{color:#fff;text-decoration:none;font-weight:600}
+.header-actions .link-phone{color:#fff}
 
-/* Order grouping visuals */
-.order-group {
-    border: 1px solid #ddd;
-    background: #fff;
-    margin-bottom: 0.5em;
-    padding: 0.25em;
+/* Strong, high-specificity rules for the cart button to override inherited header link color */
+.site-header .header-actions .nav-cart, .site-header .header-actions .nav-cart * {
+  color: var(--brand) !important;
 }
-.order-total-row td {
-    background: #f5f5f5;
-    font-weight: 700;
+.site-header .header-actions .nav-cart {
+  background: #fff;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-weight: 700;
+  text-decoration: none;
+  border: 2px solid rgba(0,64,128,0.08);
 }
 
-/* Collapse toggle */
-.order-toggle {
-    cursor: pointer;
-    color: #0b5ed7;
-    text-decoration: underline;
-    font-size: 0.9em;
+/* Account menu (shown on hover/focus for keyboard users) */
+.has-account{position:relative}
+.has-account .account-link{color:#fff;text-decoration:none;font-weight:700}
+.has-account .account-menu{display:none;position:absolute;left:0;top:100%;background:#fff;color:var(--text);min-width:140px;padding:8px;border-radius:8px;box-shadow:0 8px 20px rgba(11,34,56,0.12);z-index:60}
+.has-account .account-menu a{display:block;padding:8px 10px;color:var(--text);text-decoration:none;border-radius:6px}
+.has-account .account-menu a:hover{background:#f1f5fb;color:var(--brand)}
+.has-account:hover .account-menu, .has-account:focus-within .account-menu, .has-account.open .account-menu { display:block }
+
+/* Make header action controls visually consistent and add subtle dividers */
+.header-actions .action {
+  display:inline-flex;
+  align-items:center;
+  gap:.5rem;
+  padding:.35rem .6rem;
+  border-radius:6px;
+  background:transparent;
+  color:#fff;
+  text-decoration:none;
 }
-form {
-    display: inline-block;
-}
-button {
-    padding: 0.5em 1em;
-    background: #004080;
-    color: white;
-    border: none;
-    cursor: pointer;
-}
-button:hover {
-    background: #003060;
-}
-.message {
-    padding: 0.5em;
-    background: #dff0d8;
-    border: 1px solid #d6e9c6;
-    margin-bottom: 1em;
+.header-actions .action + .action {
+  margin-left:.5rem;
+  padding-left:.8rem; /* space between text and divider */
+  border-left:1px solid rgba(255,255,255,0.12);
 }
 
-/* Make signup form inputs approximately twice as wide for better usability */
-#signup_form input[type="text"],
-#signup_form input[type="email"],
-#signup_form input[type="password"],
-#signup_form input[type="number"],
-#signup_form textarea, #signup_form select {
-    width: 680px; /* approx twice the default in many layouts */
-    max-width: 100%; /* remain responsive on small screens */
-    box-sizing: border-box;
+/* Muted search button (keeps focus ring via :focus-visible) */
+.search-wrap .search-btn, .header-actions .search-btn {
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.06);
+  padding:8px 12px;
+  border-radius:6px;
 }
 
-/* Make My Account form inputs approximately twice as wide as default */
-#account_form input[type="text"],
-#account_form input[type="email"],
-#account_form input[type="password"],
-#account_form input[type="number"],
-#account_form textarea, #account_form select {
-    width: 680px;
-    max-width: 100%;
-    box-sizing: border-box;
+/* Keep cart as a distinct white pill */
+.nav-cart{background:#fff;padding:8px 10px;border-radius:8px;font-weight:700;text-decoration:none;border:2px solid rgba(0,64,128,0.08)}
+.nav-cart, .nav-cart * { color: var(--brand) !important; }
+.nav-cart:hover{background:#f1f5fb}
+.nav-cart #cart-count{font-weight:800}
+
+/* Small screens: remove dividers to keep layout compact */
+@media (max-width: 720px) {
+  .header-actions .action + .action {
+    border-left: none;
+    margin-left: .35rem;
+    padding-left: .35rem;
+  }
+  .search-wrap .search-btn { padding:6px 8px; }
 }
 
-/* Home hero styles */
-.home-hero { margin: 1.25em 0; }
-.home-hero .hero-inner { display:flex; gap:1.25em; align-items:center; }
-.home-hero .hero-media { flex: 0 0 220px; }
-.hero-img { width:100%; max-width:220px; height:auto; display:block; border-radius:8px; }
-.home-hero .hero-content { flex:1 1 auto; }
-.home-hero h3 { margin:0 0 0.5em 0; font-size:1.25rem; color:#002b5c; }
-.lead { margin:0 0 0.75em 0; font-size:1rem; color:#222; line-height:1.4; }
-.hero-features { list-style: disc; margin:0 0 0.75em 1.25em; padding:0; color:#333; }
-.hero-features li { margin:0.35em 0; }
-.hero-ctas { display:flex; gap:0.6em; margin-top:0.5em; }
-.hero-ctas .view-btn { background:#004080; color:#fff; box-shadow:none; }
+/* Mobile header layout: prioritize logo left and cart right on a single top row,
+   then stack search and nav on separate rows for better touch layout */
+@media (max-width: 720px) {
+  .header-inner { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .brand { order: 1; flex: 0 0 auto; }
+  .header-actions { order: 2; display:flex; align-items:center; gap:8px; }
+  .header-actions .action { padding:.35rem .5rem; }
+  /* keep only cart visually prominent in the top row; move others to nav/search rows */
+  .header-actions .link-phone, .header-actions .has-account, .header-actions .action[href="login.php"] { display: none; }
+  .nav-cart { display:inline-flex; order:2; margin-left:auto; }
 
-/* Generic page hero to give catalogue/cart/checkout/account/signup/login pages
-   a consistent, attractive header like the home page. */
-.page-hero {
-    background: #ffffff;
-    padding: 1em;
-    border-radius: 8px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.06);
-    margin: 1em 0;
+  /* Search should be full width on its own row */
+  /* Ensure search always breaks below the top row */
+  .search-wrap { order:3; width:100% !important; display:block !important; margin-top:6px !important; flex-basis:100% !important; }
+  .search-form { width:100%; display:flex; gap:8px; }
+  .search-form input[type=search] { width:100%; }
+
+  /* Make the search button and input larger on mobile for touch targets */
+  .search-form input[type=search], .search-form .search-btn { padding: 10px 12px; font-size: 15px; }
+  .search-form .search-btn { white-space:nowrap; }
+
+  /* Nav should be visible as a stacked row under search (use nav-toggle to expand) */
+  .main-nav .nav-inner { padding:6px 0; }
+  .main-nav .nav-toggle { display:inline-flex; }
+  .main-nav .nav-menu { display:block; width:100%; }
+  .nav-cats { display:block; padding:8px 0; }
+  .nav-cats a, .nav-cats button { display:block; width:100%; padding:10px 12px; border-radius:8px; margin-bottom:6px; background:var(--card); color:var(--text); }
 }
-.page-hero h1, .page-hero h2 {
-    margin: 0 0 0.45em 0;
-    color: #002b5c;
+/* Restore the cart button to the previous appearance (accent outline on brand header) */
+.nav-cart{background:#fff;padding:8px 10px;border-radius:8px;font-weight:700;text-decoration:none;border:2px solid rgba(0,64,128,0.08)}
+/* Force brand color for cart label and its children to avoid inherited white from global header links */
+.nav-cart, .nav-cart * { color: var(--brand) !important; }
+.nav-cart:hover{background:#f1f5fb}
+.nav-cart #cart-count{font-weight:800}
+
+/* Navigation */
+.main-nav{background:var(--brand);color:#fff}
+.nav-inner{display:flex;align-items:center;gap:12px;padding:8px 0}
+.nav-toggle{background:transparent;border:0;color:#fff;padding:8px 12px;font-weight:700}
+.nav-menu{display:block}
+.nav-cats{list-style:none;margin:0;padding:8px 0;display:flex;gap:10px;flex-wrap:wrap}
+/* Standardize lower nav links so all behave like buttons */
+.nav-cats a,.nav-cats button{color:#fff;background:transparent;border:0;padding:8px 10px;border-radius:6px;font-weight:700;line-height:1}
+.nav-cats a:hover, .nav-cats button:hover{background:rgba(255,255,255,0.06)}
+.nav-cats .cat-btn{background:transparent;color:#fff;border:0;padding:8px 10px;border-radius:6px;font-weight:700;cursor:pointer;line-height:1}
+.nav-cats .cat-btn:hover{background:rgba(255,255,255,0.06)}
+.nav-cats .has-mega, .nav-cats .products-item{position:relative}
+.mega{position:absolute;left:0;top:100%;background:#fff;color:var(--text);padding:18px;display:none;box-shadow:0 10px 30px rgba(11,34,56,0.12);border-radius:8px;width:min(880px,95vw)}
+.mega-col{float:left;width:33%;padding:6px}
+.mega h4{margin:0 0 8px;font-size:14px;letter-spacing:0.06em}
+.has-mega:hover .mega,.has-mega:focus-within .mega,
+.products-item:hover .mega, .products-item:focus-within .mega {display:block}
+
+/* Ensure anchors inside the white mega menu are readable and list bullets are removed */
+.mega ul{list-style:none;margin:0;padding:0}
+.mega li{margin-bottom:8px}
+.mega a{color:var(--text);text-decoration:none}
+.mega a:hover{color:var(--brand);text-decoration:none}
+
+/* Make All Products behave like the categories hover (show a simple dropdown) */
+.nav-cats .all-products{position:relative}
+.nav-cats .all-products:hover + .mega, .nav-cats .all-products:focus + .mega { display: block; }
+
+/* Hero carousel */
+.hero-section{background:linear-gradient(180deg,#f5f9ff,transparent);padding:18px 0}
+.hero-wrap{position:relative}
+.hero-carousel{position:relative;overflow:hidden;border-radius:var(--radius)}
+.carousel-track{display:flex;transition:transform 420ms ease}
+.carousel-slide{min-width:100%;display:flex;align-items:center;gap:18px;padding:28px;background:linear-gradient(90deg,rgba(255,255,255,0.9),rgba(255,255,255,0.6));}
+.slide-img{width:120px;height:120px;object-fit:contain;border-radius:8px}
+.slide-copy{flex:1}
+.slide-title{font-weight:800;letter-spacing:0.12em;text-transform:uppercase;margin:0 0 8px;font-size:clamp(20px,6.5vw,36px)}
+.slide-sub{margin:0;color:var(--muted)}
+.cta{display:inline-block;margin-top:10px;padding:10px 16px;background:var(--accent);color:#fff;border-radius:8px;text-decoration:none;font-weight:700}
+.carousel-control{position:absolute;top:50%;transform:translateY(-50%);background:rgba(11,34,56,0.7);color:#fff;border:0;padding:6px 10px;border-radius:6px;font-size:20px}
+.carousel-control.prev{left:12px}
+.carousel-control.next{right:12px}
+.carousel-dots{position:absolute;left:50%;transform:translateX(-50%);bottom:12px;display:flex;gap:8px}
+.carousel-dots button{width:10px;height:10px;border-radius:50%;border:0;background:rgba(11,34,56,0.25)}
+.carousel-dots button.active{background:var(--brand)}
+
+/* Promo tiles */
+.promo-tiles{padding:18px 0}
+.promo-grid{display:grid;grid-template-columns:repeat(1,1fr);gap:12px}
+.promo.card{background:var(--card);padding:18px;border-radius:12px;text-decoration:none;color:var(--text);box-shadow:0 8px 20px rgba(11,34,56,0.06)}
+.promo.card h3{margin:0 0 6px;text-transform:uppercase;letter-spacing:0.08em}
+
+/* Message strip */
+.message-strip{padding:8px 0;background:#fff;border-top:1px solid #eef4fb;border-bottom:1px solid #eef4fb}
+.message-list{display:flex;gap:18px;list-style:none;margin:0;padding:8px 0;overflow:hidden}
+.message-list li{font-weight:700;color:var(--brand)}
+
+/* Wide banner */
+.wide-banner{position:relative;margin:18px 0}
+.wide-banner img{width:100%;display:block;border-radius:12px;object-fit:cover}
+.banner-overlay{position:absolute;left:20px;top:20px;color:#fff}
+.banner-overlay h2{margin:0;font-size:clamp(20px,5vw,36px);text-transform:uppercase;letter-spacing:0.08em}
+
+/* Categories grid */
+.categories-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.category-card{display:block;background:var(--card);border-radius:12px;overflow:hidden;text-decoration:none;color:var(--text);position:relative}
+.category-card img{width:100%;height:140px;object-fit:cover}
+.cat-body{padding:12px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.shop-btn{background:transparent;border:2px solid var(--brand);padding:8px 12px;border-radius:8px;color:var(--brand);font-weight:700}
+.category-card:focus .shop-btn,.category-card:hover .shop-btn{background:var(--brand);color:#fff}
+
+/* Catalogue table gridlines and polished table styles */
+.catalogue-table{width:100%;border-collapse:separate;border-spacing:0;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 6px 18px rgba(11,34,56,0.06)}
+.catalogue-table th,.catalogue-table td{padding:12px 14px;border-bottom:1px solid #eef4fb}
+.catalogue-table thead th{background:#f6f8fb;border-bottom:2px solid #e6eef8;font-weight:700}
+.catalogue-table tr:nth-child(even) td{background:#fbfdff}
+.catalogue-table tr:last-child td{border-bottom:none}
+
+/* Modern SKU/Category buttons used on the catalogue page */
+.sku-btn{display:inline-block;padding:8px 12px;border-radius:10px;border:0;background:#fff;color:var(--text);font-weight:700;box-shadow:0 6px 0 rgba(11,34,56,0.06);transition:transform 120ms ease, box-shadow 120ms ease, background 120ms ease;text-decoration:none}
+.sku-btn:hover{transform:translateY(-3px);box-shadow:0 10px 0 rgba(11,34,56,0.08);background:#f6f8fb}
+.sku-btn:active,.sku-btn.active{transform:translateY(0);box-shadow:0 3px 0 rgba(11,34,56,0.06);background:var(--brand);color:#fff}
+
+/* Make shop buttons slightly bolder with hard shadow */
+.shop-btn{background:transparent;border:2px solid var(--brand);padding:8px 12px;border-radius:8px;color:var(--brand);font-weight:700;box-shadow:0 6px 0 rgba(11,34,56,0.06)}
+.shop-btn:hover{background:var(--brand);color:#fff;transform:translateY(-2px);box-shadow:0 10px 0 rgba(11,34,56,0.08)}
+.shop-btn:active{transform:translateY(0);box-shadow:0 3px 0 rgba(11,34,56,0.06)}
+
+/* Back to top */
+.back-to-top{position:fixed;right:18px;bottom:18px;background:var(--brand);color:#fff;border:0;padding:10px;border-radius:50%;display:none;z-index:60}
+
+/* Footer */
+.site-footer{background:#0b2238;color:#fff;padding:28px 0}
+.footer-grid{display:grid;grid-template-columns:1fr;gap:18px;align-items:start}
+.f-links ul,.f-social ul{list-style:none;padding:0;margin:0}
+.f-links a{color:#dcebf9;text-decoration:none}
+.f-news input[type=email]{padding:8px;border-radius:8px;border:0;margin-right:8px}
+
+/* Footer logo: keep it compact and responsive */
+.f-logo{max-height:48px;width:auto;display:block}
+
+/* Responsive layout for larger screens */
+@media(min-width:700px){
+  .promo-grid{grid-template-columns:repeat(3,1fr)}
+  .categories-grid{grid-template-columns:repeat(3,1fr)}
+  .footer-grid{grid-template-columns:2fr 1fr 1fr 1fr}
 }
-.page-hero .lead {
-    margin: 0 0 0.75em 0;
-    color: #333;
+@media(min-width:1100px){
+  .container{padding:0 24px}
+  .nav-cats{gap:18px}
+  .slide-img{width:160px;height:160px}
 }
 
-@media (max-width: 768px) {
-    .home-hero .hero-inner { flex-direction:column; align-items:flex-start; }
-    .home-hero .hero-media { flex:0 0 auto; }
-    .hero-img { max-width:180px; }
-    .lead { font-size:0.95rem; }
-    .hero-ctas { flex-wrap:wrap; }
-}
-footer {
-    text-align: center;
-    padding: 1em;
-    background: #eee;
-    margin-top: 2em;
-}
+/* Accessibility focus styles */
+/* Avoid bright yellow outlines on mouse click. Use :focus-visible for keyboard users. */
+button:focus, a:focus, input:focus{outline: none}
+/* Use brand-colored ring for focus-visible to remain visible but not jarring */
+button:focus-visible, a:focus-visible, input:focus-visible{outline:3px solid rgba(255,255,255,0.18);outline-offset:3px}
+/* For inputs inside white containers (like the catalogue table or card), use brand blue focus */
+.search-form input:focus-visible, input[type=text]:focus-visible, input[type=search]:focus-visible{outline:3px solid rgba(0,64,128,0.18);outline-offset:3px}
 
-/* Favorite star button styles */
-.fav-toggle { display:inline-flex; align-items:center; justify-content:center; padding:4px; }
-.fav-toggle .fav-icon path { fill: transparent; stroke: #000; stroke-width:1.5; transition: fill 200ms ease, stroke 200ms ease, transform 180ms ease; }
-.fav-toggle { background: transparent; border: none; }
-.fav-toggle:hover .fav-icon path { stroke: #000; transform: scale(1.05); }
-.fav-toggle.fav-on .fav-icon path { fill: #ffd54f; stroke: #000; }
-.fav-toggle.fav-on .fav-icon { filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15)); }
-
-/* Standardized view buttons (Show All / Show Favorites) */
-.view-btn {
-    padding:6px 10px;
-    border-radius:6px;
-    text-decoration:none;
-    background:#bfbfbf; /* darker */
-    color:#000;
-    font-weight:600;
-    display:inline-block;
-    box-shadow:0 6px 18px rgba(0,0,0,0.12);
-}
-.view-btn:hover { box-shadow:0 8px 20px rgba(0,0,0,0.14); }
-.view-btn.active {
-/* Added message (non-intrusive) */
-.added-msg { font-weight:700; box-shadow: 0 6px 18px rgba(0,0,0,0.12); }
-    box-shadow:none;
-    transform:translateY(1px);
-    background:#e9e9e9;
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce){
+  .carousel-track{transition:none}
 }
 
-/* SKU filter buttons */
-.sku-btn {
-    padding:6px 10px;
-    border-radius:6px;
-    text-decoration:none;
-    background:#5c5f63; /* slightly lighter unpressed */
-    color:#fff;
-    font-weight:600;
-    display:inline-block;
-    box-shadow:0 6px 16px rgba(0,0,0,0.18);
-}
-.sku-btn:hover { box-shadow:0 10px 26px rgba(0,0,0,0.22); background:#4a4d51; }
-.sku-btn.active { box-shadow:none; transform:translateY(1px); background:#3b3f44; }
-
-/* Proceed to cart button used in catalogue lead */
-.proceed-btn { display:inline-block; padding:6px 8px; background:#0d6efd; color:#fff; border-radius:6px; text-decoration:none; font-weight:700; font-size:0.9rem; margin-left:6px; }
-.proceed-btn:hover { background:#0b5ed7; }
-
-/* Muted variant for less-prominent actions (gray background) */
-.muted-btn {
-    background: #6c757d !important;
-    color: #fff !important;
-    box-shadow: none !important;
-}
-.muted-btn:hover {
-    background: #5a6268 !important;
-}
-
-/* small gold star used in Favorites button */
-.mini-star { color:#ffd54f; margin-left:6px; font-size:0.9em; /* black outline via text-shadow */ text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; }
-
-/* Cart remove X button */
-.cart-remove-btn { background:transparent; border:0; color:#dc3545; font-weight:700; cursor:pointer; font-size:18px; }
-.cart-remove-btn:hover { color:#a71d2a; }
-
-/* Force fixed column widths and wrapping for cart/checkout/account/manager tables */
-.cart-table, .admin-table, .account-table {
-    table-layout: fixed;
-    width: 100%;
-}
-
-/* Generic cell wrapping */
-.cart-table td, .cart-table th,
 .admin-table td, .admin-table th,
 .account-table td, .account-table th {
     white-space: normal;
@@ -268,6 +303,22 @@ footer {
 .admin-table.order-items th:nth-child(9), .admin-table.order-items td:nth-child(9),
 .account-table.order-items th:nth-child(9), .account-table.order-items td:nth-child(9) {
     width: 9%;
+}
+
+/* Orders section: allow full-width tables and add gridlines for legibility */
+.orders-wrap { padding: 18px 0; }
+.orders-wrap .account-table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #e6eef8; box-shadow: 0 6px 18px rgba(11,34,56,0.04); }
+.orders-wrap .account-table th, .orders-wrap .account-table td { padding: 12px 14px; border: 1px solid #eef4fb; text-align: left; vertical-align: middle; }
+.orders-wrap .account-table thead th { background: #f6f8fb; font-weight: 700; }
+.orders-wrap .order-group { margin-bottom: 18px; }
+.order-toggle { cursor: pointer; color: var(--brand); text-decoration: underline; }
+.order-toggle[aria-expanded="false"]::after { content: ' ▾'; }
+.order-toggle[aria-expanded="true"]::after { content: ' ▴'; }
+
+/* On small screens allow horizontal scroll rather than constraining columns */
+@media (max-width: 860px) {
+  .orders-wrap .account-table { display: block; width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .orders-wrap .account-table th, .orders-wrap .account-table td { white-space: nowrap; }
 }
 
 /* Responsive behavior for small screens: allow horizontal scrolling and improve touch readability */
@@ -326,3 +377,280 @@ footer {
 }
 .sort-btn:hover { background: #222222; box-shadow:0 8px 20px rgba(0,0,0,0.14); }
 .sort-btn:active, .sort-btn.active { transform: translateY(1px); box-shadow: none; }
+
+/* Contact form */
+.contact-form{max-width:780px;background:var(--card);padding:18px;border-radius:10px;box-shadow:0 6px 18px rgba(11,34,56,0.06)}
+.contact-form input[type=text], .contact-form textarea{width:100%;padding:10px;border:1px solid #e2eef8;border-radius:8px;font-size:15px}
+.contact-form button{background:var(--brand);color:#fff;padding:10px 14px;border-radius:8px;border:0;font-weight:700}
+
+/* When contact-form is used inside the centered login-card, make it full-width and match padding */
+.login-card .contact-form { max-width: 100%; padding: 0; background: transparent; box-shadow: none; }
+.login-card .contact-form .form-grid { gap: 0.6rem; }
+.login-card .contact-form input, .login-card .contact-form textarea { border: 1px solid rgba(16,22,30,0.06); }
+
+/* Signup / form improvements: modern, responsive, handles long entries */
+.form-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 6px 18px rgba(10, 20, 30, 0.06);
+  max-width: 980px;
+  margin: 0 auto;
+}
+/* Page hero variant used on contact/account pages — centered modifier */
+.page-hero { padding: 18px 0; }
+.page-hero h1 { margin: 0 0 8px 0; font-size: clamp(1.4rem, 3.5vw, 2rem); color: var(--text); }
+.page-hero .lead { margin: 0; color: rgba(16,22,30,0.65); }
+.page-hero.centered, .page-hero.centered * { text-align: center !important; }
+
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+@media (min-width: 860px) {
+  .form-grid.cols-2 {
+    grid-template-columns: 1fr 1fr;
+  }
+  .form-grid.label-left .form-row {
+    display: contents; /* let nested layout control label+input */
+  }
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+@media (min-width: 860px) {
+  .form-row.inline {
+    flex-direction: row;
+    align-items: center;
+  }
+  .form-row.inline label {
+    width: 36%;
+    flex: 0 0 36%;
+    text-align: left;
+    padding-right: 0.6rem;
+  }
+  .form-row.inline .field {
+    width: 64%;
+  }
+}
+
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="password"],
+select,
+textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid rgba(16,22,30,0.08);
+  background: #fff;
+  color: var(--text);
+  font-size: clamp(0.9rem, 1.6vw, 1rem);
+  transition: transform .08s ease, box-shadow .08s ease, border-color .12s ease;
+  outline: none;
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  box-shadow: 0 6px 18px rgba(10,20,30,0.06);
+  border-color: rgba(0,64,128,0.18);
+}
+
+:focus { outline: none; }
+:focus-visible { outline: 3px solid rgba(0, 90, 180, 0.12); outline-offset: 2px; }
+
+/* Auto-resizing textarea styling for street fields / long addresses */
+textarea.autosize {
+  min-height: 56px;
+  max-height: 360px;
+  resize: none;          /* JS will handle growth */
+  overflow: hidden;
+  padding-top: 0.65rem;
+  padding-bottom: 0.65rem;
+}
+
+.form-hint {
+  font-size: 0.88rem;
+  color: rgba(16,22,30,0.6);
+}
+
+.compact-inline {
+  display: grid;
+  grid-template-columns: 1fr 80px 1fr;
+  gap: 0.5rem;
+}
+@media (max-width: 860px) {
+  .compact-inline { grid-template-columns: 1fr; }
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .6rem .9rem;
+  border-radius: 9px;
+  border: none;
+  background: var(--brand);
+  color: #fff;
+  box-shadow: 0 6px 0 rgba(0,0,0,0.05);
+  transition: transform .08s ease, box-shadow .08s ease;
+}
+.btn-primary:active { transform: translateY(1px); box-shadow: 0 3px 0 rgba(0,0,0,0.04); }
+
+.pw-rules { display: none; margin-top: 0.4rem; padding-left: 1rem; color: #b03a2e; }
+.pw-rules.show-rules { display: block; }
+.pw-rules li { margin: .25rem 0; font-size: .95rem; }
+
+/* Constrain and center simple forms like login to avoid full-width inputs */
+.form-card.simple-form { max-width: 520px; padding: 1rem; margin: 0.75rem auto; }
+.form-card.simple-form input[type="email"], .form-card.simple-form input[type="password"] { max-width: 420px; margin: 0.25rem 0; }
+.form-card.simple-form .proceed-btn { display: inline-block; min-width: 160px; }
+
+/* Password rule hints on signup — hidden by default and shown when rules are violated */
+.pw-rules{list-style:disc;margin:8px 0 0 18px;padding:0;display:none}
+.pw-rules.show{display:block}
+.pw-rule{color:var(--muted);font-size:14px;margin-bottom:6px}
+.pw-rule.fail{color:#b02a37;font-weight:700}
+
+/* Login page — sleek centered card and tidy helper actions */
+.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.25rem 1rem;
+  min-height: calc(100vh - 120px);
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0));
+}
+
+.login-card {
+  width: 100%;
+  max-width: 520px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 12px 30px rgba(6,18,30,0.06);
+  border: 1px solid rgba(6,18,30,0.03);
+}
+
+/* Compact variation for pages that should show the form higher under the hero (e.g., contact) */
+.login-page.compact { padding-top: 1rem; min-height: auto; padding-bottom: 1rem; }
+
+.login-card h1 {
+  font-size: clamp(1.25rem, 2.5vw, 1.4rem);
+  margin: 0 0 .6rem 0;
+  letter-spacing: .02em;
+  color: var(--text);
+}
+
+.login-sub {
+  color: rgba(16,22,30,0.65);
+  font-size: .94rem;
+  margin-bottom: 1rem;
+}
+
+.login-helpers {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: .5rem;
+  margin-top: .6rem;
+  font-size: .94rem;
+}
+
+.login-helpers .forgot-link,
+.login-helpers .signup-trigger {
+  color: var(--brand);
+  text-decoration: none;
+  padding: .35rem .5rem;
+  border-radius: 8px;
+  transition: background .12s, transform .06s;
+}
+
+.login-helpers .forgot-link:hover,
+.login-helpers .signup-trigger:hover {
+  background: rgba(0,64,128,0.06);
+}
+
+.signup-helper {
+  display:flex;
+  gap:.5rem;
+  align-items:center;
+  color: rgba(16,22,30,0.6);
+  font-size:.92rem;
+}
+
+.signup-trigger {
+  background: transparent;
+  border: 1px solid rgba(6,18,30,0.06);
+  color: var(--brand);
+  padding: .42rem .6rem;
+}
+
+.login-card .btn-primary {
+  width: 100%;
+  margin-top: .8rem;
+}
+
+.alt-actions {
+  display:flex;
+  gap:.5rem;
+  justify-content:center;
+  margin-top:.75rem;
+}
+
+.form-hint { font-size:.88rem; color: rgba(16,22,30,0.55); }
+
+.login-card a:focus, .login-card button:focus { outline: 3px solid rgba(0,90,180,0.12); outline-offset: 2px; }
+
+/* Favorite toggle (catalogue) */
+.fav-toggle { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:6px; background:transparent; }
+.fav-icon path { fill: none; stroke: #ffffff; stroke-width:1.2; }
+.fav-toggle:hover .fav-icon path { stroke: #ffd43b; }
+.fav-toggle.fav-on .fav-icon path { fill: #ffd43b; stroke: #ffd43b; }
+
+/* Modern proceed button styles: base + context variants */
+.proceed-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .6rem;
+  padding: .65rem .9rem;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 800;
+  letter-spacing: .04em;
+  transition: transform .12s cubic-bezier(.2,.9,.2,1), box-shadow .12s ease, opacity .12s ease;
+  box-shadow: 0 6px 0 rgba(11,34,56,0.06); /* match .sku-btn shadow scale */
+  border: 0;
+}
+
+/* Catalog button — subtle brand outline with soft white fill */
+.proceed-btn.btn-catalog {
+  background: linear-gradient(180deg,#ffffff,#f6f8fb);
+  color: var(--brand);
+  border: 2px solid rgba(0,64,128,0.08);
+  box-shadow: 0 6px 0 rgba(11,34,56,0.06);
+}
+.proceed-btn.btn-catalog:hover { transform: translateY(-3px); box-shadow: 0 10px 0 rgba(11,34,56,0.06); }
+.proceed-btn.btn-catalog:active { transform: translateY(1px); box-shadow: 0 3px 0 rgba(0,0,0,0.04); }
+.proceed-btn.btn-catalog:focus { outline: 3px solid rgba(0,64,128,0.12); outline-offset: 3px; }
+
+/* Cart button — solid accent with stronger shadow and inverted hover */
+.proceed-btn.btn-cart {
+  background: linear-gradient(180deg,var(--brand),#0b3b6b);
+  color: #fff;
+  box-shadow: 0 6px 0 rgba(11,34,56,0.06);
+}
+.proceed-btn.btn-cart:hover { transform: translateY(-3px); box-shadow: 0 10px 0 rgba(11,34,56,0.06); }
+.proceed-btn.btn-cart:active { transform: translateY(1px); box-shadow: 0 3px 0 rgba(0,0,0,0.06); }
+.proceed-btn.btn-cart:focus { outline: 3px solid rgba(255,255,255,0.14); outline-offset: 3px; }
+
+/* Muted variant used on cart update buttons */
+.proceed-btn.muted-btn { background: #f6f8fb; color: var(--text); box-shadow: 0 6px 0 rgba(11,34,56,0.06); border: 1px solid rgba(6,18,30,0.04); }

@@ -162,10 +162,31 @@ function updateCustomer(int $id, array $data)
  */
 function getAllProducts(): array
 {
+    $cacheKey = 'daytona_all_products_v1';
+    $useApc = function_exists('apcu_fetch');
+    if ($useApc) {
+        $cached = @apcu_fetch($cacheKey, $ok);
+        if ($ok && is_array($cached)) return $cached;
+    } else {
+        $cacheFile = __DIR__ . '/../data/cache_products.json';
+        if (is_readable($cacheFile)) {
+            $json = @file_get_contents($cacheFile);
+            $arr = json_decode($json, true);
+            if (is_array($arr)) return $arr;
+        }
+    }
     $db = getDb();
     // Always return products ordered by name (our SKU) for consistent UI ordering
     $stmt = $db->query('SELECT * FROM products ORDER BY name ASC');
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    // Cache the result for subsequent requests
+    if ($useApc) {
+        @apcu_store($cacheKey, $products, 300); // 5 minutes
+    } else {
+        // best-effort write
+        @file_put_contents(__DIR__ . '/../data/cache_products.json', json_encode($products), LOCK_EX);
+    }
+    return $products;
 }
 
 /**

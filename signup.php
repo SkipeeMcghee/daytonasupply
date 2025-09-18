@@ -3,6 +3,25 @@ session_start();
 $successMessage = '';
 $showForm = true;
 $show_resend_top = false;
+// Only allow signup when arriving from the login page or when a server-side flag is set.
+// This prevents users from navigating directly to signup.php except via the login "Sign up" button.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['from_login'])) {
+    // Set a short-lived session flag permitting access to the signup form.
+    // This POST is only a navigation signal from the login page; avoid
+    // treating it as a form submission. Redirect to the signup page (GET)
+    // so validation logic below doesn't run on this navigation POST.
+    $_SESSION['allow_signup'] = time();
+    header('Location: signup.php');
+    exit;
+}
+// If no session allow flag present or it's older than 5 minutes, redirect back to login.
+if (empty($_SESSION['allow_signup']) || (time() - (int)$_SESSION['allow_signup']) > 300) {
+    // If we already completed signup and were redirected back, allow showing the success message.
+    if (empty($_SESSION['signup_success'])) {
+        header('Location: login.php');
+        exit;
+    }
+}
 // Keep a prefill email for the resend button if needed
 $prefill_resend_email = '';
 if (isset($_SESSION['signup_success'])) {
@@ -15,6 +34,14 @@ require_once __DIR__ . '/includes/functions.php';
 
 $title = 'Sign Up';
 $errors = [];
+$fieldErrors = [];
+
+function add_field_error($field, $msg) {
+    global $errors, $fieldErrors;
+    $errors[] = $msg;
+    if (!isset($fieldErrors[$field])) $fieldErrors[$field] = [];
+    $fieldErrors[$field][] = $msg;
+}
 // Ensure a per-session randomized honeypot field name to prevent attackers
 // from trivially adding a known field name in their client HTML to bypass.
 if (session_status() === PHP_SESSION_ACTIVE && empty($_SESSION['hp_name'])) {
@@ -36,8 +63,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $showForm) {
         $stmt->execute([':ip' => $ip, ':since' => $oneHourAgo]);
         $recent = (int)$stmt->fetchColumn();
         if ($recent >= 3) {
-            $errors[] = 'Too many signup attempts from your IP address. Please try again later.';
-        }
+                add_field_error('general', 'Too many signup attempts from your IP address. Please try again later.');
+            }
     } catch (Exception $e) {
         // If the DB check fails for any reason, log and continue (do not block signups)
         error_log('signup rate limit check failed: ' . $e->getMessage());
@@ -73,33 +100,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $showForm) {
         if ($captcha_success && $captcha_success->success && ($captcha_success->score ?? 0) >= 0.5) {
             $recaptcha = true;
         } else {
-            $errors[] = 'Captcha verification failed. Please try again.';
+            add_field_error('captcha', 'Captcha verification failed. Please try again.');
         }
     } else {
-        $errors[] = 'Captcha verification required.';
+        add_field_error('captcha', 'Captcha verification required.');
     }
-    if ($name === '' || $email === '' || $password === '') {
-        $errors[] = 'Name, email and password are required.';
-    }
+    if ($name === '') add_field_error('name', 'Name is required.');
+    if ($email === '') add_field_error('email', 'Email is required.');
+    if ($password === '') add_field_error('password', 'Password is required.');
     // Honeypot should be empty; if filled, treat as bot submission
     if ($honeypot !== '') {
-        $errors[] = 'Bot detected.';
+        add_field_error('general', 'Bot detected.');
     }
     // Minimum time check: require the form to have been open for at least 3 seconds
     if (!empty($_SESSION['signup_form_ts'])) {
         $elapsed = time() - (int)$_SESSION['signup_form_ts'];
         if ($elapsed < 3) {
-            $errors[] = 'Form submitted too quickly. Please take a moment and try again.';
+            add_field_error('general', 'Form submitted too quickly. Please take a moment and try again.');
         }
     }
     // Require business name and phone and billing fields
-    if ($biz === '') $errors[] = 'Business name is required.';
-    if ($phone === '') $errors[] = 'Phone number is required.';
+    if ($biz === '') add_field_error('business_name', 'Business name is required.');
+    if ($phone === '') add_field_error('phone', 'Phone number is required.');
     if ($bill_street === '' || $bill_city === '' || $bill_state === '' || $bill_zip === '') {
-        $errors[] = 'Billing address (street, city, state, zip) is required.';
+        add_field_error('billing', 'Billing address (street, city, state, zip) is required.');
     }
-    if ($password !== $confirm) $errors[] = 'Passwords do not match.';
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = 'Invalid email address.';
+    if ($password !== $confirm) add_field_error('confirm', 'Passwords do not match.');
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) add_field_error('email', 'Invalid email address.');
     $sameBillingFlag = isset($_POST['same_as_billing']);
     if ($sameBillingFlag) {
         $ship_street = $bill_street;
@@ -111,13 +138,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $showForm) {
     // If shipping is not same as billing, require shipping fields
     if (!$sameBillingFlag) {
         if ($ship_street === '' || $ship_city === '' || $ship_state === '' || $ship_zip === '') {
-            $errors[] = 'Shipping address (street, city, state, zip) is required.';
+            add_field_error('shipping', 'Shipping address (street, city, state, zip) is required.');
         }
     }
     // Normalize phone to digits and require exactly 10 digits for US numbers
     $phone_digits = preg_replace('/\D+/', '', $phone);
     if (strlen($phone_digits) !== 10) {
-        $errors[] = 'Phone number must be a 10-digit US number.';
+        add_field_error('phone', 'Phone number must be a 10-digit US number.');
     } else {
         // store normalized phone (optional)
         $phone = $phone_digits;
@@ -125,12 +152,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $showForm) {
     // Validate US ZIP: 5 digits or 5-4 format
     $zip_to_check = $bill_zip;
     if (!preg_match('/^\d{5}(-\d{4})?$/', $zip_to_check)) {
-        $errors[] = 'Billing ZIP code must be a US ZIP (12345 or 12345-6789).';
+        add_field_error('billing_zip', 'Billing ZIP code must be a US ZIP (12345 or 12345-6789).');
     }
     // If shipping distinct, validate shipping zip as US ZIP
     if (!$sameBillingFlag) {
         if (!preg_match('/^\d{5}(-\d{4})?$/', $ship_zip)) {
-            $errors[] = 'Shipping ZIP code must be a US ZIP (12345 or 12345-6789).';
+            add_field_error('shipping_zip', 'Shipping ZIP code must be a US ZIP (12345 or 12345-6789).');
         }
     }
     if ($recaptcha && empty($errors)) {
@@ -196,7 +223,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $showForm) {
             } catch (Exception $_e) {
                 // swallow
             }
-            $errors[] = $e->getMessage();
+            add_field_error('general', $e->getMessage());
             // If the error is that the email already exists and the account
             // is not verified yet, show a resend verification button at the
             // top of the signup page so the user can request a new link.
@@ -214,24 +241,82 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $showForm) {
 }
 include __DIR__ . '/includes/header.php';
 ?>
-<h1>Sign Up</h1>
-<?php if (!empty($show_resend_top)): ?>
-    <div style="margin:0.5em 0;padding:0.5em;border-radius:6px;background:#fff;box-shadow:0 6px 18px rgba(0,0,0,0.04);">
-        <p style="margin:0 0 0.4em 0;color:#222;">It looks like an account already exists for <strong><?= htmlspecialchars($prefill_resend_email) ?></strong> but it hasn't been verified yet.</p>
-        <form method="post" action="resend_verification.php" style="margin:0;">
-            <input type="hidden" name="email" value="<?= htmlspecialchars($prefill_resend_email) ?>">
-            <button type="submit" class="muted-btn action-btn small">Resend verification email</button>
-        </form>
-    </div>
-<?php endif; ?>
-<?php if (!empty($successMessage)): ?>
-    <div class="message"><?= htmlspecialchars($successMessage) ?></div>
-<?php else: ?>
-    <p class="lead">For new accounts, please complete the boxes, then click on the Create Account button below.</p>
-    <?php if (!empty($errors)): ?>
-        <ul class="error"><?php foreach ($errors as $err): ?><li><?= htmlspecialchars($err) ?></li><?php endforeach; ?></ul>
+<main class="login-page" id="content" role="main">
+  <section class="login-card" aria-labelledby="signup-heading">
+    <h1 id="signup-heading">Create a Daytona Supply account</h1>
+    <p class="login-sub">Create an account to place orders, track shipments, and manage your billing.</p>
+
+    <?php if (!empty($show_resend_top)): ?>
+        <div style="margin:0.5em 0;padding:0.5em;border-radius:6px;background:#fff;box-shadow:0 6px 18px rgba(0,0,0,0.04);">
+            <p style="margin:0 0 0.4em 0;color:#222;">It looks like an account already exists for <strong><?= htmlspecialchars($prefill_resend_email) ?></strong> but it hasn't been verified yet.</p>
+            <form method="post" action="resend_verification.php" style="margin:0;">
+                <input type="hidden" name="email" value="<?= htmlspecialchars($prefill_resend_email) ?>">
+                <button type="submit" class="muted-btn action-btn small">Resend verification email</button>
+            </form>
+        </div>
     <?php endif; ?>
-    <form id="signup_form" method="post" action="signup.php" class="vertical-form">
+    <?php if (!empty($successMessage)): ?>
+        <div class="message"><?= htmlspecialchars($successMessage) ?></div>
+    <?php else: ?>
+        <p class="lead">For new accounts, please complete the boxes, then click on the Create Account button below.</p>
+        <?php if (!empty($errors)): ?>
+            <ul class="error"><?php foreach ($errors as $err): ?><li><?= htmlspecialchars($err) ?></li><?php endforeach; ?></ul>
+        <?php endif; ?>
+        <form id="signup_form" method="post" action="signup.php" class="vertical-form">
+        <!-- Shared datalist for US state abbreviations -->
+        <datalist id="us_states">
+            <option value="AL"></option>
+            <option value="AK"></option>
+            <option value="AZ"></option>
+            <option value="AR"></option>
+            <option value="CA"></option>
+            <option value="CO"></option>
+            <option value="CT"></option>
+            <option value="DE"></option>
+            <option value="FL"></option>
+            <option value="GA"></option>
+            <option value="HI"></option>
+            <option value="ID"></option>
+            <option value="IL"></option>
+            <option value="IN"></option>
+            <option value="IA"></option>
+            <option value="KS"></option>
+            <option value="KY"></option>
+            <option value="LA"></option>
+            <option value="ME"></option>
+            <option value="MD"></option>
+            <option value="MA"></option>
+            <option value="MI"></option>
+            <option value="MN"></option>
+            <option value="MS"></option>
+            <option value="MO"></option>
+            <option value="MT"></option>
+            <option value="NE"></option>
+            <option value="NV"></option>
+            <option value="NH"></option>
+            <option value="NJ"></option>
+            <option value="NM"></option>
+            <option value="NY"></option>
+            <option value="NC"></option>
+            <option value="ND"></option>
+            <option value="OH"></option>
+            <option value="OK"></option>
+            <option value="OR"></option>
+            <option value="PA"></option>
+            <option value="RI"></option>
+            <option value="SC"></option>
+            <option value="SD"></option>
+            <option value="TN"></option>
+            <option value="TX"></option>
+            <option value="UT"></option>
+            <option value="VT"></option>
+            <option value="VA"></option>
+            <option value="WA"></option>
+            <option value="WV"></option>
+            <option value="WI"></option>
+            <option value="WY"></option>
+            <option value="DC"></option>
+        </datalist>
         <!-- Honeypot field to trap bots; name randomized per session to avoid simple bypass -->
         <div style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;">
             <?php $hpName = $_SESSION['hp_name'] ?? 'hp_field'; ?>
@@ -246,28 +331,81 @@ include __DIR__ . '/includes/header.php';
         <p>Email:<br><input type="email" name="email" required value="<?= isset($email) ? htmlspecialchars($email) : '' ?>"></p>
         <fieldset>
             <legend>Billing Address</legend>
-            <p>Street Address:<br><input type="text" name="billing_street" required value="<?= isset($bill_street) ? htmlspecialchars($bill_street) : '' ?>" autocomplete="off"></p>
-            <p>Street Address 2:<br><input type="text" name="billing_street2" value="<?= isset($bill_street2) ? htmlspecialchars($bill_street2) : '' ?>" autocomplete="off"></p>
-            <p>City:<br><input type="text" name="billing_city" required value="<?= isset($bill_city) ? htmlspecialchars($bill_city) : '' ?>" autocomplete="off"></p>
-            <p>State:<br><input type="text" name="billing_state" required value="<?= isset($bill_state) ? htmlspecialchars($bill_state) : '' ?>" autocomplete="off"></p>
-            <p>Zip:<br><input type="text" name="billing_zip" required value="<?= isset($bill_zip) ? htmlspecialchars($bill_zip) : '' ?>" autocomplete="off"></p>
+            <div class="form-row inline">
+                <label for="billing_street">Street Address</label>
+                <div class="field">
+                    <textarea id="billing_street" name="billing_street" class="autosize" required autocomplete="off"><?= isset($bill_street) ? htmlspecialchars($bill_street) : '' ?></textarea>
+                </div>
+            </div>
+            <div class="form-row inline">
+                <label for="billing_street2">Street Address 2</label>
+                <div class="field"><input type="text" id="billing_street2" name="billing_street2" value="<?= isset($bill_street2) ? htmlspecialchars($bill_street2) : '' ?>" autocomplete="off"></div>
+            </div>
+            <div class="form-row">
+                <div class="compact-inline">
+                    <div>
+                        <label for="billing_city">City</label>
+                        <input type="text" id="billing_city" name="billing_city" required value="<?= isset($bill_city) ? htmlspecialchars($bill_city) : '' ?>" autocomplete="off">
+                    </div>
+                    <div>
+                        <label for="billing_state">State</label>
+                        <input list="us_states" type="text" id="billing_state" name="billing_state" required value="<?= isset($bill_state) ? htmlspecialchars($bill_state) : '' ?>" autocomplete="off" placeholder="e.g., FL">
+                    </div>
+                    <div>
+                        <label for="billing_zip">Zip</label>
+                        <input type="text" id="billing_zip" name="billing_zip" required value="<?= isset($bill_zip) ? htmlspecialchars($bill_zip) : '' ?>" autocomplete="off">
+                    </div>
+                </div>
+            </div>
         </fieldset>
         <fieldset>
             <legend>Shipping Address</legend>
             <p><label><input type="checkbox" name="same_as_billing" id="signup_same_billing" value="1" <?= isset($_POST['same_as_billing']) ? 'checked' : '' ?>> Same as billing</label></p>
             <div id="signup_shipping_fields">
-                <p>Street Address:<br><input type="text" name="shipping_street" required value="<?= isset($ship_street) ? htmlspecialchars($ship_street) : '' ?>" autocomplete="off"></p>
-                <p>Street Address 2:<br><input type="text" name="shipping_street2" value="<?= isset($ship_street2) ? htmlspecialchars($ship_street2) : '' ?>" autocomplete="off"></p>
-                <p>City:<br><input type="text" name="shipping_city" required value="<?= isset($ship_city) ? htmlspecialchars($ship_city) : '' ?>" autocomplete="off"></p>
-                <p>State:<br><input type="text" name="shipping_state" required value="<?= isset($ship_state) ? htmlspecialchars($ship_state) : '' ?>" autocomplete="off"></p>
-                <p>Zip:<br><input type="text" name="shipping_zip" required value="<?= isset($ship_zip) ? htmlspecialchars($ship_zip) : '' ?>" autocomplete="off"></p>
+                <div class="form-row inline">
+                    <label for="shipping_street">Street Address</label>
+                    <div class="field">
+                        <textarea id="shipping_street" name="shipping_street" class="autosize" required autocomplete="off"><?= isset($ship_street) ? htmlspecialchars($ship_street) : '' ?></textarea>
+                    </div>
+                </div>
+                <div class="form-row inline">
+                    <label for="shipping_street2">Street Address 2</label>
+                    <div class="field"><input type="text" id="shipping_street2" name="shipping_street2" value="<?= isset($ship_street2) ? htmlspecialchars($ship_street2) : '' ?>" autocomplete="off"></div>
+                </div>
+                <div class="form-row">
+                    <div class="compact-inline">
+                        <div>
+                            <label for="shipping_city">City</label>
+                            <input type="text" id="shipping_city" name="shipping_city" required value="<?= isset($ship_city) ? htmlspecialchars($ship_city) : '' ?>" autocomplete="off">
+                        </div>
+                        <div>
+                            <label for="shipping_state">State</label>
+                            <input list="us_states" type="text" id="shipping_state" name="shipping_state" required value="<?= isset($ship_state) ? htmlspecialchars($ship_state) : '' ?>" autocomplete="off" placeholder="e.g., FL">
+                        </div>
+                        <div>
+                            <label for="shipping_zip">Zip</label>
+                            <input type="text" id="shipping_zip" name="shipping_zip" required value="<?= isset($ship_zip) ? htmlspecialchars($ship_zip) : '' ?>" autocomplete="off">
+                        </div>
+                    </div>
+                </div>
             </div>
         </fieldset>
-        <p>Password:<br><input type="password" name="password" required></p>
-        <p>Confirm Password:<br><input type="password" name="confirm" required></p>
+        <p>Password:<br><input type="password" name="password" id="signup_password" required></p>
+        <p>Confirm Password:<br><input type="password" name="confirm" id="signup_confirm" required></p>
+        <!-- Password rule hints — hidden by default, shown only when a rule is violated -->
+        <ul id="pw_rules" class="pw-rules" aria-live="polite">
+            <li class="pw-rule" data-rule="length">Must be at least 8 characters</li>
+            <li class="pw-rule" data-rule="uppercase">Must contain an uppercase letter (A-Z)</li>
+            <li class="pw-rule" data-rule="lowercase">Must contain a lowercase letter (a-z)</li>
+            <li class="pw-rule" data-rule="digit">Must contain a digit (0-9)</li>
+            <li class="pw-rule" data-rule="special">Must contain a special character (e.g., !@#$%)</li>
+            <li class="pw-rule" data-rule="nospaces">Must not contain spaces</li>
+        </ul>
         <input type="hidden" id="g-recaptcha-response" name="g-recaptcha-response">
-    <p><button type="submit" class="proceed-btn">Create Account</button></p>
+    <p><button type="submit" class="btn-primary">Create Account</button></p>
     </form>
+    </section>
+</main>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         var checkbox = document.getElementById('signup_same_billing');
@@ -303,6 +441,66 @@ include __DIR__ . '/includes/header.php';
         Object.values(billing).forEach(function(f) { if (f) f.addEventListener('input', function() { if (checkbox && checkbox.checked) setShipping(true); }); });
         setShipping(checkbox && checkbox.checked);
     });
+    </script>
+    <script>
+    // Password rule validation: hide rules until the user interacts
+    // or when the server already reported password/confirm errors.
+    (function(){
+        var pw = document.getElementById('signup_password');
+        var confirm = document.getElementById('signup_confirm');
+        var rulesEl = document.getElementById('pw_rules');
+        if (!pw || !rulesEl) return;
+        // If the server returned password/confirm errors, show rules immediately so users see guidance
+        var serverShowPwRules = <?php echo (!empty($fieldErrors['password']) || !empty($fieldErrors['confirm'])) ? 'true' : 'false'; ?>;
+        var rules = Array.prototype.slice.call(rulesEl.querySelectorAll('.pw-rule'));
+        var touched = false; // becomes true after user focuses or types in password fields
+        function testPassword(value) {
+            var results = {
+                length: value.length >= 8,
+                uppercase: /[A-Z]/.test(value),
+                lowercase: /[a-z]/.test(value),
+                digit: /[0-9]/.test(value),
+                special: /[!@#\$%\^&\*\(\)_\+\-=`\[\]\\\{\};:'"\\|,.<>\/?]/.test(value),
+                nospaces: !/\s/.test(value)
+            };
+            return results;
+        }
+        function updateRules() {
+            var val = pw.value || '';
+            var r = testPassword(val);
+            var anyFail = false;
+            rules.forEach(function(el){
+                var rule = el.getAttribute('data-rule');
+                if (!r[rule]) { el.classList.add('fail'); anyFail = true; }
+                else { el.classList.remove('fail'); }
+            });
+            // show rule box only when user interacted (touched) and there's a failure/typing,
+            // or when the server has already indicated password/confirm errors.
+            if (serverShowPwRules) {
+                rulesEl.classList.add('show');
+            } else if (touched && (anyFail || val.length > 0)) {
+                rulesEl.classList.add('show');
+            } else {
+                rulesEl.classList.remove('show');
+            }
+            // confirm mismatch handling (show as a failing rule visually by toggling a class)
+            if (confirm) {
+                var mismatch = (val.length>0 && confirm.value.length>0 && val !== confirm.value);
+                var exists = rulesEl.querySelector('[data-rule="mismatch"]');
+                if (!exists) {
+                    var li = document.createElement('li'); li.className='pw-rule'; li.setAttribute('data-rule','mismatch'); li.textContent='Passwords do not match'; rulesEl.appendChild(li); rules.push(li); exists = li;
+                }
+                if (mismatch) { exists.classList.add('fail'); rulesEl.classList.add('show'); } else { exists.classList.remove('fail'); }
+            }
+        }
+        // mark touched on focus or first input so rules don't appear from autofill or initial state
+        function touch() { if (!touched) { touched = true; updateRules(); } }
+        pw.addEventListener('input', function(e){ touch(); updateRules(); });
+        pw.addEventListener('focus', touch);
+        if (confirm) { confirm.addEventListener('input', function(e){ touch(); updateRules(); }); confirm.addEventListener('focus', touch); }
+        // initialize once (but only show if server signaled errors)
+        updateRules();
+    })();
     </script>
     <script src="https://www.google.com/recaptcha/api.js?render=6Lfsm6wrAAAAAFuElD_SuX0RdtxWv3myo3t5AvqT"></script>
     <script>

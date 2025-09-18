@@ -191,35 +191,10 @@ if ($showMode === 'favorites') {
     $products = array_values(array_filter($products, function($p) use ($favoriteIds) { return in_array((int)$p['id'], $favoriteIds, true); }));
 }
 
-// SKU filter mapping: category => array of SKU prefixes/codes
-$skuFilters = [
-    'BATHROOM' => ['BAT'],
-    'BROOMS AND BRUSHES' => ['BRB'],
-    'BUBBLE PRODUCTS' => ['BPA'],
-    'CLEANERS AND DEGREASERS' => ['CLD'],
-    'CORRUGATED BOXES' => ['BAR','PAD','CLEARANCEBOX050514','SBO','ROL','OPF','SFC','SIZ','SOB'],
-    'DEODORIZER' => ['DEO'],
-    'DISINFECTANTS' => ['DIS'],
-    'FLOOR PRODUCTS' => ['FLO'],
-    'FOAM' => ['FOA'],
-    'FOODSERVICE' => ['FOO'],
-    'GLOVES' => ['GLO'],
-    'MAILERS' => ['BMA','MDC','PMA'],
-    'MATS' => ['MAT'],
-    'OFFICE' => ['OFF'],
-    'PACKAGING SUPPLIES' => ['PAC'],
-    'PAPER PRODUCTS' => ['PAP'],
-    'PEST CONTROL' => ['PCO'],
-    'POLY' => ['POS'],
-    'POLY BAGS' => ['POL'],
-    'RAGS' => ['RAG'],
-    'SAFETY EQUIPMENT' => ['SAF'],
-    'SOAP AND SANITIZER' => ['SAN'],
-    'SPONGES AND SCRUBBERS' => ['SPS'],
-    'TAPE' => ['TAP'],
-    'TOOLS & EQUIPMENT' => ['TEQ'],
-    'TRASH CAN LINERS' => ['LIN']
-];
+// Load shared SKU filters and grouping from includes/sku_filters.php
+$skuData = @include __DIR__ . '/includes/sku_filters.php';
+$skuFilters = is_array($skuData) && isset($skuData['filters']) ? $skuData['filters'] : [];
+
 
 // Apply SKU/type filter if provided
 if ($skuKey !== '') {
@@ -256,7 +231,7 @@ include __DIR__ . '/includes/header.php';
 ?>
 <section class="page-hero">
     <h1>Catalog</h1>
-    <p class="lead">Browse through our extensive product listings or click on a category below to go directly to a product group. Use the SEARCH box to find a product or product group. Click ADD to order a product. When ready, <a href="cart.php" class="proceed-btn">PROCEED TO CART</a></p>
+    <p class="lead">Browse through our extensive product listings or click on a category below to go directly to a product group. Use the SEARCH box to find a product or product group. Click ADD to order a product. When ready, <a href="cart.php" class="proceed-btn btn-cart">PROCEED TO CART</a></p>
 </section>
 <div style="margin-bottom:8px; display:flex; gap:10px; align-items:center;">
     <div style="font-weight:700;">View:</div>
@@ -290,7 +265,7 @@ include __DIR__ . '/includes/header.php';
 <?php if (empty($products)): ?>
     <p>No products found.</p>
 <?php else: ?>
-<table>
+<table class="catalogue-table">
     <tr>
         <th>Name</th>
         <th>Description</th>
