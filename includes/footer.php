@@ -9,8 +9,8 @@
                 <img src="assets/images/DaytonaSupplyDSlogo.png" alt="Daytona Supply" class="f-logo">
                 <address>
                     Daytona Supply<br>
-                    123 Supply Ave<br>
-                    Daytona Beach, FL 32114
+                    1022 Reed Canal Rd<br>
+                    Daytona Beach, FL 32119
                 </address>
             </div>
             <div class="f-links">
@@ -25,7 +25,7 @@
             <div class="f-news">
                 <h4>Newsletter</h4>
                 <p>Get product updates and local deals.</p>
-                <form id="newsletter" action="" method="post">
+                <form id="newsletter" action="login.php" method="get">
                     <label for="news-email" class="sr-only">Email address</label>
                     <input id="news-email" name="email" type="email" placeholder="you@company.com" required>
                     <button type="submit">Subscribe</button>

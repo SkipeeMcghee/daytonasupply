@@ -26,6 +26,29 @@ if (!empty($_SESSION['cart']) && is_array($_SESSION['cart'])) {
 $loggedIn = isset($_SESSION['customer']);
 // Check if admin logged in
 $adminLoggedIn = isset($_SESSION['admin']);
+// If a logged-in customer has a preference stored in session, use it to render theme class server-side
+$serverThemeClass = '';
+if ($loggedIn) {
+    $pref = $_SESSION['customer']['darkmode'] ?? null;
+    if ($pref === null) {
+        // Some installs store flat customer array with 'id' only; try loading from DB when available
+        try {
+            if (!empty($_SESSION['customer']['id'])) {
+                // Ensure getDb() is available. Only include db.php when necessary to avoid early DB initialization on simple pages.
+                if (!function_exists('getDb')) {
+                    @include_once __DIR__ . '/db.php';
+                }
+                if (!function_exists('getDb')) throw new Exception('getDb unavailable');
+                $db = getDb();
+                $stmt = $db->prepare('SELECT darkmode FROM customers WHERE id = :id LIMIT 1');
+                $stmt->execute([':id' => $_SESSION['customer']['id']]);
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($row && isset($row['darkmode'])) $pref = (int)$row['darkmode'];
+            }
+        } catch (Exception $e) { /* ignore DB failures here */ }
+    }
+    if ($pref) $serverThemeClass = 'theme-dark';
+}
 ?>
 <!doctype html>
 <html lang="en">
@@ -41,7 +64,7 @@ $adminLoggedIn = isset($_SESSION['admin']);
     <?php $cssPath = __DIR__ . '/../assets/styles.css'; ?>
     <link rel="stylesheet" href="assets/styles.css?v=<?php echo file_exists($cssPath) ? filemtime($cssPath) : time(); ?>">
 </head>
-<body>
+<body class="<?php echo $serverThemeClass; ?>">
     <header class="site-header" role="banner">
         <div class="header-inner container">
             <div class="brand" style="margin-right:auto; margin-left:0;">
@@ -102,6 +125,7 @@ $adminLoggedIn = isset($_SESSION['admin']);
                         </li>
                         <li><a href="about.php">About Us</a></li>
                         <li><a href="contact.php">Contact Us</a></li>
+                        <li><a href="shipping.php">Shipping</a></li>
                         <!-- Removed All Products and Partner as requested -->
                     </ul>
                 </div>

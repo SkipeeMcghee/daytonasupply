@@ -199,6 +199,14 @@ include __DIR__ . '/includes/header.php';
                             <input type="email" value="<?= htmlspecialchars($customer['email']) ?>" disabled autocomplete="off">
                         </label>
                     </div>
+                                    <div class="form-row">
+                                        <label>Dark mode
+                                            <label class="dark-toggle" style="margin-left:.6rem;">
+                                                <input type="checkbox" id="darkmode_toggle" name="darkmode_toggle" <?= !empty($customer['darkmode']) ? 'checked' : '' ?> />
+                                                <span class="dark-toggle-switch" aria-hidden="true"></span>
+                                            </label>
+                                        </label>
+                                    </div>
                 </div>
 
                 <fieldset>

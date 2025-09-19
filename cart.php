@@ -84,7 +84,7 @@ if (!empty($_SESSION['cart'])) {
     <div class="message"><?php echo htmlspecialchars($message); ?></div>
 <?php endif; ?>
 <?php if (empty($cartItems)): ?>
-    <p>Your cart is empty.  <a href="catalogue.php">Browse products</a>.</p>
+    <p>Your cart is empty.  <a href="catalogue.php" class="proceed-btn btn-catalog">Browse products</a>.</p>
 <?php else: ?>
     <form method="post" action="">
         <input type="hidden" name="update_cart" value="1">

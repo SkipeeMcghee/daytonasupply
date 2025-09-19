@@ -9,6 +9,14 @@
   --radius:10px;
   --container:1200px;
 }
+/* Dark mode variables - toggled by adding `.theme-dark` to <html> or <body> */
+:root.theme-dark, body.theme-dark {
+  --bg: #121212; /* user requested */
+  --card: #0f1416; /* slightly offset from bg for cards */
+  --text: #e8f6ff;
+  --muted: rgba(255,255,255,0.68);
+  --brand: #0d2b52; /* much darker blue */
+}
 *{box-sizing:border-box}
 html,body{height:100%}
 body{
@@ -183,7 +191,39 @@ body{
 /* Promo tiles */
 .promo-tiles{padding:18px 0}
 .promo-grid{display:grid;grid-template-columns:repeat(1,1fr);gap:12px}
-.promo.card{background:var(--card);padding:18px;border-radius:12px;text-decoration:none;color:var(--text);box-shadow:0 8px 20px rgba(11,34,56,0.06)}
+.promo.card{background:var(--card);padding:18px;border-radius:12px;text-decoration:none;color:var(--text);box-shadow:0 8px 20px rgba(11,34,56,0.06);transition:transform 120ms ease, box-shadow 120ms ease, background 120ms ease}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .promo.card:hover, .promo.card:focus-within { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(11,34,56,0.08); }
+  .promo.card:active, .promo.card.active { transform: translateY(0); box-shadow: 0 6px 12px rgba(11,34,56,0.06); }
+}
+
+/* Subdued sheen effect for promo cards */
+.promo.card { position: relative; overflow: hidden; }
+.promo.card::after {
+  content: '';
+  position: absolute;
+  top: -40%;
+  left: -40%;
+  width: 60%;
+  height: 200%;
+  background: linear-gradient(120deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.30) 50%, rgba(255,255,255,0) 100%);
+  transform: rotate(-18deg) translateX(0);
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .promo.card:hover::after, .promo.card:focus-within::after {
+    transform: rotate(-18deg) translateX(140%);
+    opacity: 1;
+    transition: transform 420ms cubic-bezier(.2,.9,.2,1), opacity 260ms ease;
+  }
+}
+
+@media (prefers-reduced-motion: reduce), (hover: none) {
+  .promo.card::after { display: none; }
+}
 .promo.card h3{margin:0 0 6px;text-transform:uppercase;letter-spacing:0.08em}
 
 /* Message strip */
@@ -194,15 +234,190 @@ body{
 /* Wide banner */
 .wide-banner{position:relative;margin:18px 0}
 .wide-banner img{width:100%;display:block;border-radius:12px;object-fit:cover}
-.banner-overlay{position:absolute;left:20px;top:20px;color:#fff}
-.banner-overlay h2{margin:0;font-size:clamp(20px,5vw,36px);text-transform:uppercase;letter-spacing:0.08em}
+.banner-overlay{position:absolute;left:20px;top:20px;color:rgba(255,255,255,0);padding:18px;border-radius:8px;z-index:4;pointer-events:auto}
+.banner-overlay::before{content:'';position:absolute;inset:0;border-radius:8px;background:transparent;z-index:-1;}
+.banner-overlay h2{margin:0;font-size:clamp(18px,2.2vw,32px);text-transform:uppercase;letter-spacing:0.06em;line-height:1.05;font-weight:800;max-width:78ch;text-shadow:0 6px 20px rgba(2,6,12,0.5)}
+
+/* Make overlay responsive and keep it readable on small screens */
+@media (max-width:720px) {
+  .banner-overlay{left:12px;right:12px;top:12px;padding:12px}
+  .banner-overlay h2{font-size:clamp(18px,6.6vw,22px);line-height:1.08}
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .banner-overlay h2 { transition: none; }
+}
+
+/* Small bottom-left caption mirroring main banner message */
+.banner-bottom-left {
+  position: absolute;
+  left: 18px;
+  bottom: 18px;
+  z-index: 5;
+  color: rgba(255,255,255,0.9);
+  font-weight:700;
+  text-transform:none;
+  font-size: clamp(18px, 2.2vw, 32px);
+  letter-spacing:0.02em;
+  text-shadow: 0 6px 18px rgba(2,6,12,0.6);
+  pointer-events: auto;
+  padding: 6px 10px;
+  border-radius:6px;
+  background: linear-gradient(180deg, rgba(0,0,0,0.12), rgba(0,0,0,0.24));
+}
+
+@media (max-width:720px) {
+  .banner-bottom-left { left: 12px; bottom: 12px; font-size:14px; padding:6px 8px; }
+}
+
+/* Center-right caption: vertically centered, right-aligned */
+.banner-center-right {
+  position: absolute;
+  right: 22px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;
+  color: rgba(255,255,255,0.92);
+  font-weight:700;
+  font-size: clamp(18px, 2.2vw, 32px);
+  text-align: right;
+  letter-spacing: 0.02em;
+  text-shadow: 0 6px 18px rgba(2,6,12,0.6);
+  pointer-events: auto;
+  padding: 6px 10px;
+  border-radius:6px;
+  background: linear-gradient(180deg, rgba(0,0,0,0.08), rgba(0,0,0,0.18));
+}
+
+/* Unified caption style and desktop hover interaction for all banner captions */
+/* These rules make the smaller captions visually match the main overlay and
+   add a subtle pop + warmth on hover when the banner is hovered. Motion is
+   disabled for users who prefer reduced motion or on touch/hoverless devices. */
+.wide-banner .banner-overlay,
+.wide-banner .banner-bottom-left,
+.wide-banner .banner-center-right {
+  transition: transform 360ms cubic-bezier(.2,.9,.2,1), box-shadow 360ms ease, background-color 420ms ease, opacity 320ms ease;
+  will-change: transform, box-shadow, opacity;
+  border-radius: 8px;
+}
+
+/* Expand hit area so hover triggers when pointer gets near the text. The pseudo
+   element is invisible but increases the effective hover zone without moving
+   visual elements. */
+.wide-banner .banner-overlay::before,
+.wide-banner .banner-bottom-left::before,
+.wide-banner .banner-center-right::before {
+  content: '';
+  position: absolute;
+  inset: -18px; /* expand 18px around each caption */
+  border-radius: 12px;
+  background: transparent;
+  pointer-events: none; /* keep pseudo-element non-interactive while still extending hover */
+}
+
+/* Make the smaller captions visually consistent with the main overlay */
+.wide-banner .banner-bottom-left,
+.wide-banner .banner-center-right {
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  /* start transparent by default — hover will reveal the caption */
+  background: transparent;
+  color: rgba(255,255,255,0); /* text hidden until hover */
+  text-shadow: none;
+}
+
+/* Hover/pointer interaction (desktop) - slightly lift and brighten the captions */
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  /* Per-caption hover triggers — reveal captions on hover (background + text)
+     so they are transparent by default and become visible when pointer is near. */
+  .wide-banner .banner-overlay,
+  .wide-banner .banner-bottom-left,
+  .wide-banner .banner-center-right {
+    transition: background-color 260ms ease, color 260ms ease, opacity 260ms ease, text-shadow 260ms ease;
+  }
+
+  .wide-banner .banner-overlay:hover {
+    background: linear-gradient(180deg, rgba(4,8,14,0.28) 0%, rgba(4,8,14,0.46) 40%, rgba(4,8,14,0.6) 100%);
+    color: rgba(255,255,255,0.95) !important;
+    text-shadow: 0 6px 18px rgba(2,6,12,0.6) !important;
+    opacity: 1;
+  }
+
+  .wide-banner .banner-bottom-left:hover {
+    background: linear-gradient(180deg, rgba(0,0,0,0.12), rgba(0,0,0,0.24)) !important;
+    color: rgba(255,255,255,0.92) !important;
+    text-shadow: 0 6px 18px rgba(2,6,12,0.6) !important;
+    opacity: 1;
+  }
+
+  .wide-banner .banner-center-right:hover {
+    background: linear-gradient(180deg, rgba(0,0,0,0.08), rgba(0,0,0,0.18)) !important;
+    color: rgba(255,255,255,0.92) !important;
+    text-shadow: 0 6px 18px rgba(2,6,12,0.6) !important;
+    opacity: 1;
+  }
+}
+
+/* Respect reduced motion and touch devices: disable caption transitions and hover effects */
+@media (prefers-reduced-motion: reduce), (hover: none) {
+  /* For touch and reduced-motion users, keep captions visible by default */
+  .wide-banner .banner-overlay,
+  .wide-banner .banner-bottom-left,
+  .wide-banner .banner-center-right {
+    transition: none !important;
+    transform: none !important;
+    box-shadow: none !important;
+    background: linear-gradient(180deg, rgba(4,8,14,0.28) 0%, rgba(4,8,14,0.46) 40%, rgba(4,8,14,0.6) 100%);
+    color: rgba(255,255,255,0.95) !important;
+    text-shadow: 0 6px 18px rgba(2,6,12,0.6) !important;
+    opacity: 1;
+  }
+}
+
+@media (max-width:720px) {
+  .banner-center-right { right: 12px; font-size:14px; padding:6px 8px; }
+}
 
 /* Categories grid */
 .categories-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
 .category-card{display:block;background:var(--card);border-radius:12px;overflow:hidden;text-decoration:none;color:var(--text);position:relative}
-.category-card img{width:100%;height:140px;object-fit:cover}
+/* Make category tiles square for visual consistency */
+.category-card { aspect-ratio: 1 / 1; display:flex; flex-direction:column; }
+.category-card img{width:100%;height:100%;object-fit:cover;display:block}
 .cat-body{padding:12px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+/* Position the cat-body over the image at the bottom with a translucent background for readability */
+.category-card { position: relative; }
+/* Position a solid, high-contrast label band over the bottom of the tile */
+.category-card .cat-body{
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  padding: 10px;
+  /* strong dark overlay to guarantee readability */
+  background: linear-gradient(180deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.72) 100%);
+}
+/* Ensure headings and buttons contrast on dark overlay */
+.category-card .cat-body h3{color:#fff;margin:0;font-size:1rem;text-shadow:0 1px 2px rgba(0,0,0,0.6)}
+.category-card .cat-body .shop-btn{background:#ffffff;color:var(--text);border:0;padding:8px 10px;border-radius:8px;box-shadow:0 4px 10px rgba(0,0,0,0.12)}
+
+/* Slightly darken images to help text pop when overlay still collides with bright areas */
+.category-card img{filter:brightness(0.94);}
 .shop-btn{background:transparent;border:2px solid var(--brand);padding:8px 12px;border-radius:8px;color:var(--brand);font-weight:700}
+
+/* Dark mode toggle control styling */
+.dark-toggle{display:inline-flex;align-items:center;gap:.6rem;cursor:pointer;user-select:none}
+.dark-toggle input{display:none}
+.dark-toggle-switch{width:44px;height:26px;border-radius:18px;background:#e6eef8;position:relative;display:inline-block;transition:background .18s, box-shadow .12s}
+.dark-toggle-switch::after{content:'';position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .18s cubic-bezier(.2,.9,.2,1);box-shadow:0 2px 6px rgba(6,18,30,0.12)}
+.dark-toggle input:checked + .dark-toggle-switch{background:var(--brand)}
+.dark-toggle input:checked + .dark-toggle-switch::after{transform:translateX(18px)}
+.theme-dark .dark-toggle-switch{background:rgba(255,255,255,0.12)}
+.theme-dark .dark-toggle-switch::after{background:#fff}
+
+@media (prefers-reduced-motion: reduce){ .dark-toggle-switch, .dark-toggle-switch::after { transition:none !important } }
 .category-card:focus .shop-btn,.category-card:hover .shop-btn{background:var(--brand);color:#fff}
 
 /* Catalogue table gridlines and polished table styles */
@@ -211,6 +426,59 @@ body{
 .catalogue-table thead th{background:#f6f8fb;border-bottom:2px solid #e6eef8;font-weight:700}
 .catalogue-table tr:nth-child(even) td{background:#fbfdff}
 .catalogue-table tr:last-child td{border-bottom:none}
+
+/* Mobile-first constraint: ensure catalogue table fits narrow portrait screens.
+   Use fixed layout with percentage columns, reduce padding/font-size, and
+   wrap long text minimally so the table width remains within viewport. */
+@media (max-width: 420px) and (orientation: portrait) {
+  .catalogue-table { table-layout: fixed; font-size: 13px; }
+  .catalogue-table th, .catalogue-table td { padding: 8px 6px; }
+  /* Set reasonable percentage widths so columns sum to ~100% */
+  .catalogue-table th:nth-child(1), .catalogue-table td:nth-child(1) { width: 28%; } /* Name */
+  .catalogue-table th:nth-child(2), .catalogue-table td:nth-child(2) { width: 44%; } /* Description */
+  .catalogue-table th:nth-child(3), .catalogue-table td:nth-child(3) { width: 14%; } /* Price */
+  .catalogue-table th:nth-child(4), .catalogue-table td:nth-child(4) { width: 14%; } /* Add to Cart */
+  /* Reduce line-height and allow word-break to keep layout tight */
+  .catalogue-table td { line-height: 1.1; word-break: break-word; white-space: normal; }
+  /* Reduce button sizes inside table to keep within cell */
+  .catalogue-table button, .catalogue-table input { font-size: 12px; padding: 4px 6px; }
+  /* Shrink the overall table font slightly more to keep the action column visible */
+  .catalogue-table { font-size: 12px; }
+  /* Ensure action cell content doesn't force overflow: use ellipsis for long text and keep input/button inline */
+  .catalogue-table td:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .catalogue-table td:last-child form, .catalogue-table td:last-child .fav-toggle { display: inline-block; vertical-align: middle; }
+}
+
+/* Ultra-narrow screens (<= 340px) - aggressively compress layout so all four columns fit */
+@media (max-width: 340px) and (orientation: portrait) {
+  .catalogue-table { table-layout: fixed; font-size: 11px; }
+  .catalogue-table th, .catalogue-table td { padding: 6px 4px; }
+  .catalogue-table th:nth-child(1), .catalogue-table td:nth-child(1) { width: 24%; } /* Name */
+  .catalogue-table th:nth-child(2), .catalogue-table td:nth-child(2) { width: 46%; } /* Description */
+  .catalogue-table th:nth-child(3), .catalogue-table td:nth-child(3) { width: 14%; } /* Price */
+  .catalogue-table th:nth-child(4), .catalogue-table td:nth-child(4) { width: 16%; } /* Add to Cart */
+  .catalogue-table { font-size: 10.5px; }
+  .catalogue-table button, .catalogue-table input { font-size: 11px; padding: 3px 5px; }
+  .catalogue-table td:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* Make quantity input compact */
+  .catalogue-table input[type=number] { width: 2.2em; padding: 2px 4px; }
+  /* Reduce fav icon size */
+  .fav-icon { width: 14px; height: 14px; }
+  .fav-toggle { width: 22px; height: 22px; }
+  /* Tighten table header font and remove extra spacing */
+  .catalogue-table thead th { font-size: 11px; padding: 6px 4px; }
+}
+
+/* Reduce container side padding on ultra-narrow screens so table has more horizontal room */
+@media (max-width: 360px) {
+  .container { padding-left: 8px; padding-right: 8px; }
+  /* Remove extra margins around the view switcher to avoid horizontal overflow */
+  .container > div[style] { margin-left: 0; margin-right: 0; }
+  /* Reduce gap between cells and remove left/right spacing on nav/switcher */
+  .nav-inner, .header-inner { padding-left: 8px; padding-right: 8px; }
+  /* Ensure fav button has minimal margin so it doesn't push the last column */
+  .fav-toggle { margin-left: 4px !important; margin-right: 0 !important; }
+}
 
 /* Modern SKU/Category buttons used on the catalogue page */
 .sku-btn{display:inline-block;padding:8px 12px;border-radius:10px;border:0;background:#fff;color:var(--text);font-weight:700;box-shadow:0 6px 0 rgba(11,34,56,0.06);transition:transform 120ms ease, box-shadow 120ms ease, background 120ms ease;text-decoration:none}
@@ -612,9 +880,15 @@ textarea.autosize {
 
 /* Favorite toggle (catalogue) */
 .fav-toggle { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:6px; background:transparent; }
-.fav-icon path { fill: none; stroke: #ffffff; stroke-width:1.2; }
-.fav-toggle:hover .fav-icon path { stroke: #ffd43b; }
-.fav-toggle.fav-on .fav-icon path { fill: #ffd43b; stroke: #ffd43b; }
+/* Ensure the SVG star has a visible black outline for contrast on light backgrounds */
+.fav-icon path { fill: none; stroke: #000000; stroke-width:1.6; vector-effect: non-scaling-stroke; }
+/* Maintain yellow fill when active and keep a black outline for visibility */
+.fav-toggle.fav-on .fav-icon path { fill: #ffd43b; stroke: #000000; }
+/* Hover visual: emphasize the outline and hint at activation */
+.fav-toggle:hover .fav-icon path { stroke: #000000; filter: drop-shadow(0 1px 0 rgba(0,0,0,0.25)); }
+
+/* When the star is filled, add a subtle outer stroke to make it pop on both light and dark tiles */
+.fav-toggle.fav-on .fav-icon { filter: drop-shadow(0 2px 6px rgba(0,0,0,0.12)); }
 
 /* Modern proceed button styles: base + context variants */
 .proceed-btn {
@@ -654,3 +928,241 @@ textarea.autosize {
 
 /* Muted variant used on cart update buttons */
 .proceed-btn.muted-btn { background: #f6f8fb; color: var(--text); box-shadow: 0 6px 0 rgba(11,34,56,0.06); border: 1px solid rgba(6,18,30,0.04); }
+
+/* Polished hover/shine effect for category tiles (desktop only). Respects reduced-motion. */
+@media (min-width: 860px) and (prefers-reduced-motion: no-preference) {
+  .category-card { transition: transform 260ms cubic-bezier(.2,.9,.2,1), box-shadow 260ms ease; will-change: transform; }
+  .category-card:hover, .category-card:focus-within { transform: translateY(-6px) scale(1.02); box-shadow: 0 20px 40px rgba(11,34,56,0.12); }
+
+  /* Add a subtle sheen that moves with hover — implemented with a pseudo-element on the image area */
+  .category-card::before {
+    content: '';
+    position: absolute;
+    left: -60%;
+    top: -40%;
+    width: 60%;
+    height: 180%;
+    background: linear-gradient(120deg, rgba(255,255,255,0.00) 0%, rgba(255,255,255,0.28) 50%, rgba(255,255,255,0.00) 100%);
+    transform: rotate(-18deg) translateX(0);
+    transition: transform 640ms cubic-bezier(.2,.9,.2,1), opacity 420ms ease;
+    pointer-events: none;
+    opacity: 0;
+    z-index: 1;
+  }
+  .category-card:hover::before, .category-card:focus-within::before { transform: translateX(110%); opacity: 1; }
+
+  /* Slight scale on the underlying image for a more dynamic feel */
+  .category-card img { transition: transform 420ms cubic-bezier(.2,.9,.2,1), filter 420ms ease; }
+  .category-card:hover img, .category-card:focus-within img { transform: scale(1.04); filter: brightness(0.92) saturate(0.98); }
+
+  /* Ensure the label band remains above the sheen and readable */
+  .category-card .cat-body { z-index: 3; }
+}
+
+/* Hero joe: dynamic blur controlled by --joe-blur (JS updates value). */
+.hero-joe { position: relative; overflow: hidden; border-radius: 10px; --joe-blur: 12px; --joe-grayscale: 0.02; --joe-contrast: 0.98; }
+.hero-joe .joe-wrap { transition: transform 520ms ease; will-change: transform; }
+.hero-joe img.joe-img { display:block; width:100%; height:auto; transition: filter 360ms ease, transform 360ms ease; will-change: filter, transform; filter: blur(var(--joe-blur)) grayscale(var(--joe-grayscale)) contrast(var(--joe-contrast)); transform: scale(1.01); }
+
+/* When JS sets --joe-blur to 0px the image becomes sharp. Keep a tiny dead-zone handled in JS. */
+
+/* Respect reduced-motion and touch devices */
+@media (prefers-reduced-motion: reduce), (hover: none) {
+  .hero-joe .joe-wrap, .hero-joe img.joe-img { transition: none !important; filter: none !important; transform: none !important; }
+}
+/* Dark-mode search input overrides */
+body.theme-dark .search-form input[type=search], html.theme-dark .search-form input[type=search] {
+  background: #1e1e1e; /* dark gray */
+  border-color: rgba(255,255,255,0.06);
+  color: var(--text);
+}
+body.theme-dark .search-form input[type=search]::placeholder, html.theme-dark .search-form input[type=search]::placeholder {
+  color: rgba(232,246,255,0.5);
+}
+body.theme-dark .search-wrap .search-btn, html.theme-dark .search-wrap .search-btn {
+  background: rgba(255,255,255,0.04);
+  color: var(--text);
+  border-color: rgba(255,255,255,0.04);
+}
+
+/* Dark mode: make cards and forms high-contrast (white text on dark gray) */
+body.theme-dark .form-card,
+body.theme-dark .login-card,
+body.theme-dark .card,
+body.theme-dark .promo.card,
+body.theme-dark .mega,
+html.theme-dark .form-card,
+html.theme-dark .login-card,
+html.theme-dark .card,
+html.theme-dark .promo.card,
+html.theme-dark .mega {
+  background: #1b1b1b; /* dark gray */
+  color: #fff;
+  border-color: rgba(255,255,255,0.04);
+}
+
+/* Cart button in header: match dark search bar color with white text when dark theme active */
+body.theme-dark .nav-cart,
+html.theme-dark .nav-cart {
+  background: #1e1e1e; /* same as dark search bar */
+  color: #fff !important;
+  border: 1px solid rgba(255,255,255,0.04);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.35);
+}
+body.theme-dark .nav-cart:hover, html.theme-dark .nav-cart:hover {
+  background: #242424;
+}
+
+/* Proceed to cart button (on catalogue page) in dark mode */
+body.theme-dark .proceed-btn.btn-cart, html.theme-dark .proceed-btn.btn-cart {
+  background: #1e1e1e; /* dark gray */
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+}
+
+/* Tables: catalogue, account/order, and cart should match card style in dark mode */
+body.theme-dark .catalogue-table,
+body.theme-dark .account-table,
+body.theme-dark .cart-table,
+body.theme-dark table.order-items,
+html.theme-dark .catalogue-table,
+html.theme-dark .account-table,
+html.theme-dark .cart-table,
+html.theme-dark table.order-items {
+  background: #1b1b1b; /* same as cards */
+  color: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.04);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+}
+
+/* Table header and rows */
+body.theme-dark .catalogue-table thead th,
+body.theme-dark .account-table thead th,
+body.theme-dark .cart-table thead th,
+html.theme-dark .catalogue-table thead th,
+html.theme-dark .account-table thead th,
+html.theme-dark .cart-table thead th {
+  background: transparent; /* keep consistent with dark card */
+  color: rgba(255,255,255,0.9);
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+
+body.theme-dark .catalogue-table td,
+body.theme-dark .catalogue-table th,
+body.theme-dark .account-table td,
+body.theme-dark .account-table th,
+body.theme-dark .cart-table td,
+body.theme-dark .cart-table th,
+html.theme-dark .catalogue-table td,
+html.theme-dark .catalogue-table th,
+html.theme-dark .account-table td,
+html.theme-dark .account-table th,
+html.theme-dark .cart-table td,
+html.theme-dark .cart-table th {
+  color: #fff;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+
+/* Zebra rows subtle overlay for readability */
+body.theme-dark .catalogue-table tr:nth-child(even) td,
+body.theme-dark .account-table tr:nth-child(even) td,
+body.theme-dark .cart-table tr:nth-child(even) td,
+html.theme-dark .catalogue-table tr:nth-child(even) td,
+html.theme-dark .account-table tr:nth-child(even) td,
+html.theme-dark .cart-table tr:nth-child(even) td {
+  background: rgba(255,255,255,0.01);
+}
+
+/* Inputs and buttons inside tables should also match dark theme */
+body.theme-dark .catalogue-table input,
+body.theme-dark .catalogue-table button,
+body.theme-dark .account-table input,
+body.theme-dark .account-table button,
+body.theme-dark .cart-table input,
+body.theme-dark .cart-table button,
+html.theme-dark .catalogue-table input,
+html.theme-dark .catalogue-table button,
+html.theme-dark .account-table input,
+html.theme-dark .account-table button,
+html.theme-dark .cart-table input,
+html.theme-dark .cart-table button {
+  background: #222;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.04);
+}
+
+/* Ensure numeric cells align and remain readable */
+body.theme-dark .numeric, html.theme-dark .numeric { color: #fff; }
+
+/* Inputs, textareas, selects inside those cards should be dark and white text */
+body.theme-dark .form-card input,
+body.theme-dark .form-card textarea,
+body.theme-dark .form-card select,
+body.theme-dark .login-card input,
+body.theme-dark .login-card textarea,
+body.theme-dark .login-card select,
+html.theme-dark .form-card input,
+html.theme-dark .form-card textarea,
+html.theme-dark .form-card select,
+html.theme-dark .login-card input,
+html.theme-dark .login-card textarea,
+html.theme-dark .login-card select {
+  background: #222;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+body.theme-dark .form-card label,
+body.theme-dark .login-card label,
+html.theme-dark .form-card label,
+html.theme-dark .login-card label {
+  color: #fff;
+}
+
+/* Ensure mega menu links are readable on dark background */
+body.theme-dark .mega a, html.theme-dark .mega a { color: #fff; }
+
+/* Slightly brighten card headings */
+body.theme-dark .form-card h2, body.theme-dark .form-card h3, html.theme-dark .form-card h2, html.theme-dark .form-card h3 { color: #fff; }
+
+/* Category & SKU buttons in dark mode: light gray with white text and softer shadows */
+body.theme-dark .category-card .cat-body .shop-btn,
+html.theme-dark .category-card .cat-body .shop-btn,
+body.theme-dark .sku-btn,
+html.theme-dark .sku-btn {
+  background: #2f2f2f; /* light gray against dark card */
+  color: #fff !important;
+  border: 1px solid rgba(255,255,255,0.04);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+  transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+body.theme-dark .category-card .cat-body .shop-btn:hover,
+html.theme-dark .category-card .cat-body .shop-btn:hover,
+body.theme-dark .sku-btn:hover,
+html.theme-dark .sku-btn:hover {
+  background: #3a3a3a;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.14);
+  transform: translateY(-2px);
+}
+
+/* Small catalogue search (the inline form under SKU/category buttons) */
+body.theme-dark form[action="catalogue.php"] input[name="search"],
+html.theme-dark form[action="catalogue.php"] input[name="search"] {
+  background: #1e1e1e;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.06);
+  padding: 8px 10px;
+  border-radius: 6px;
+}
+body.theme-dark form[action="catalogue.php"] .proceed-btn,
+html.theme-dark form[action="catalogue.php"] .proceed-btn {
+  background: #1e1e1e;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.28);
+}
+body.theme-dark form[action="catalogue.php"] a,
+html.theme-dark form[action="catalogue.php"] a { color: rgba(255,255,255,0.85); }

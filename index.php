@@ -75,55 +75,57 @@ require_once __DIR__ . '/includes/header.php';
 
 	<!-- Wide banner -->
 	<section class="wide-banner" aria-hidden="false">
-		<img src="assets/images/DaytonaSupplyDSlogo.png" alt="Daytona Supply banner" loading="lazy">
+		<img src="assets/images/joe.jpg" alt="Daytona Supply banner" loading="lazy">
 		<div class="banner-overlay">
 			<h2>Supply locally. Ship fast. Stay compliant.</h2>
 		</div>
+	<div class="banner-bottom-left" aria-hidden="true">We accept packages of all sizes for delivery</div>
+	<div class="banner-center-right" aria-hidden="true">Low freight costs, higher margins</div>
 	</section>
 
 	<!-- Category grid -->
 	<section class="categories container" aria-label="Shop by category">
 		<h2 class="sr-only">Shop by category</h2>
 		<div class="grid categories-grid">
-			<a class="category-card" href="catalogue.php?cat=packaging">
-				<img src="assets/images/DaytonaSupplyDSlogo.png" alt="Packaging" loading="lazy">
+			<a class="category-card" href="catalogue.php?cat=corrugated">
+				<img src="assets/images/boxes.png" alt="Corrugated Boxes" loading="lazy">
 				<div class="cat-body">
-					<h3>Packaging</h3>
+					<h3>Corrugated Boxes</h3>
 					<button class="shop-btn">Shop Category</button>
 				</div>
 			</a>
-			<a class="category-card" href="catalogue.php?cat=janitorial">
-				<img src="assets/images/DaytonaSupplyDSlogo.png" alt="Janitorial" loading="lazy">
+			<a class="category-card" href="catalogue.php?cat=tape">
+				<img src="assets/images/tape.png" alt="Tape" loading="lazy">
 				<div class="cat-body">
-					<h3>Janitorial</h3>
+					<h3>Tape</h3>
 					<button class="shop-btn">Shop Category</button>
 				</div>
 			</a>
-			<a class="category-card" href="catalogue.php?cat=safety">
-				<img src="assets/images/DaytonaSupplyDSlogo.png" alt="Safety" loading="lazy">
+			<a class="category-card" href="catalogue.php?cat=packaging-supplies">
+				<img src="assets/images/stretchfilm.png" alt="Packaging Supplies" loading="lazy">
 				<div class="cat-body">
-					<h3>Safety</h3>
+					<h3>Packaging Supplies</h3>
 					<button class="shop-btn">Shop Category</button>
 				</div>
 			</a>
-			<a class="category-card" href="catalogue.php?cat=paper">
-				<img src="assets/images/DaytonaSupplyDSlogo.png" alt="Paper & Wipes" loading="lazy">
+			<a class="category-card" href="catalogue.php?cat=paper-products">
+				<img src="assets/images/paper.png" alt="Paper Products" loading="lazy">
 				<div class="cat-body">
-					<h3>Paper & Wipes</h3>
+					<h3>Paper Products</h3>
 					<button class="shop-btn">Shop Category</button>
 				</div>
 			</a>
-			<a class="category-card" href="catalogue.php?cat=chemicals">
-				<img src="assets/images/DaytonaSupplyDSlogo.png" alt="Chemicals" loading="lazy">
+			<a class="category-card" href="catalogue.php?cat=bubble-products">
+				<img src="assets/images/bubble.png" alt="Bubble Products" loading="lazy">
 				<div class="cat-body">
-					<h3>Chemicals</h3>
+					<h3>Bubble Products</h3>
 					<button class="shop-btn">Shop Category</button>
 				</div>
 			</a>
-			<a class="category-card" href="catalogue.php?cat=equipment">
-				<img src="assets/images/DaytonaSupplyDSlogo.png" alt="Equipment" loading="lazy">
+			<a class="category-card" href="catalogue.php?cat=foam">
+				<img src="assets/images/foam.png" alt="Foam" loading="lazy">
 				<div class="cat-body">
-					<h3>Equipment</h3>
+					<h3>Foam</h3>
 					<button class="shop-btn">Shop Category</button>
 				</div>
 			</a>

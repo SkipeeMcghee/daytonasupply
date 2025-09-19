@@ -272,3 +272,132 @@ document.addEventListener('DOMContentLoaded', function () {
 	if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initAutosize);
 	else initAutosize();
 })();
+
+/* Desktop-only subtle parallax for category tiles: translate image slightly on pointermove/hover.
+	 Respects reduced-motion and avoids running on touch devices. */
+(function categoryParallax() {
+	function isTouch() { return ('ontouchstart' in window) || navigator.maxTouchPoints > 0; }
+	if (isTouch()) return;
+	if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+	document.addEventListener('DOMContentLoaded', function () {
+		var cards = document.querySelectorAll('.category-card');
+		if (!cards || cards.length === 0) return;
+
+		cards.forEach(function (card) {
+			var img = card.querySelector('img');
+			if (!img) return;
+			// Use pointermove for smooth tracking on desktop; fallback to mousemove
+			function move(e) {
+				var rect = card.getBoundingClientRect();
+				var cx = rect.left + rect.width / 2;
+				var cy = rect.top + rect.height / 2;
+				var dx = (e.clientX - cx) / rect.width;
+				var dy = (e.clientY - cy) / rect.height;
+				var tx = dx * 6; // small translate range px
+				var ty = dy * 6;
+				img.style.transform = 'translate(' + tx + 'px,' + ty + 'px) scale(1.03)';
+			}
+			function reset() { img.style.transform = ''; }
+			card.addEventListener('pointermove', move, { passive: true });
+			card.addEventListener('pointerleave', reset);
+			card.addEventListener('pointerup', reset);
+		});
+	});
+})();
+
+/* Observe hero-joe and remove blur when it scrolls into view */
+(function heroJoeDynamicBlur(){
+	if (typeof window === 'undefined') return;
+	if (window.matchMedia && (window.matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+	var container = document.querySelector('.hero-joe');
+	if (!container) return;
+
+	// mapping params
+	var maxBlur = 12; // px when mostly out of view
+	var centerDeadZonePx = 18; // small dead zone in px around center where blur is zero
+
+	function setBlur(val) {
+		container.style.setProperty('--joe-blur', val + 'px');
+	}
+
+	function computeAndSet(entry) {
+		var rect = entry.boundingClientRect;
+		var viewportH = window.innerHeight || document.documentElement.clientHeight;
+		// compute distance from vertical center normalized to -1..1
+		var elementCenter = rect.top + rect.height / 2;
+		var norm = (elementCenter - viewportH / 2) / (viewportH / 2);
+		norm = Math.max(-1, Math.min(1, norm));
+
+		// When the element center is near 0 (centered), we want blur=0 within dead zone.
+		// When the element is moved so that half of it is out of frame, produce max blur.
+		// Measure half-out condition: if rect.top >= viewportH/2 or rect.bottom <= viewportH/2 then it's half-out roughly.
+
+		// Compute distance of center from center in pixels
+		var centerPx = Math.abs(elementCenter - (viewportH/2));
+
+		// If within dead zone, zero blur
+		if (centerPx <= centerDeadZonePx) { setBlur(0); return; }
+
+		// Map centerPx (0..viewportH/2) to blur (0..maxBlur) with clamp.
+		var maxDistance = viewportH / 2; // when center at top or bottom
+		var t = Math.min(1, centerPx / maxDistance);
+
+		// soften curve a bit for nicer falloff
+		var eased = Math.pow(t, 0.9);
+		var blur = Math.round(eased * maxBlur * 100) / 100;
+		setBlur(blur);
+	}
+
+	try {
+		var obs = new IntersectionObserver(function(entries){
+			entries.forEach(function(en){
+				computeAndSet(en);
+			});
+		}, { threshold: [0, 0.1, 0.25, 0.5, 0.75, 1] });
+		obs.observe(container);
+		// also update on resize/scroll to keep value in sync
+		window.addEventListener('scroll', function(){ /* no-op; IntersectionObserver triggers on scroll */ }, { passive: true });
+		window.addEventListener('resize', function(){ /* recompute via intersection */ }, { passive: true });
+	} catch (err) {
+		// IntersectionObserver not supported: just remove blur
+		setBlur(0);
+	}
+})();
+
+/* Dark mode toggle + persistence
+   - Applies saved preference from localStorage immediately
+   - Fetches server preference (if logged-in) and applies (server overrides local)
+   - Persists changes to server via POST when toggled
+*/
+(function darkMode(){
+	var storageKey = 'dg_theme';
+	function apply(isDark){
+		try { if (isDark) document.documentElement.classList.add('theme-dark'), document.body.classList.add('theme-dark'); else document.documentElement.classList.remove('theme-dark'), document.body.classList.remove('theme-dark'); } catch(e) {}
+		var cb = document.getElementById('darkmode_toggle'); if (cb) cb.checked = !!isDark;
+	}
+
+	// Apply from localStorage immediately for fast UX
+	try {
+		var local = localStorage.getItem(storageKey);
+		if (local !== null) apply(local === 'dark');
+	} catch (e) { /* storage blocked */ }
+
+	// Query server for saved preference and apply if available
+	try {
+		fetch('/ajax/get_user_prefs.php', { credentials: 'same-origin' }).then(function(r){ if (!r.ok) return null; return r.json(); }).then(function(json){ if (!json) return; if (typeof json.darkmode !== 'undefined' && json.darkmode !== null) { apply(!!json.darkmode); try { localStorage.setItem(storageKey, json.darkmode ? 'dark' : 'light'); } catch(e){} } }).catch(function(){});
+	} catch (e) {}
+
+	// Wire toggle to persist and apply
+	document.addEventListener('DOMContentLoaded', function(){
+		var toggle = document.getElementById('darkmode_toggle'); if (!toggle) return;
+		toggle.addEventListener('change', function(){
+			var isDark = !!toggle.checked; apply(isDark);
+			try { localStorage.setItem(storageKey, isDark ? 'dark' : 'light'); } catch(e){}
+			try {
+				var fd = new FormData(); fd.append('darkmode', isDark ? '1' : '0');
+				fetch('/ajax/update_darkmode.php', { method: 'POST', credentials: 'same-origin', body: fd });
+			} catch(e){ }
+		}, { passive: true });
+	});
+})();
