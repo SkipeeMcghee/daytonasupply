@@ -17,7 +17,7 @@ require_once __DIR__ . '/includes/header.php';
 						<img src="assets/images/boxey with smartphone.png" alt="Ordering on mobile" class="slide-img" loading="lazy">
 						<div class="slide-copy">
 							<h1 class="slide-title">Local, Trusted Packaging & Janitorial Supply</h1>
-							<p class="slide-sub">Thousands of products, next-day local delivery, and wholesale pricing for businesses.</p>
+							<p class="slide-sub">Hundreds of products, next-day local delivery, and wholesale pricing for businesses since 1987.</p>
 							<p><a class="cta" href="catalogue.php">Shop the Catalog</a></p>
 						</div>
 					</article>
@@ -25,7 +25,7 @@ require_once __DIR__ . '/includes/header.php';
 						<img src="assets/images/Tapey.png" alt="Tape products" class="slide-img" loading="lazy">
 						<div class="slide-copy">
 							<h2 class="slide-title">Order Faster — Account Tools for Businesses</h2>
-							<p class="slide-sub">Manage reorders, downloadable invoices, and bulk pricing.</p>
+							<p class="slide-sub">View past orders, browse products and place orders in minutes.</p>
 							<p><a class="cta" href="login.php">Create an Account</a></p>
 						</div>
 					</article>
@@ -52,12 +52,12 @@ require_once __DIR__ . '/includes/header.php';
 				<p>Explore our full product range and bulk pricing.</p>
 			</a>
 			<a class="promo card" href="login.php">
-				<h3>Place an Order</h3>
-				<p>Log in to access account pricing and reorders.</p>
+				<h3>Check your Orders</h3>
+				<p>Log in to access account and order details.</p>
 			</a>
-			<a class="promo card" href="login.php">
-				<h3>Partner Packages</h3>
-				<p>Custom programs for resellers and contractors.</p>
+			<a class="promo card" href="shipping.php">
+				<h3>Ship a Package</h3>
+				<p>From an Authorized Fedex Ship Center.</p>
 			</a>
 		</div>
 	</section>
