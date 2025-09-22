@@ -14,7 +14,12 @@ document.addEventListener('DOMContentLoaded', function () {
 					var res = JSON.parse(xhr.responseText);
 					if (res && res.success) {
 						var countEl = document.getElementById('cart-count');
-						if (countEl) countEl.textContent = res.cartCount;
+						if (countEl) {
+							// Format client-side to match server: "empty" when 0, "999+" when >=1000
+							var cc = parseInt(res.cartCount || 0, 10) || 0;
+							var display = (cc === 0) ? 'empty' : (cc >= 1000 ? '999+' : String(cc));
+							countEl.textContent = display;
+						}
 						var row = document.getElementById('product-' + res.productId);
 						if (row) {
 							var msg = document.createElement('div');
@@ -40,7 +45,7 @@ document.addEventListener('DOMContentLoaded', function () {
 					}
 				} catch (err) { console.error('Add-to-cart error', err); }
 			};
-			xhr.send(new URLSearchParams(data).toString());
+			xhr.send(data);
 		}
 	}, true);
 

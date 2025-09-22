@@ -14,7 +14,7 @@ require_once __DIR__ . '/includes/header.php';
 				<button class="carousel-control prev" aria-label="Previous slide">‹</button>
 				<div class="carousel-track">
 					<article class="carousel-slide" aria-hidden="false">
-						<img src="assets/images/DaytonaSupplyDSlogo.png" alt="Daytona Supply" class="slide-img" loading="lazy">
+						<img src="assets/images/boxey with smartphone.png" alt="Ordering on mobile" class="slide-img" loading="lazy">
 						<div class="slide-copy">
 							<h1 class="slide-title">Local, Trusted Packaging & Janitorial Supply</h1>
 							<p class="slide-sub">Thousands of products, next-day local delivery, and wholesale pricing for businesses.</p>
@@ -22,7 +22,7 @@ require_once __DIR__ . '/includes/header.php';
 						</div>
 					</article>
 					<article class="carousel-slide" aria-hidden="true">
-						<img src="assets/images/boxey with smartphone.png" alt="Ordering on mobile" class="slide-img" loading="lazy">
+						<img src="assets/images/Tapey.png" alt="Tape products" class="slide-img" loading="lazy">
 						<div class="slide-copy">
 							<h2 class="slide-title">Order Faster — Account Tools for Businesses</h2>
 							<p class="slide-sub">Manage reorders, downloadable invoices, and bulk pricing.</p>
@@ -30,7 +30,7 @@ require_once __DIR__ . '/includes/header.php';
 						</div>
 					</article>
 					<article class="carousel-slide" aria-hidden="true">
-						<img src="assets/images/DaytonaSupplyDSlogo.png" alt="Partner support" class="slide-img" loading="lazy">
+						<img src="assets/images/juggo.png" alt="Packaging equipment" class="slide-img" loading="lazy">
 						<div class="slide-copy">
 							<h2 class="slide-title">Dedicated Support for Vendors & Partners</h2>
 							<p class="slide-sub">Marketing materials, custom packaging, and account reps to help you scale.</p>

@@ -13,6 +13,9 @@ include __DIR__ . '/includes/header.php';
 
 <div class="container thin">
     <div class="form-card">
+        <div class="shipping-media">
+            <img src="assets/images/fedex.jpg" alt="FedEx logo and packaging" />
+        </div>
         <h2>Fast, reliable FedEx service from Packing Generals</h2>
         <p>For fast, reliable service at competitive rates, FedEx delivers. Packing Generals is Daytona Supply's pack-and-ship division and an officially recognized FedEx Authorized ShipCenter, providing convenient access to FedEx Ground®, FedEx Express® and FedEx International products and services.</p>
 

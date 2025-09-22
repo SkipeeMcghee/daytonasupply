@@ -46,7 +46,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $body .= "Subject: " . $subject . "\n\n";
         $body .= $message . "\n\n--\nThis message was sent from the site contact form.";
 
-        $sent = sendEmail($company, '[Contact] ' . $subject, $body);
+    // Pass the user's email as Reply-To so the team can reply directly
+    $sent = sendEmail($company, '[Contact] ' . $subject, $body, $from);
         if ($sent) {
             $success = true;
             // rotate CSRF token to avoid resubmit

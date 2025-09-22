@@ -140,7 +140,7 @@ foreach ($cart as $pid => $qty) {
     <p><label><input type="checkbox" name="apply_tax" id="apply_tax" value="1"> Apply sales tax (6.5%)</label></p>
     <p><label>PO Number (optional): <input type="text" name="po_number" value="<?php echo htmlspecialchars($_POST['po_number'] ?? ''); ?>" maxlength="255"></label></p>
         <p class="lead" id="checkout-lead">Once you click on PLACE ORDER, the request is received at our Order Desk for review and fulfillment.  You will receive a confirmation Email when your order has been accepted. Sales Tax applies unless you have a valid Sales Tax Exemption Form on file with us.</p>
-        <p><button type="submit" class="proceed-btn">Place Order</button></p>
+    <p><button type="submit" class="proceed-btn place-order">Place Order</button></p>
     </form>
     <script>
     (function(){

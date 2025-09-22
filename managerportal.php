@@ -594,9 +594,7 @@ require_once __DIR__ . '/includes/header.php';
 
 <section>
     <h3>Products</h3>
-    <div style="display:flex; justify-content:flex-start; margin:8px 0 12px 0;">
-        <a href="admin/update_inventory.php" style="background:#0b5ed7; color:#fff; padding:8px 14px; border-radius:6px; text-decoration:none; font-weight:600;">Update Inventory</a>
-    </div>
+    <!-- Update Inventory button moved below the products table to sit beside Save Product Changes -->
     <form method="post" action="">
         <input type="hidden" name="save_products" value="1">
         <table class="admin-table">
@@ -616,7 +614,10 @@ require_once __DIR__ . '/includes/header.php';
                 <tr><td colspan="5">No products found.</td></tr>
             <?php endif; ?>
         </table>
-    <p><button type="submit" class="proceed-btn">Save Product Changes</button></p>
+    <p style="display:flex;gap:8px;align-items:center;">
+        <button type="submit" class="proceed-btn">Save Product Changes</button>
+        <a href="admin/update_inventory.php" style="background:#0b5ed7; color:#fff; padding:8px 14px; border-radius:6px; text-decoration:none; font-weight:600;">Update Inventory</a>
+    </p>
     </form>
     <h4>Add Product</h4>
     <form method="post" action="">

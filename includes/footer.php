@@ -34,7 +34,7 @@
             <div class="f-social">
                 <h4>Follow</h4>
                 <ul>
-                    <li><a href="#" aria-label="LinkedIn">LinkedIn</a></li>
+                    <li><a href="#" aria-label="LinkedIn"><img src="assets/images/Linkedinicon.png" alt="LinkedIn" class="social-icon"></a></li>
                 </ul>
             </div>
         </div>

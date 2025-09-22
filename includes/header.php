@@ -22,6 +22,8 @@ if (!empty($_SESSION['cart']) && is_array($_SESSION['cart'])) {
         $cartCount += (int)$qty;
     }
 }
+// Format the displayed cart count: "empty" for 0, 1..999 for counts, and "999+" for 1000 or more
+$displayCart = ($cartCount === 0) ? 'empty' : (($cartCount >= 1000) ? '999+' : (string)$cartCount);
 // Check if user is logged in
 $loggedIn = isset($_SESSION['customer']);
 // Check if admin logged in
@@ -86,6 +88,13 @@ if ($loggedIn) {
                         <div class="has-account action" tabindex="0" aria-haspopup="true" aria-expanded="false">
                             <a class="account-link" href="account.php">My Account</a>
                             <div class="account-menu" role="menu" aria-label="Account menu">
+                                <label class="dark-toggle" role="menuitem" style="display:flex;align-items:center;gap:.6rem;padding:8px 10px;">
+                                    <span>Dark mode</span>
+                                    <label class="dark-toggle" style="margin-left:.6rem;">
+                                        <input type="checkbox" id="darkmode_toggle" name="darkmode_toggle" <?php echo ($serverThemeClass === 'theme-dark') ? 'checked' : ''; ?> />
+                                        <span class="dark-toggle-switch" aria-hidden="true"></span>
+                                    </label>
+                                </label>
                                 <a role="menuitem" href="logout.php">Log out</a>
                             </div>
                         </div>
@@ -93,7 +102,7 @@ if ($loggedIn) {
                         <a class="action" href="login.php">Login / Register</a>
                     <?php endif; ?>
                     <!-- Nav cart button (upper-right) -->
-                    <a class="nav-cart action" href="cart.php" id="cart-link" aria-label="View cart">Cart (<span id="cart-count"><?php echo $cartCount; ?></span>)</a>
+                    <a class="nav-cart action" href="cart.php" id="cart-link" aria-label="View cart">Cart (<span id="cart-count"><?php echo htmlspecialchars($displayCart); ?></span>)</a>
                 </div>
         </div>
 

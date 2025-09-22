@@ -426,7 +426,7 @@ function createOrder(int $customerId, array $cart, float $taxAmount = 0.0, ?stri
  * @param string $subject Email subject
  * @param string $message Email body
  */
-function sendEmail(string $to, string $subject, string $message): bool
+function sendEmail(string $to, string $subject, string $message, ?string $replyTo = null): bool
 {
     /*
      * This helper attempts to send email using PHPMailer if it is available.
@@ -462,6 +462,10 @@ function sendEmail(string $to, string $subject, string $message): bool
             }
             $mailer->setFrom($from, 'Daytona Supply');
             $mailer->addAddress($to);
+            // If a valid reply-to address was supplied, add it so replies go to the user
+            if (!empty($replyTo) && filter_var($replyTo, FILTER_VALIDATE_EMAIL)) {
+                $mailer->addReplyTo($replyTo);
+            }
             $mailer->Subject = $subject;
             $mailer->Body = $message;
             // Attempt to send
@@ -473,8 +477,10 @@ function sendEmail(string $to, string $subject, string $message): bool
         }
     }
     // Fallback to PHP mail()
+    // Use the supplied reply-to if valid, otherwise keep Reply-To as the company address
+    $effectiveReply = (!empty($replyTo) && filter_var($replyTo, FILTER_VALIDATE_EMAIL)) ? $replyTo : $from;
     $headers = 'From: ' . $from . "\r\n"
-             . 'Reply-To: ' . $from . "\r\n"
+             . 'Reply-To: ' . $effectiveReply . "\r\n"
              . 'X-Mailer: PHP/' . phpversion();
     $success = @mail($to, $subject, $message, $headers);
     if (!$success) {

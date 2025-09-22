@@ -138,6 +138,6 @@ if (!empty($_SESSION['cart'])) {
         });
     });
     </script>
-    <p><a href="checkout.php" class="proceed-btn">Proceed to Checkout</a></p>
+    <p><a href="checkout.php" class="proceed-btn btn-checkout">Proceed to Checkout</a></p>
 <?php endif; ?>
 <?php include __DIR__ . '/includes/footer.php'; ?>

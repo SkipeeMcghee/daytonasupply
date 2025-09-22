@@ -199,14 +199,7 @@ include __DIR__ . '/includes/header.php';
                             <input type="email" value="<?= htmlspecialchars($customer['email']) ?>" disabled autocomplete="off">
                         </label>
                     </div>
-                                    <div class="form-row">
-                                        <label>Dark mode
-                                            <label class="dark-toggle" style="margin-left:.6rem;">
-                                                <input type="checkbox" id="darkmode_toggle" name="darkmode_toggle" <?= !empty($customer['darkmode']) ? 'checked' : '' ?> />
-                                                <span class="dark-toggle-switch" aria-hidden="true"></span>
-                                            </label>
-                                        </label>
-                                    </div>
+                                    <!-- Dark mode toggle moved to My Account dropdown in header -->
                 </div>
 
                 <fieldset>
@@ -311,11 +304,11 @@ include __DIR__ . '/includes/header.php';
                 </div>
                 <table class="account-table order-items" data-order="<?= $order['id']; ?>">
                     <tr>
-                        <th>Order ID</th>
+                        <th><span class="no-break">Order ID</span></th>
                         <th>Date</th>
                         <th>SKU</th>
                         <th>Description</th>
-                        <th class="numeric">Quantity</th>
+                        <th class="numeric"><span class="no-break">Quantity</span></th>
                         <th class="numeric">Rate</th>
                         <th class="numeric">Price</th>
                         <th>Status</th>
