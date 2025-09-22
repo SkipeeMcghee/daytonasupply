@@ -34,7 +34,7 @@ require_once __DIR__ . '/includes/header.php';
 						<div class="slide-copy">
 							<h2 class="slide-title">Dedicated Support for Vendors & Partners</h2>
 							<p class="slide-sub">Marketing materials, custom packaging, and account reps to help you scale.</p>
-							<p><a class="cta" href="managerportal.php">Partner Services</a></p>
+							<p><a class="cta" href="contact.php">Tell Us What You Need</a></p>
 						</div>
 					</article>
 				</div>

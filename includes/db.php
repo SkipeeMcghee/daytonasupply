@@ -200,6 +200,39 @@ function migrateDatabase(PDO $db): void
         $db->exec('ALTER TABLE customers ADD COLUMN reset_token_expires TEXT');
     }
 
+    // Ensure order_items snapshot columns exist for SQLite as well. These
+    // columns allow us to record a snapshot of the product's name,
+    // description and price at the time the order was placed so that
+    // historical orders remain accurate even if the product row changes.
+    if (!$columnExists('order_items', 'product_name')) {
+        $db->exec('ALTER TABLE order_items ADD COLUMN product_name TEXT NULL');
+    }
+    if (!$columnExists('order_items', 'product_description')) {
+        $db->exec('ALTER TABLE order_items ADD COLUMN product_description TEXT NULL');
+    }
+    if (!$columnExists('order_items', 'product_price')) {
+        // Use REAL for SQLite numeric prices
+        $db->exec('ALTER TABLE order_items ADD COLUMN product_price REAL NULL');
+    }
+
+    // Backfill existing order_items with product data when available. This
+    // is best-effort and will only populate rows where the snapshot fields
+    // are currently NULL and the referenced product still exists in the
+    // products table.
+    try {
+        $db->beginTransaction();
+        // Populate product_name where missing
+        $db->exec("UPDATE order_items SET product_name = (SELECT p.name FROM products p WHERE p.id = order_items.product_id) WHERE product_name IS NULL AND EXISTS (SELECT 1 FROM products p WHERE p.id = order_items.product_id)");
+        // Populate product_description where missing
+        $db->exec("UPDATE order_items SET product_description = (SELECT p.description FROM products p WHERE p.id = order_items.product_id) WHERE product_description IS NULL AND EXISTS (SELECT 1 FROM products p WHERE p.id = order_items.product_id)");
+        // Populate product_price where missing
+        $db->exec("UPDATE order_items SET product_price = (SELECT p.price FROM products p WHERE p.id = order_items.product_id) WHERE product_price IS NULL AND EXISTS (SELECT 1 FROM products p WHERE p.id = order_items.product_id)");
+        $db->commit();
+    } catch (Exception $e) {
+        try { $db->rollBack(); } catch (Exception $_) {}
+        error_log('migrateDatabase backfill error: ' . $e->getMessage());
+    }
+
     // Ensure at least one admin account exists.  If the admin table is
     // empty, insert a default admin with password 'admin'.  The
     // password_hash() function is used to securely store the password.
@@ -263,6 +296,7 @@ function ensureMySQLOrderSnapshotSchema(PDO $db): void
         $db->exec("ALTER TABLE order_items ADD COLUMN product_price DECIMAL(12,2) NULL");
     }
 }
+
 
 /**
  * Create required tables and seed initial data.

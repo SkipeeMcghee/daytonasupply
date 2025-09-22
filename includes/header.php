@@ -4,7 +4,35 @@
 
 // Ensure a session is started so cart and user data can persist.
 if (session_status() === PHP_SESSION_NONE) {
+    // Set consistent cookie params to ensure the session cookie is sent
+    // across subdomains and respects secure flags in production.
+    $host = $_SERVER['HTTP_HOST'] ?? '';
+    $hostNoPort = preg_replace('/:\\d+$/', '', $host);
+    $isLocal = ($hostNoPort === 'localhost' || filter_var($hostNoPort, FILTER_VALIDATE_IP));
+    $secure = (!empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off');
+    $cookieDomain = $isLocal ? '' : ('.' . preg_replace('/^www\./i', '', $hostNoPort));
+    @session_set_cookie_params([
+        'lifetime' => 0,
+        'path' => '/',
+        'domain' => $cookieDomain ?: null,
+        'secure' => $secure,
+        'httponly' => true,
+        'samesite' => 'Lax'
+    ]);
     session_start();
+}
+
+// Redirect legacy/mistyped hostnames to the site's homepage.
+// This must run before any output so headers can be sent safely.
+$host = strtolower($_SERVER['HTTP_HOST'] ?? '');
+$host = preg_replace('/:\\d+$/', '', $host); // strip port if present
+if ($host === 'www.daytona.com') {
+    // Permanent redirect to the canonical homepage. Update the target if your canonical
+    // domain changes. We explicitly use https here since the request the user mentioned
+    // is over HTTPS.
+    header('HTTP/1.1 301 Moved Permanently');
+    header('Location: https://www.daytonasupply.com/');
+    exit;
 }
 
 // If the site is being served over HTTPS, instruct modern browsers
@@ -70,7 +98,7 @@ if ($loggedIn) {
     <header class="site-header" role="banner">
         <div class="header-inner container">
             <div class="brand" style="margin-right:auto; margin-left:0;">
-                <a href="/" aria-label="Daytona Supply home">
+                <a href="index.php" aria-label="Daytona Supply home">
                     <img src="assets/images/Logowhite.png" alt="Daytona Supply" class="logo">
                 </a>
             </div>

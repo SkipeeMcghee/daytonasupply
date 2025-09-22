@@ -2,6 +2,31 @@
 // Product catalogue page with search capability.
 
 // Start a session so cart and user data persist across requests.
+// Ensure session cookie parameters are set before starting the session so
+// the cookie is sent with consistent domain/path/secure flags. This helps
+// avoid cases where the browser does not send the session cookie between
+// requests (common when hostnames/subdomains differ between requests).
+$host = $_SERVER['HTTP_HOST'] ?? '';
+$hostNoPort = preg_replace('/:\\d+$/', '', $host);
+$isLocal = ($hostNoPort === 'localhost' || filter_var($hostNoPort, FILTER_VALIDATE_IP));
+$secure = (!empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off');
+if (!$isLocal) {
+    // Use a broad domain (strip leading www.) so cookies work across subdomains
+    $cookieDomain = '.' . preg_replace('/^www\./i', '', $hostNoPort);
+} else {
+    $cookieDomain = '';
+}
+// Use SameSite=Lax to allow top-level navigation POSTs while protecting CSRF.
+$params = [
+    'lifetime' => 0,
+    'path' => '/',
+    'domain' => $cookieDomain ?: null,
+    'secure' => $secure,
+    'httponly' => true,
+    'samesite' => 'Lax'
+];
+// session_set_cookie_params accepts an array in PHP 7.3+
+@session_set_cookie_params($params);
 session_start();
 // If running on localhost or CLI enable error display for debugging to help
 // diagnose HTTP 500 responses during development. This will not affect
@@ -89,6 +114,46 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['product_id'],
     } else {
         $_SESSION['cart'][$pid] = $qty;
     }
+    // Persist a fallback cart snapshot. Use a stable cookie key when possible
+    // so the frontend and subsequent requests can load the same snapshot even
+    // when PHP session handling is unreliable in the environment.
+    try {
+        $cartDir = __DIR__ . '/data/carts';
+        if (!is_dir($cartDir)) @mkdir($cartDir, 0755, true);
+        // Prefer a cookie-based key so the browser will present the same key
+        // on future requests (covers cases where PHPSESSID is not preserved).
+        $cartKey = $_COOKIE['dg_cart_key'] ?? null;
+        if (!$cartKey) {
+            try { $cartKey = bin2hex(random_bytes(10)); } catch (Exception $_) { $cartKey = uniqid('c', true); }
+            // set cookie for 30 days; path=/ so it's available site-wide
+            setcookie('dg_cart_key', $cartKey, time() + 60*60*24*30, '/');
+            // also update $_COOKIE for current request handling
+            $_COOKIE['dg_cart_key'] = $cartKey;
+        }
+        if ($cartKey) {
+            @file_put_contents($cartDir . '/cart_' . $cartKey . '.json', json_encode($_SESSION['cart']), LOCK_EX);
+        }
+        // Also write a session-id keyed snapshot so servers can load the
+        // cart by PHPSESSID when session storage is unreliable.
+        $sid = session_id();
+        if ($sid) {
+            @file_put_contents($cartDir . '/sess_' . $sid . '.json', json_encode($_SESSION['cart']), LOCK_EX);
+        }
+    } catch (Exception $e) { /* no-op */ }
+    // Also persist a compact JSON version of the cart in a cookie as a
+    // lightweight fallback for environments where PHP sessions are
+    // unreliable (e.g. some dev setups). The cookie is site-wide and
+    // lasts 30 days. We Base64-encode to keep the value safe for cookie
+    // transport without URL-encoding issues.
+    try {
+        $cartJson = json_encode($_SESSION['cart']);
+        if ($cartJson !== false) {
+            $cookieVal = base64_encode($cartJson);
+            // 30 days
+            setcookie('dg_cart', $cookieVal, time() + 60*60*24*30, '/');
+            $_COOKIE['dg_cart'] = $cookieVal;
+        }
+    } catch (Exception $_) { /* ignore cookie failures */ }
     // If this is an AJAX request, return JSON and do not redirect.
     $isAjax = false;
     if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
@@ -101,7 +166,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['product_id'],
         $count = 0;
         foreach ($_SESSION['cart'] as $q) $count += (int)$q;
         header('Content-Type: application/json');
-        echo json_encode(['success' => true, 'cartCount' => $count, 'productId' => $pid]);
+        $resp = ['success' => true, 'cartCount' => $count, 'productId' => $pid];
+    // Ensure session data is written immediately so subsequent requests see updates
+    @session_write_close();
+    echo json_encode($resp);
         exit;
     }
     // Redirect back to catalogue to implement the Post/Redirect/Get pattern and

@@ -6,6 +6,12 @@ require_once __DIR__ . '/includes/header.php';
 $title = 'Your Cart';
 $message = '';
 
+// DEBUG: When running locally, emit a HTML comment with the current session id
+// and the cart contents to help diagnose session persistence issues.
+if ((php_sapi_name() === 'cli') || ($_SERVER['REMOTE_ADDR'] ?? '') === '127.0.0.1' || ($_SERVER['REMOTE_ADDR'] ?? '') === '::1') {
+    // local debug was here; removed
+}
+
 // Handle adding items to cart when posted directly to this page.  This
 // supports backward compatibility with forms that may still post to
 // cart.php.  The Post/Redirect/Get pattern is used to prevent
@@ -53,13 +59,98 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_cart'])) {
                 }
             }
         }
-        $message = 'Cart updated.';
+$message = 'Cart updated.';
     }
 }
 
-// Build cart details for display
-$cartItems = [];
+// After handling POST updates, ensure any on-disk or cookie snapshots reflect
+// the authoritative session state. This prevents stale snapshots from being
+// reloaded on subsequent requests and restores deleted items.
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    try {
+        $cartDir = __DIR__ . '/data/carts';
+        if (!is_dir($cartDir)) @mkdir($cartDir, 0755, true);
+        $sid = session_id();
+        // Build a normalized cart payload (empty array if no items)
+        $payload = (isset($_SESSION['cart']) && is_array($_SESSION['cart'])) ? $_SESSION['cart'] : [];
+        // Write session-keyed snapshot
+        if ($sid) {
+            $sessFile = $cartDir . '/sess_' . preg_replace('/[^a-zA-Z0-9_\-]/', '', $sid) . '.json';
+            if (!empty($payload)) {
+                @file_put_contents($sessFile, json_encode($payload), LOCK_EX);
+            } else {
+                // remove stale snapshot when cart is emptied
+                if (is_file($sessFile)) @unlink($sessFile);
+            }
+        }
+        // Update compact cookie and cookie-key snapshot
+        if (!empty($payload)) {
+            // compact cookie (base64 json)
+            setcookie('dg_cart', base64_encode(json_encode($payload)), 0, '/');
+            // ensure a stable dg_cart_key exists
+            $cartKey = $_COOKIE['dg_cart_key'] ?? bin2hex(random_bytes(8));
+            setcookie('dg_cart_key', $cartKey, 0, '/');
+            $cartFile = $cartDir . '/cart_' . preg_replace('/[^a-zA-Z0-9_\-]/', '', $cartKey) . '.json';
+            @file_put_contents($cartFile, json_encode($payload), LOCK_EX);
+        } else {
+            // clear cookies when cart is emptied
+            setcookie('dg_cart', '', time() - 3600, '/');
+            setcookie('dg_cart_key', '', time() - 3600, '/');
+        }
+    } catch (Exception $_) { /* ignore snapshot write failures */ }
+}
+
 $total = 0.0;
+
+// If the session cart is empty and this is a GET request, attempt to load a
+// file-backed snapshot. Keep this read-only and skip during POST handling so
+// that form submissions remain authoritative.
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && empty($_SESSION['cart'])) {
+    try {
+        $sid = session_id();
+        // DEBUG: log session id and snapshot existence for diagnosis
+        try {
+            $dbgDir = __DIR__ . '/data/logs'; if (!is_dir($dbgDir)) @mkdir($dbgDir, 0755, true);
+            $snap = __DIR__ . '/data/carts/sess_' . $sid . '.json';
+            $exists = is_readable($snap) ? 'yes' : 'no';
+            @file_put_contents($dbgDir . '/cart_session_debug.log', '['.date('c').'] cart.php GET SID=' . $sid . ' snapshot_exists=' . $exists . "\n", FILE_APPEND | LOCK_EX);
+        } catch (Exception $_) { /* ignore */ }
+        // Try compact cookie fallback first (dg_cart)
+        $dgCart = $_COOKIE['dg_cart'] ?? null;
+        if ($dgCart) {
+            $decoded = @base64_decode($dgCart, true);
+            $data = $decoded ? json_decode($decoded, true) : null;
+            if (is_array($data) && !empty($data)) {
+                $_SESSION['cart'] = $data;
+            }
+        }
+        // Next, try cookie-backed snapshot key (dg_cart_key)
+        $cartKey = $_COOKIE['dg_cart_key'] ?? null;
+        if (empty($_SESSION['cart']) && $cartKey) {
+            $snap = __DIR__ . '/data/carts/cart_' . preg_replace('/[^a-zA-Z0-9_\-]/', '', $cartKey) . '.json';
+            if (is_readable($snap)) {
+                $data = json_decode(@file_get_contents($snap), true);
+                if (is_array($data) && !empty($data)) {
+                    $_SESSION['cart'] = $data;
+                }
+            }
+        }
+        // Legacy: session-id keyed snapshot
+        if (empty($_SESSION['cart'])) {
+            $sid = session_id();
+            if ($sid) {
+                $snap = __DIR__ . '/data/carts/sess_' . $sid . '.json';
+                if (is_readable($snap)) {
+                    $data = json_decode(@file_get_contents($snap), true);
+                    if (is_array($data) && !empty($data)) {
+                        $_SESSION['cart'] = $data;
+                    }
+                }
+            }
+        }
+    } catch (Exception $e) { /* ignore fallback errors */ }
+}
+
 if (!empty($_SESSION['cart'])) {
     foreach ($_SESSION['cart'] as $pid => $qty) {
         $product = getProductById((int)$pid);
@@ -73,6 +164,18 @@ if (!empty($_SESSION['cart'])) {
                 'subtotal' => $subtotal
             ];
             $total += $subtotal;
+        } else {
+            // Product row missing for this ID. Log a warning to help
+            // diagnose mismatches between cart contents and the products table
+            // (common when migrating between SQLite and MySQL or when IDs differ).
+            error_log('cart.php: product not found for id=' . (int)$pid . ' (showing placeholder)');
+            $cartItems[] = [
+                'id' => (int)$pid,
+                'name' => 'Product #' . (int)$pid,
+                'price' => 0.0,
+                'quantity' => $qty,
+                'subtotal' => 0.0
+            ];
         }
     }
 }
