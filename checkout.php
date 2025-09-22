@@ -28,11 +28,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $applyTax = isset($_POST['apply_tax']) && ($_POST['apply_tax'] === '1' || $_POST['apply_tax'] === 'on');
     $cartTotal = 0.0;
     $itemsDesc = [];
-    foreach ($cart as $pid => $qty) {
-        $prod = getProductById((int)$pid);
-        if ($prod) {
-            $itemsDesc[] = $prod['name'] . ' x' . $qty . ' ($' . number_format($prod['price'] * $qty, 2) . ')';
-            $cartTotal += $prod['price'] * $qty;
+    foreach ($cart as $pid => $entry) {
+        if (is_array($entry) && isset($entry['quantity'])) {
+            $qty = (int)$entry['quantity'];
+            $name = $entry['product_name'] ?? '';
+            $price = isset($entry['product_price']) ? (float)$entry['product_price'] : 0.0;
+            if ($name === '' || $price === 0.0) {
+                $prod = getProductById((int)$pid);
+                if ($prod) {
+                    $name = $prod['name'];
+                    if ($price === 0.0) $price = (float)$prod['price'];
+                } else {
+                    $name = 'Product #' . (int)$pid;
+                }
+            }
+            $itemsDesc[] = $name . ' x' . $qty . ' ($' . number_format($price * $qty, 2) . ')';
+            $cartTotal += $price * $qty;
+        } else {
+            $qty = (int)$entry;
+            $prod = getProductById((int)$pid);
+            if ($prod) {
+                $itemsDesc[] = $prod['name'] . ' x' . $qty . ' ($' . number_format($prod['price'] * $qty, 2) . ')';
+                $cartTotal += $prod['price'] * $qty;
+            } else {
+                $itemsDesc[] = 'Product #' . (int)$pid . ' x' . $qty . ' ($0.00)';
+            }
         }
     }
     $taxAmount = $applyTax ? round($cartTotal * 0.065, 2) : 0.0;

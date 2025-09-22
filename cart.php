@@ -25,10 +25,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['product_id'])) {
     if (!isset($_SESSION['cart']) || !is_array($_SESSION['cart'])) {
         $_SESSION['cart'] = [];
     }
+    // Preserve snapshot-shaped entries if present
     if (isset($_SESSION['cart'][$pid])) {
-        $_SESSION['cart'][$pid] += $qty;
+        if (is_array($_SESSION['cart'][$pid]) && isset($_SESSION['cart'][$pid]['quantity'])) {
+            $_SESSION['cart'][$pid]['quantity'] = (int)$_SESSION['cart'][$pid]['quantity'] + $qty;
+        } elseif (is_int($_SESSION['cart'][$pid]) || is_numeric($_SESSION['cart'][$pid])) {
+            $_SESSION['cart'][$pid] = (int)$_SESSION['cart'][$pid] + $qty;
+        } else {
+            // unexpected shape, replace with numeric fallback
+            $_SESSION['cart'][$pid] = $qty;
+        }
     } else {
-        $_SESSION['cart'][$pid] = $qty;
+        // Build a snapshot object when product info is available
+        $prod = getProductById($pid);
+        if ($prod) {
+            $_SESSION['cart'][$pid] = [
+                'product_id' => $pid,
+                'quantity' => $qty,
+                'product_name' => $prod['name'],
+                'product_description' => $prod['description'] ?? $prod['name'],
+                'product_price' => isset($prod['price']) ? (float)$prod['price'] : 0.0
+            ];
+        } else {
+            // fallback to numeric qty if product not found
+            $_SESSION['cart'][$pid] = $qty;
+        }
     }
     // Redirect to the cart using a relative path so it works from subfolders
     header('Location: cart.php');
@@ -55,7 +76,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_cart'])) {
                 if ($newQty <= 0) {
                     unset($_SESSION['cart'][$pid]);
                 } else {
-                    $_SESSION['cart'][$pid] = $newQty;
+                    // If this cart entry is a snapshot object, update its quantity subkey
+                    if (is_array($_SESSION['cart'][$pid]) && isset($_SESSION['cart'][$pid]['quantity'])) {
+                        $_SESSION['cart'][$pid]['quantity'] = $newQty;
+                    } else {
+                        // legacy numeric entry
+                        $_SESSION['cart'][$pid] = $newQty;
+                    }
                 }
             }
         }
@@ -152,30 +179,87 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && empty($_SESSION['cart'])) {
 }
 
 if (!empty($_SESSION['cart'])) {
-    foreach ($_SESSION['cart'] as $pid => $qty) {
-        $product = getProductById((int)$pid);
-        if ($product) {
-            $subtotal = $product['price'] * $qty;
+    // Normalize legacy numeric-only cart entries into snapshot objects so
+    // rendering can consistently use product_name/description/product_price.
+    foreach ($_SESSION['cart'] as $k => $v) {
+        if (!is_array($v)) {
+            $pid = (int)$k;
+            $qty = (int)$v;
+            $prod = getProductById($pid);
+            if ($prod) {
+                $_SESSION['cart'][$k] = [
+                    'product_id' => $pid,
+                    'quantity' => $qty,
+                    'product_name' => $prod['name'],
+                    'product_description' => $prod['description'] ?? $prod['name'],
+                    'product_price' => isset($prod['price']) ? (float)$prod['price'] : 0.0
+                ];
+            } else {
+                // leave numeric fallback if product missing
+                $_SESSION['cart'][$k] = $qty;
+            }
+        }
+    }
+    // DEBUG: write full $_SESSION['cart'] to a log for diagnosis (GET only)
+    if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+        try {
+            $dbgDir = __DIR__ . '/data/logs'; if (!is_dir($dbgDir)) @mkdir($dbgDir, 0755, true);
+            @file_put_contents($dbgDir . '/cart_session_full.log', '['.date('c').'] SID=' . session_id() . ' CART=' . json_encode($_SESSION['cart']) . "\n", FILE_APPEND | LOCK_EX);
+        } catch (Exception $_) { /* ignore */ }
+    }
+    foreach ($_SESSION['cart'] as $pid => $entry) {
+        // Support both legacy numeric-qty entries and the new snapshot object
+        if (is_array($entry) && isset($entry['quantity'])) {
+            $qty = (int)$entry['quantity'];
+            $name = $entry['product_name'] ?? '';
+            $desc = $entry['product_description'] ?? '';
+            $price = isset($entry['product_price']) ? (float)$entry['product_price'] : 0.0;
+            // If snapshot fields are blank, try resolving current product data
+            if ($name === '' || $price === 0.0) {
+                $prod = getProductById((int)$pid);
+                if ($prod) {
+                    $name = getProductDisplayName($prod);
+                    $desc = getProductDescription($prod);
+                    if ($price === 0.0) $price = getProductPrice($prod);
+                }
+            }
+            $subtotal = $price * $qty;
             $cartItems[] = [
                 'id' => (int)$pid,
-                'name' => $product['name'],
-                'price' => $product['price'],
+                // prefer the snapshot product_name for SKU display
+                'name' => $name ?: ('Product #' . (int)$pid),
+                'price' => $price,
                 'quantity' => $qty,
-                'subtotal' => $subtotal
+                'subtotal' => $subtotal,
+                'description' => $desc
             ];
             $total += $subtotal;
         } else {
-            // Product row missing for this ID. Log a warning to help
-            // diagnose mismatches between cart contents and the products table
-            // (common when migrating between SQLite and MySQL or when IDs differ).
-            error_log('cart.php: product not found for id=' . (int)$pid . ' (showing placeholder)');
-            $cartItems[] = [
-                'id' => (int)$pid,
-                'name' => 'Product #' . (int)$pid,
-                'price' => 0.0,
-                'quantity' => $qty,
-                'subtotal' => 0.0
-            ];
+            // Legacy numeric qty entry
+            $qty = (int)$entry;
+            $prod = getProductById((int)$pid);
+            if ($prod) {
+                $subtotal = $prod['price'] * $qty;
+                $cartItems[] = [
+                    'id' => (int)$pid,
+                    'name' => $prod['name'],
+                    'price' => $prod['price'],
+                    'quantity' => $qty,
+                    'subtotal' => $subtotal,
+                    'description' => $prod['description'] ?? ''
+                ];
+                $total += $subtotal;
+            } else {
+                error_log('cart.php: product not found for id=' . (int)$pid . ' (showing placeholder)');
+                $cartItems[] = [
+                    'id' => (int)$pid,
+                    'name' => 'Product #' . (int)$pid,
+                    'price' => 0.0,
+                    'quantity' => $qty,
+                    'subtotal' => 0.0,
+                    'description' => ''
+                ];
+            }
         }
     }
 }
@@ -201,10 +285,21 @@ if (!empty($_SESSION['cart'])) {
                 <th></th>
             </tr>
             <?php foreach ($cartItems as $item): ?>
-                <?php $prod = getProductById((int)$item['id']);
-                      // Use the product 'name' field as the visible SKU/code.
-                      $sku = $prod ? htmlspecialchars($prod['name']) : $item['id'];
-                      $description = $prod ? htmlspecialchars($prod['description'] ?? $prod['name']) : htmlspecialchars($item['name']); ?>
+                <?php
+                    // Prefer snapshot values from the cart item when available.
+                    $sku = isset($item['name']) ? htmlspecialchars($item['name']) : '';
+                    $description = isset($item['description']) ? htmlspecialchars($item['description']) : '';
+                    // If snapshot lacks fields, try to resolve from the live product record.
+                    if ($sku === '' || $description === '') {
+                        $prod = getProductById((int)$item['id']);
+                        if ($prod) {
+                            if ($sku === '') $sku = htmlspecialchars($prod['name']);
+                            if ($description === '') $description = htmlspecialchars($prod['description'] ?? $prod['name']);
+                        }
+                    }
+                    // Final fallback: show numeric id if nothing else available
+                    if ($sku === '') $sku = (int)$item['id'];
+                ?>
                 <tr>
                     <td><?php echo $sku; ?></td>
                     <td><?php echo $description; ?></td>

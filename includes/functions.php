@@ -275,6 +275,46 @@ function getProductById(int $id): ?array
 }
 
 /**
+ * Return a best-effort display SKU/name for a product row.
+ * Supports products that may use 'name', 'sku' or 'code' as the identifier.
+ */
+function getProductDisplayName(array $prod): string
+{
+    if (empty($prod)) return '';
+    if (!empty($prod['name'])) return (string)$prod['name'];
+    if (!empty($prod['sku'])) return (string)$prod['sku'];
+    if (!empty($prod['code'])) return (string)$prod['code'];
+    return '';
+}
+
+/**
+ * Return a best-effort product description.
+ */
+function getProductDescription(array $prod): string
+{
+    if (empty($prod)) return '';
+    if (!empty($prod['description'])) return (string)$prod['description'];
+    if (!empty($prod['desc'])) return (string)$prod['desc'];
+    // fallback to name/sku if no description
+    return getProductDisplayName($prod);
+}
+
+/**
+ * Return a best-effort product price as float. Supports columns like
+ * 'price', 'unit_price', 'list_price'. Returns 0.0 when unknown.
+ */
+function getProductPrice(array $prod): float
+{
+    if (empty($prod)) return 0.0;
+    foreach (['price', 'unit_price', 'list_price', 'cost'] as $c) {
+        if (isset($prod[$c]) && $prod[$c] !== '') {
+            return (float)$prod[$c];
+        }
+    }
+    return 0.0;
+}
+
+/**
  * Create a new order record and its associated items.  The cart array
  * must map product IDs to quantities.  The total is calculated
  * automatically.
@@ -288,12 +328,25 @@ function createOrder(int $customerId, array $cart, float $taxAmount = 0.0, ?stri
     $db = getDb();
     $db->beginTransaction();
     try {
-        // Calculate order total
+        // Calculate order total. Support new cart shape where each entry
+        // may be a snapshot array (product_name, product_description,
+        // product_price, quantity) or the legacy productId => qty map.
         $total = 0.0;
-        foreach ($cart as $productId => $qty) {
-            $prod = getProductById((int)$productId);
-            if ($prod) {
-                $total += $prod['price'] * $qty;
+        foreach ($cart as $productId => $entry) {
+            if (is_array($entry) && isset($entry['quantity'])) {
+                $qty = (int)$entry['quantity'];
+                $price = isset($entry['product_price']) ? (float)$entry['product_price'] : null;
+                if ($price === null || $price === 0.0) {
+                    $prod = getProductById((int)$productId);
+                    if ($prod) $price = (float)$prod['price']; else $price = 0.0;
+                }
+                $total += $price * $qty;
+            } else {
+                $qty = (int)$entry;
+                $prod = getProductById((int)$productId);
+                if ($prod) {
+                    $total += $prod['price'] * $qty;
+                }
             }
         }
         // Apply tax amount if provided
@@ -368,15 +421,25 @@ function createOrder(int $customerId, array $cart, float $taxAmount = 0.0, ?stri
             if ($hasPrice) { $fields[] = 'product_price'; $params[] = ':product_price'; }
             $sql = 'INSERT INTO order_items(' . implode(',', $fields) . ') VALUES(' . implode(',', $params) . ')';
             $insItem = $db->prepare($sql);
-            foreach ($cart as $productId => $qty) {
-                $prod = getProductById((int)$productId);
-                // Snapshot explicit mapping:
-                // - SKU/code visible to users is the product 'name' -> product_name
-                // - Description is the product 'description' -> product_description
-                // - Price is the product 'price' -> product_price
-                $pname = $prod ? ($prod['name'] ?? '') : '';
-                $pdesc = $prod ? ($prod['description'] ?? '') : '';
-                $pprice = $prod ? ((float)($prod['price'] ?? 0.0)) : 0.0;
+            foreach ($cart as $productId => $entry) {
+                // Support snapshot entries stored in session cart
+                if (is_array($entry) && isset($entry['quantity'])) {
+                    $qty = (int)$entry['quantity'];
+                    $pname = $entry['product_name'] ?? '';
+                    $pdesc = $entry['product_description'] ?? '';
+                    $pprice = isset($entry['product_price']) ? (float)$entry['product_price'] : null;
+                } else {
+                    $qty = (int)$entry;
+                    $prod = getProductById((int)$productId);
+                    $pname = $prod ? getProductDisplayName($prod) : '';
+                    $pdesc = $prod ? getProductDescription($prod) : '';
+                    $pprice = $prod ? getProductPrice($prod) : 0.0;
+                }
+                // If snapshot price was not provided, fall back to current product
+                if ($pprice === null) {
+                    $prod = getProductById((int)$productId);
+                    $pprice = $prod ? ((float)($prod['price'] ?? 0.0)) : 0.0;
+                }
                 $bind = [':order_id' => $orderId, ':product_id' => (int)$productId, ':quantity' => (int)$qty];
                 if ($hasName) $bind[':product_name'] = $pname;
                 if ($hasDesc) $bind[':product_description'] = $pdesc;

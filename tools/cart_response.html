@@ -1,0 +1,188 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Daytona Supply</title>
+    <meta name="description" content="Daytona Supply — local packaging and janitorial supplier.">
+    <link rel="canonical" href="http://localhost:8000/cart.php">
+    <meta property="og:title" content="Daytona Supply">
+    <meta property="og:description" content="Local B2B packaging & janitorial supplies">
+    <meta name="twitter:card" content="summary_large_image">
+        <link rel="stylesheet" href="assets/styles.css?v=1758558814">
+</head>
+<body class="">
+    <header class="site-header" role="banner">
+        <div class="header-inner container">
+            <div class="brand" style="margin-right:auto; margin-left:0;">
+                <a href="index.php" aria-label="Daytona Supply home">
+                    <img src="assets/images/Logowhite.png" alt="Daytona Supply" class="logo">
+                </a>
+            </div>
+            <div class="search-wrap">
+                <form role="search" action="catalogue.php" method="get" class="search-form">
+                    <label for="search-input" class="sr-only">Search products</label>
+                    <!-- use `search` param to match catalogue.php's parameter name -->
+                    <input id="search-input" name="search" type="search" placeholder="Search SKUs, items, categories" aria-label="Search products">
+                    <button class="search-btn" aria-label="Search">Search</button>
+                </form>
+            </div>
+                <div class="header-actions">
+                    <a class="action link-phone" href="tel:3867887009">Call: (386) 788-7009</a>
+                                            <a class="action" href="login.php">Login / Register</a>
+                                        <!-- Nav cart button (upper-right) -->
+                    <a class="nav-cart action" href="cart.php" id="cart-link" aria-label="View cart">Cart (<span id="cart-count">1</span>)</a>
+                </div>
+        </div>
+
+        <nav class="main-nav" role="navigation" aria-label="Primary">
+            <div class="container nav-inner">
+                <button id="nav-toggle" class="nav-toggle" aria-expanded="false" aria-controls="nav-menu" aria-label="Toggle navigation"><span class="sr-only">Menu</span></button>
+                <div id="nav-menu" class="nav-menu" hidden>
+                    <ul class="nav-cats">
+                                                <li class="has-mega products-item"><a class="cat-btn" href="catalogue.php">Products</a>
+                            <div class="mega" role="menu">
+                                                                    <div class="mega-col">
+                                        <h4>Packaging</h4>
+                                        <ul>
+                                                                                                                                            <li><a href="catalogue.php?sku=CORRUGATED+BOXES">CORRUGATED BOXES</a></li>
+                                                                                                                                            <li><a href="catalogue.php?sku=TAPE">TAPE</a></li>
+                                                                                                                                            <li><a href="catalogue.php?sku=PACKAGING+SUPPLIES">PACKAGING SUPPLIES</a></li>
+                                                                                                                                            <li><a href="catalogue.php?sku=PAPER+PRODUCTS">PAPER PRODUCTS</a></li>
+                                                                                                                                            <li><a href="catalogue.php?sku=POLY">POLY</a></li>
+                                                                                                                                            <li><a href="catalogue.php?sku=POLY+BAGS">POLY BAGS</a></li>
+                                                                                                                                            <li><a href="catalogue.php?sku=MAILERS">MAILERS</a></li>
+                                                                                                                                            <li><a href="catalogue.php?sku=TRASH+CAN+LINERS">TRASH CAN LINERS</a></li>
+                                                                                                                                            <li><a href="catalogue.php?sku=BUBBLE+PRODUCTS">BUBBLE PRODUCTS</a></li>
+                                                                                                                                            <li><a href="catalogue.php?sku=FOAM">FOAM</a></li>
+                                                                                    </ul>
+                                    </div>
+                                                                    <div class="mega-col">
+                                        <h4>Janitorial</h4>
+                                        <ul>
+                                                                                                                                            <li><a href="catalogue.php?sku=BATHROOM">BATHROOM</a></li>
+                                                                                                                                            <li><a href="catalogue.php?sku=BROOMS+AND+BRUSHES">BROOMS AND BRUSHES</a></li>
+                                                                                                                                            <li><a href="catalogue.php?sku=CLEANERS+AND+DEGREASERS">CLEANERS AND DEGREASERS</a></li>
+                                                                                                                                            <li><a href="catalogue.php?sku=DEODORIZER">DEODORIZER</a></li>
+                                                                                                                                            <li><a href="catalogue.php?sku=DISINFECTANTS">DISINFECTANTS</a></li>
+                                                                                                                                            <li><a href="catalogue.php?sku=FLOOR+PRODUCTS">FLOOR PRODUCTS</a></li>
+                                                                                                                                            <li><a href="catalogue.php?sku=MATS">MATS</a></li>
+                                                                                                                                            <li><a href="catalogue.php?sku=SOAP+AND+SANITIZER">SOAP AND SANITIZER</a></li>
+                                                                                                                                            <li><a href="catalogue.php?sku=SPONGES+AND+SCRUBBERS">SPONGES AND SCRUBBERS</a></li>
+                                                                                                                                            <li><a href="catalogue.php?sku=RAGS">RAGS</a></li>
+                                                                                                                                            <li><a href="catalogue.php?sku=FOODSERVICE">FOODSERVICE</a></li>
+                                                                                    </ul>
+                                    </div>
+                                                                    <div class="mega-col">
+                                        <h4>Safety</h4>
+                                        <ul>
+                                                                                                                                            <li><a href="catalogue.php?sku=GLOVES">GLOVES</a></li>
+                                                                                                                                            <li><a href="catalogue.php?sku=SAFETY+EQUIPMENT">SAFETY EQUIPMENT</a></li>
+                                                                                                                                            <li><a href="catalogue.php?sku=TOOLS+%26+EQUIPMENT">TOOLS &amp; EQUIPMENT</a></li>
+                                                                                                                                            <li><a href="catalogue.php?sku=PEST+CONTROL">PEST CONTROL</a></li>
+                                                                                    </ul>
+                                    </div>
+                                                            </div>
+                        </li>
+                        <li><a href="about.php">About Us</a></li>
+                        <li><a href="contact.php">Contact Us</a></li>
+                        <li><a href="shipping.php">Shipping</a></li>
+                        <!-- Removed All Products and Partner as requested -->
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <main><section class="page-hero">
+    <h2>Your Cart</h2>
+</section>
+    <form method="post" action="">
+        <input type="hidden" name="update_cart" value="1">
+        <table class="cart-table">
+            <tr>
+                <th>SKU</th>
+                <th>Description</th>
+                <th>Quantity</th>
+                <th>Rate</th>
+                <th>Price</th>
+                <th></th>
+            </tr>
+                                            <tr>
+                    <td>BAR-1000</td>
+                    <td>Wardrobe Box Bar 18&#039;</td>
+                    <td><input type="number" name="qty_1429" value="1" min="0" style="width:60px"></td>
+                    <td>$2.25</td>
+                    <td>$2.25</td>
+                        <td style="text-align:center;">
+                            <button type="button" class="cart-remove-btn" title="Remove item" data-item-id="1429">×</button>
+                        </td>
+                </tr>
+                        <tr>
+                <td colspan="4" style="text-align:right"><strong>Total:</strong></td>
+                <td><strong>$2.25</strong></td>
+            </tr>
+        </table>
+    <p><button type="submit" class="proceed-btn muted-btn">Update Cart</button></p>
+    </form>
+    <script>
+    // Replace remove buttons behaviour: set the qty input to 0 and submit the form
+    document.addEventListener('DOMContentLoaded', function() {
+        var buttons = document.querySelectorAll('.cart-remove-btn[data-item-id]');
+        buttons.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var id = btn.getAttribute('data-item-id');
+                var qtyField = document.querySelector('input[name="qty_' + id + '"]');
+                if (qtyField) {
+                    qtyField.value = 0;
+                    // submit the enclosing form
+                    var form = document.querySelector('form[action=""]');
+                    if (form) form.submit();
+                }
+            });
+        });
+    });
+    </script>
+    <p><a href="checkout.php" class="proceed-btn btn-checkout">Proceed to Checkout</a></p>
+    </main>
+    <footer class="site-footer" role="contentinfo">
+        <div class="container footer-grid">
+            <div class="f-brand">
+                <img src="assets/images/DaytonaSupplyDSlogo.png" alt="Daytona Supply" class="f-logo">
+                <address>
+                    Daytona Supply<br>
+                    1022 Reed Canal Rd<br>
+                    Daytona Beach, FL 32119
+                </address>
+            </div>
+            <div class="f-links">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="index.php">Home</a></li>
+                    <li><a href="catalogue.php">Catalog</a></li>
+                    <li><a href="privacy.php">Privacy</a></li>
+                    <li><a href="terms.php">Terms</a></li>
+                </ul>
+            </div>
+            <div class="f-news">
+                <h4>Newsletter</h4>
+                <p>Get product updates and local deals.</p>
+                <form id="newsletter" action="login.php" method="get">
+                    <label for="news-email" class="sr-only">Email address</label>
+                    <input id="news-email" name="email" type="email" placeholder="you@company.com" required>
+                    <button type="submit">Subscribe</button>
+                </form>
+            </div>
+            <div class="f-social">
+                <h4>Follow</h4>
+                <ul>
+                    <li><a href="#" aria-label="LinkedIn"><img src="assets/images/Linkedinicon.png" alt="LinkedIn" class="social-icon"></a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="site-copyright">
+            <small>&copy; 2025 Daytona Supply. All rights reserved.</small>
+        </div>
+    </footer>
+    <script src="assets/scripts.js?v=1758558814" defer></script>
+</body>
+</html>

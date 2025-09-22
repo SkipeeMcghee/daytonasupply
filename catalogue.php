@@ -104,15 +104,35 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['product_id'],
     if ($qty < 1) {
         $qty = 1;
     }
-    // Initialise cart structure if absent
+    // Ensure cart structure
     if (!isset($_SESSION['cart']) || !is_array($_SESSION['cart'])) {
         $_SESSION['cart'] = [];
     }
-    // Increment quantity if product already in cart
+    // Read product snapshot at time of add-to-cart so the cart shows
+    // the SKU/description/price as they were when the user added the item.
+    $prod = getProductById($pid);
+    $snapshot = [
+        'product_id' => $pid,
+        'quantity' => $qty,
+        'product_name' => $prod ? getProductDisplayName($prod) : '',
+        'product_description' => $prod ? getProductDescription($prod) : '',
+        'product_price' => $prod ? getProductPrice($prod) : 0.0
+    ];
+    // If item exists in cart already (array or simple qty), merge quantities
     if (isset($_SESSION['cart'][$pid])) {
-        $_SESSION['cart'][$pid] += $qty;
+        $existing = $_SESSION['cart'][$pid];
+        if (is_array($existing) && isset($existing['quantity'])) {
+            $existing['quantity'] = (int)$existing['quantity'] + $qty;
+            // keep original snapshot fields (name/price/desc) from first add
+            $_SESSION['cart'][$pid] = $existing;
+        } else {
+            // legacy numeric qty stored previously, convert to snapshot
+            $existingQty = (int)$existing;
+            $snapshot['quantity'] = $existingQty + $qty;
+            $_SESSION['cart'][$pid] = $snapshot;
+        }
     } else {
-        $_SESSION['cart'][$pid] = $qty;
+        $_SESSION['cart'][$pid] = $snapshot;
     }
     // Persist a fallback cart snapshot. Use a stable cookie key when possible
     // so the frontend and subsequent requests can load the same snapshot even
