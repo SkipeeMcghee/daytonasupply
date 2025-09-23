@@ -29,17 +29,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $cartTotal = 0.0;
     $itemsDesc = [];
     foreach ($cart as $pid => $entry) {
+        // Support snapshot entries stored in session cart or legacy numeric qty
         if (is_array($entry) && isset($entry['quantity'])) {
             $qty = (int)$entry['quantity'];
             $name = $entry['product_name'] ?? '';
-            $price = isset($entry['product_price']) ? (float)$entry['product_price'] : 0.0;
-            if ($name === '' || $price === 0.0) {
+            $price = isset($entry['product_price']) ? (float)$entry['product_price'] : null;
+            // If snapshot fields are missing, resolve current product data
+            if ($name === '' || $price === null || $price === 0.0) {
                 $prod = getProductById((int)$pid);
                 if ($prod) {
-                    $name = $prod['name'];
-                    if ($price === 0.0) $price = (float)$prod['price'];
+                    if ($name === '') $name = $prod['name'] ?? 'Product #' . (int)$pid;
+                    if ($price === null || $price === 0.0) $price = (float)($prod['price'] ?? 0.0);
                 } else {
-                    $name = 'Product #' . (int)$pid;
+                    if ($name === '') $name = 'Product #' . (int)$pid;
+                    if ($price === null) $price = 0.0;
                 }
             }
             $itemsDesc[] = $name . ' x' . $qty . ' ($' . number_format($price * $qty, 2) . ')';
@@ -99,19 +102,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Build order summary
 $items = [];
 $total = 0.0;
-foreach ($cart as $pid => $qty) {
-    $prod = getProductById((int)$pid);
-    if ($prod) {
-        $subtotal = $prod['price'] * $qty;
+foreach ($cart as $pid => $entry) {
+    // Support snapshot entries and legacy numeric-only entries
+    if (is_array($entry) && isset($entry['quantity'])) {
+        $qty = (int)$entry['quantity'];
+        $name = $entry['product_name'] ?? '';
+        $desc = $entry['product_description'] ?? '';
+        $price = isset($entry['product_price']) ? (float)$entry['product_price'] : null;
+        if ($name === '' || $price === null || $price === 0.0) {
+            $prod = getProductById((int)$pid);
+            if ($prod) {
+                if ($name === '') $name = $prod['name'] ?? '';
+                if ($desc === '') $desc = $prod['description'] ?? '';
+                if ($price === null || $price === 0.0) $price = (float)($prod['price'] ?? 0.0);
+            }
+        }
+        $subtotal = ($price ?? 0.0) * $qty;
         $items[] = [
             'id' => (int)$pid,
-            'name' => $prod['name'],
-            'description' => $prod['description'] ?? '',
-            'price' => $prod['price'],
+            'name' => $name,
+            'description' => $desc,
+            'price' => ($price ?? 0.0),
             'qty' => $qty,
             'subtotal' => $subtotal
         ];
         $total += $subtotal;
+    } else {
+        $qty = (int)$entry;
+        $prod = getProductById((int)$pid);
+        if ($prod) {
+            $subtotal = $prod['price'] * $qty;
+            $items[] = [
+                'id' => (int)$pid,
+                'name' => $prod['name'],
+                'description' => $prod['description'] ?? '',
+                'price' => $prod['price'],
+                'qty' => $qty,
+                'subtotal' => $subtotal
+            ];
+            $total += $subtotal;
+        }
     }
 }
 ?>

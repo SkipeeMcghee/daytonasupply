@@ -66,7 +66,7 @@ body{
 .has-account .account-menu{display:none;position:absolute;left:0;top:100%;background:#fff;color:var(--text);min-width:140px;padding:8px;border-radius:8px;box-shadow:0 8px 20px rgba(11,34,56,0.12);z-index:60}
 .has-account .account-menu a{display:block;padding:8px 10px;color:var(--text);text-decoration:none;border-radius:6px}
 .has-account .account-menu a:hover{background:#f1f5fb;color:var(--brand)}
-.has-account:hover .account-menu, .has-account:focus-within .account-menu, .has-account.open .account-menu { display:block }
+.has-account:focus-within .account-menu, .has-account.open .account-menu { display:block }
 
 /* Dark mode: account dropdown should be dark with white text */
 html.theme-dark .has-account .account-menu,
@@ -526,6 +526,48 @@ html.theme-dark .carousel-dots button.active { background: #e8f6ff; }
 .theme-dark .dark-toggle-switch{background:rgba(255,255,255,0.12)}
 .theme-dark .dark-toggle-switch::after{background:#fff}
 
+/* Account menu toggle button (small chevron) */
+.account-toggle{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:34px;height:34px;border-radius:8px;border:0;padding:0;margin:0;cursor:pointer;
+  transition:background .12s ease, transform .12s ease, color .12s ease;
+  background: transparent; /* transparent background (chevron only) */
+  color: #64b5ff; /* unified chevron color (use dark-mode hue everywhere) */
+}
+
+/* Chevron rotation: default points down. When expanded, rotate 180deg to point up */
+.account-toggle svg{transition:transform .16s cubic-bezier(.2,.9,.2,1);transform-origin:center center}
+/* Rotate when the control has aria-expanded or the container is visually open (class or focus-within) */
+.account-toggle[aria-expanded="true"] svg,
+.has-account.open .account-toggle svg,
+.has-account:focus-within .account-toggle svg {
+  transform: rotate(180deg);
+}
+
+/* Ensure the SVG path inherits the button color so hover/active affect the arrow stroke */
+.account-toggle svg, .account-toggle svg path { stroke: currentColor; fill: none; }
+
+/* Stronger, direct stroke overrides to ensure the arrow itself changes on hover/active */
+.has-account .account-toggle:hover svg path,
+.account-toggle:hover svg path {
+  stroke: currentColor !important; /* arrow inherits hover color */
+}
+.has-account .account-toggle:active svg path,
+.account-toggle:active svg path {
+  stroke: #ffffff !important; /* white on click */
+}
+.account-toggle:focus-visible svg path { stroke: currentColor; }
+
+/* Hover: chevron changes to light grey in both modes */
+.account-toggle:hover{color:#9bd8ff}
+
+/* Active/click: chevron turns white in both modes */
+.account-toggle:active{color:#ffffff}
+
+/* Make focus-visible accessible */
+.account-toggle:focus{outline: none}
+.account-toggle:focus-visible{box-shadow:0 0 0 3px rgba(0,51,102,0.18);border-radius:8px}
+
 @media (prefers-reduced-motion: reduce){ .dark-toggle-switch, .dark-toggle-switch::after { transition:none !important } }
 .category-card:focus .shop-btn,.category-card:hover .shop-btn{background:var(--brand);color:#fff}
 
@@ -632,6 +674,8 @@ html.theme-dark .sku-btn.active, body.theme-dark .sku-btn.active {
 
 /* Footer logo: keep it compact and responsive */
 .f-logo{max-height:48px;width:auto;display:block}
+/* Slightly smaller footer logo to match request */
+.f-logo{max-height:40px}
 
 /* Responsive layout for larger screens */
 @media(min-width:700px){

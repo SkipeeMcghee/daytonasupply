@@ -271,7 +271,28 @@ function getProductById(int $id): ?array
     $stmt = $db->prepare('SELECT * FROM products WHERE id = :id');
     $stmt->execute([':id' => $id]);
     $prod = $stmt->fetch(PDO::FETCH_ASSOC);
-    return $prod ?: null;
+    if ($prod) return $prod;
+    // DB lookup missed — attempt a best-effort fallback to the on-disk
+    // product cache so the site can still display product details when
+    // the database is temporarily unavailable or the row is missing.
+    try {
+        $cacheFile = __DIR__ . '/../data/cache_products.json';
+        if (is_readable($cacheFile)) {
+            $json = @file_get_contents($cacheFile);
+            $arr = $json ? json_decode($json, true) : null;
+            if (is_array($arr)) {
+                foreach ($arr as $p) {
+                    if (isset($p['id']) && (int)$p['id'] === $id) {
+                        error_log('getProductById: falling back to cache_products.json for id=' . $id);
+                        return $p;
+                    }
+                }
+            }
+        }
+    } catch (Exception $e) {
+        // ignore and return null below
+    }
+    return null;
 }
 
 /**

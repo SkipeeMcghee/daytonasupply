@@ -9,7 +9,10 @@ require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/functions.php';
 
 if (!isset($_SESSION['customer'])) {
-    header('Location: login.php');
+    // Preserve desired return location so unauthenticated users are sent
+    // to the login page and then returned to the 'Your Orders' section.
+    $next = 'account.php#your-orders';
+    header('Location: login.php?next=' . urlencode($next));
     exit;
 }
 
@@ -292,7 +295,7 @@ include __DIR__ . '/includes/header.php';
     </div>
 </div>
 
-<div class="orders-wrap container">
+<div class="orders-wrap container" id="your-orders">
     <h2 style="margin-top:1.5rem;">Your Orders</h2>
     <?php if (!empty($orders)): ?>
         <?php foreach ($orders as $order): ?>

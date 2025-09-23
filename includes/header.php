@@ -46,8 +46,12 @@ if (!empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off') {
 // Determine the number of items in the cart (stored in session)
 $cartCount = 0;
 if (!empty($_SESSION['cart']) && is_array($_SESSION['cart'])) {
-    foreach ($_SESSION['cart'] as $qty) {
-        $cartCount += (int)$qty;
+    foreach ($_SESSION['cart'] as $entry) {
+        if (is_array($entry) && isset($entry['quantity'])) {
+            $cartCount += (int)$entry['quantity'];
+        } else {
+            $cartCount += (int)$entry;
+        }
     }
 }
 // Format the displayed cart count: "empty" for 0, 1..999 for counts, and "999+" for 1000 or more
@@ -114,8 +118,14 @@ if ($loggedIn) {
                     <a class="action link-phone" href="tel:3867887009">Call: (386) 788-7009</a>
                     <?php if ($loggedIn): ?>
                         <div class="has-account action" tabindex="0" aria-haspopup="true" aria-expanded="false">
-                            <a class="account-link" href="account.php">My Account</a>
-                            <div class="account-menu" role="menu" aria-label="Account menu">
+                            <div style="display:inline-flex; align-items:center; gap:.4rem;">
+                                <a class="account-link" href="account.php">My Account</a>
+                                <!-- small toggle button to open the account menu -->
+                                <button type="button" id="account-menu-toggle" class="account-toggle" aria-label="Toggle account menu" aria-expanded="false">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                </button>
+                            </div>
+                            <div class="account-menu" role="menu" aria-label="Account menu" hidden>
                                 <label class="dark-toggle" role="menuitem" style="display:flex;align-items:center;gap:.6rem;padding:8px 10px;">
                                     <span>Dark mode</span>
                                     <label class="dark-toggle" style="margin-left:.6rem;">
@@ -126,13 +136,84 @@ if ($loggedIn) {
                                 <a role="menuitem" href="logout.php">Log out</a>
                             </div>
                         </div>
-                    <?php else: ?>
+                        <?php else: ?>
                         <a class="action" href="login.php">Login / Register</a>
                     <?php endif; ?>
                     <!-- Nav cart button (upper-right) -->
                     <a class="nav-cart action" href="cart.php" id="cart-link" aria-label="View cart">Cart (<span id="cart-count"><?php echo htmlspecialchars($displayCart); ?></span>)</a>
                 </div>
         </div>
+
+    <script>
+    // Toggle the account menu when the small chevron button is clicked
+    (function(){
+        var toggle = document.getElementById('account-menu-toggle');
+        var container = document.querySelector('.has-account');
+        if (!toggle || !container) return;
+    var menu = container.querySelector('.account-menu');
+    // Timestamp of the last toggle click to avoid immediate document click races
+    var lastToggleAt = 0;
+    var TOGGLE_SUPPRESS_MS = 180; // small window to ignore outside clicks that are part of the same pointer action
+        function setExpanded(val){
+            toggle.setAttribute('aria-expanded', val ? 'true' : 'false');
+            container.setAttribute('aria-expanded', val ? 'true' : 'false');
+            // Mirror visual state via a helper class so CSS can show/hide the menu using .has-account.open
+            if (val) {
+                container.classList.add('open');
+            } else {
+                container.classList.remove('open');
+            }
+            if (menu) {
+                if (val) {
+                    menu.removeAttribute('hidden');
+                } else {
+                    menu.setAttribute('hidden', '');
+                }
+            }
+        }
+        // Record pointerdown early (capture) so we can ignore immediate document clicks originating from the same pointer
+        toggle.addEventListener('pointerdown', function(e){
+            lastToggleAt = Date.now();
+        }, true);
+
+        // Toggle when clicking the button. Use container.open class as the source of truth
+        toggle.addEventListener('click', function(e){
+            // allow default so focus behavior remains natural; stop propagation so document handler doesn't run
+            e.stopPropagation();
+            var expanded = container.classList.contains('open');
+            setExpanded(!expanded);
+            // record toggle timestamp (redundant but ensures we have a timestamp in all cases)
+            lastToggleAt = Date.now();
+            // If we just closed the menu, remove keyboard focus so :focus-within won't re-open it
+            if (expanded) {
+                try { toggle.blur(); } catch (err) { /* ignore */ }
+            }
+        });
+        // Prevent clicks inside the container from bubbling to document and immediately closing it
+        container.addEventListener('click', function(e){
+            e.stopPropagation();
+        });
+        // Close menu if click happens outside. Ignore clicks that occur within a tiny window
+        // after using the toggle to avoid race conditions where the same pointer action
+        // fires multiple events in different handlers.
+        document.addEventListener('click', function(e){
+            // If the click originated inside the account container, ignore it (it is handled there)
+            if (container.contains(e.target)) return;
+            var now = Date.now();
+            if (lastToggleAt && (now - lastToggleAt) < TOGGLE_SUPPRESS_MS) {
+                // ignore this outside click because it likely belongs to the same pointer interaction
+                return;
+            }
+            setExpanded(false);
+        });
+        // Close with Escape key for accessibility
+        document.addEventListener('keydown', function(e){
+            if (e.key === 'Escape' || e.key === 'Esc') {
+                setExpanded(false);
+            }
+        });
+    })();
+    </script>
 
         <nav class="main-nav" role="navigation" aria-label="Primary">
             <div class="container nav-inner">

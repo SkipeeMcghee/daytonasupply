@@ -51,7 +51,7 @@ require_once __DIR__ . '/includes/header.php';
 				<h3>View Catalog</h3>
 				<p>Explore our full product range and bulk pricing.</p>
 			</a>
-			<a class="promo card" href="login.php">
+			<a class="promo card" href="account.php#your-orders">
 				<h3>Check your Orders</h3>
 				<p>Log in to access account and order details.</p>
 			</a>

@@ -110,13 +110,19 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['product_id'],
     }
     // Read product snapshot at time of add-to-cart so the cart shows
     // the SKU/description/price as they were when the user added the item.
+    // Prefer values posted from the catalogue listing to avoid relying on
+    // a back-end DB lookup at POST time (helps in transient DB failure cases
+    // and matches what the user saw when they clicked Add).
+    $postedName = isset($_POST['product_name']) ? trim((string)$_POST['product_name']) : null;
+    $postedDesc = isset($_POST['product_description']) ? trim((string)$_POST['product_description']) : null;
+    $postedPrice = isset($_POST['product_price']) ? (float)str_replace(',', '', $_POST['product_price']) : null;
     $prod = getProductById($pid);
     $snapshot = [
         'product_id' => $pid,
         'quantity' => $qty,
-        'product_name' => $prod ? getProductDisplayName($prod) : '',
-        'product_description' => $prod ? getProductDescription($prod) : '',
-        'product_price' => $prod ? getProductPrice($prod) : 0.0
+        'product_name' => $postedName !== null ? $postedName : ($prod ? getProductDisplayName($prod) : ''),
+        'product_description' => $postedDesc !== null ? $postedDesc : ($prod ? getProductDescription($prod) : ''),
+        'product_price' => $postedPrice !== null ? $postedPrice : ($prod ? getProductPrice($prod) : 0.0)
     ];
     // If item exists in cart already (array or simple qty), merge quantities
     if (isset($_SESSION['cart'][$pid])) {
@@ -182,14 +188,21 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['product_id'],
         $isAjax = true;
     }
     if ($isAjax) {
-        // compute cart count
+        // compute cart count: support both legacy numeric entries and
+        // snapshot-shaped entries stored as arrays with a 'quantity' key.
         $count = 0;
-        foreach ($_SESSION['cart'] as $q) $count += (int)$q;
+        foreach ($_SESSION['cart'] as $entry) {
+            if (is_array($entry) && isset($entry['quantity'])) {
+                $count += (int)$entry['quantity'];
+            } else {
+                $count += (int)$entry;
+            }
+        }
         header('Content-Type: application/json');
         $resp = ['success' => true, 'cartCount' => $count, 'productId' => $pid];
-    // Ensure session data is written immediately so subsequent requests see updates
-    @session_write_close();
-    echo json_encode($resp);
+        // Ensure session data is written immediately so subsequent requests see updates
+        @session_write_close();
+        echo json_encode($resp);
         exit;
     }
     // Redirect back to catalogue to implement the Post/Redirect/Get pattern and
@@ -211,7 +224,47 @@ $search = normalizeScalar($_GET['search'] ?? '', 150, '');
 // Favorites filter
 $showMode = normalizeScalar($_GET['show'] ?? 'all', 32, 'all');
 // SKU/type filter key
+// Accept either `sku` (short code or label) or `cat` (slug from index.php) so
+// links like catalogue.php?cat=foam work as expected. We map a slug to the
+// nearest SKU filter label and populate $skuKey with that label so the
+// UI renders the corresponding button as active.
 $skuKey = normalizeScalar($_GET['sku'] ?? '', 64, '');
+$catParam = normalizeScalar($_GET['cat'] ?? '', 64, '');
+if ($skuKey === '' && $catParam !== '') {
+    // Deterministic slug -> SKU filter label map for the homepage category tiles.
+    $slugMap = [
+        'corrugated' => 'CORRUGATED BOXES',
+        'tape' => 'TAPE',
+        'packaging-supplies' => 'PACKAGING SUPPLIES',
+        'paper-products' => 'PAPER PRODUCTS',
+        'bubble-products' => 'BUBBLE PRODUCTS',
+        'foam' => 'FOAM'
+    ];
+    $lowerSlug = strtolower($catParam);
+    if (isset($slugMap[$lowerSlug])) {
+        $skuKey = $slugMap[$lowerSlug];
+    } else {
+        // Fallback to best-effort heuristics when a slug isn't in the map
+        $catToken = strtoupper(str_replace(['-', '_'], ' ', $catParam));
+        $matched = null;
+        foreach ($skuFilters as $label => $codes) {
+            $labelNorm = strtoupper($label);
+            if ($labelNorm === $catToken) {
+                $matched = $label;
+                break;
+            }
+            if (strpos($labelNorm, $catToken) !== false || strpos($catToken, str_replace(' ', '_', $labelNorm)) !== false) {
+                $matched = $label;
+                break;
+            }
+        }
+        if ($matched !== null) {
+            $skuKey = $matched;
+        } else {
+            $skuKey = $catParam;
+        }
+    }
+}
 
 // Determine which products to show
 // Strategy: always fetch the full "show all" product list and then
@@ -368,6 +421,9 @@ include __DIR__ . '/includes/header.php';
             <td>
                 <form method="post" action="catalogue.php" class="cart-add" style="margin:0; display:inline-block;">
                     <input type="hidden" name="product_id" value="<?= (int)$p['id'] ?>">
+                    <input type="hidden" name="product_name" value="<?= htmlspecialchars($p['name']) ?>">
+                    <input type="hidden" name="product_description" value="<?= htmlspecialchars($p['description'] ?? $p['name']) ?>">
+                    <input type="hidden" name="product_price" value="<?= htmlspecialchars(number_format((float)($p['price'] ?? 0), 2, '.', '')) ?>">
                     <input type="number" name="quantity" value="1" min="1" style="width:3em;">
                     <?php if ($search !== ''): ?>
                         <input type="hidden" name="search" value="<?= htmlspecialchars($search) ?>">

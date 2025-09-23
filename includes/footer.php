@@ -6,7 +6,7 @@
     <footer class="site-footer" role="contentinfo">
         <div class="container footer-grid">
             <div class="f-brand">
-                <img src="assets/images/DaytonaSupplyDSlogo.png" alt="Daytona Supply" class="f-logo">
+                <img src="assets/images/Logowhite.png" alt="Daytona Supply" class="f-logo">
                 <address>
                     Daytona Supply<br>
                     1022 Reed Canal Rd<br>
