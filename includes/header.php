@@ -98,7 +98,8 @@ if ($loggedIn) {
     <?php $cssPath = __DIR__ . '/../assets/styles.css'; ?>
     <link rel="stylesheet" href="assets/styles.css?v=<?php echo file_exists($cssPath) ? filemtime($cssPath) : time(); ?>">
 </head>
-<body class="<?php echo $serverThemeClass; ?>">
+<?php $authClass = $loggedIn ? 'is-authenticated' : 'guest'; ?>
+<body class="<?php echo trim($serverThemeClass . ' ' . $authClass); ?>">
     <header class="site-header" role="banner">
         <div class="header-inner container">
             <div class="brand" style="margin-right:auto; margin-left:0;">
@@ -135,7 +136,7 @@ if ($loggedIn) {
                             </div>
                         </div>
                     <?php else: ?>
-                        <a class="action" href="login.php">Login / Register</a>
+                        <a class="action login-register" href="login.php">Login / Register</a>
                     <?php endif; ?>
                     <!-- Nav cart button (upper-right) -->
                     <a class="nav-cart action" href="cart.php" id="cart-link" aria-label="View cart">Cart (<span id="cart-count"><?php echo htmlspecialchars($displayCart); ?></span>)</a>

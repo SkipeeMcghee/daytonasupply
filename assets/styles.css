@@ -160,16 +160,17 @@ html.theme-dark .f-social .social-icon, body.theme-dark .f-social .social-icon {
   .search-wrap { order:2; width:100% !important; display:block !important; margin-top:6px !important; flex-basis:100% !important; }
   .search-form { width:100%; display:flex; gap:8px; }
 
-  /* Header actions (phone, My Account) move to their own full-width third row under the search
-    Align phone left and account to the right for clearer tap targets */
+  /* Header actions row: phone left; account OR login/register right */
   .header-actions { order:3; display:flex; align-items:center; gap:8px; width:100%; justify-content:space-between; }
-  /* Ensure phone sits at the left and My Account cluster sticks to the right */
-  .header-actions .link-phone { order: 1; }
-  .header-actions .has-account, .header-actions .action[href="login.php"] { order: 2; }
   .header-actions .action { padding:.35rem .5rem; }
-  /* Show phone and account links on mobile; keep login link hidden when present */
-  .header-actions .link-phone, .header-actions .has-account { display:inline-flex; }
-  .header-actions .action[href="login.php"] { display: none; }
+  .header-actions .link-phone { order:1; display:inline-flex; }
+  .header-actions .has-account { order:2; display:inline-flex; }
+  .header-actions .login-register { order:2; display:none; font-weight:600; }
+  /* Guest state: hide account, show login */
+  body.guest .header-actions .has-account { display:none !important; }
+  body.guest .header-actions .login-register { display:inline-flex; }
+  /* Authenticated state: hide login */
+  body.is-authenticated .header-actions .login-register { display:none !important; }
   .search-form { width:100%; display:flex; gap:8px; }
   .search-form input[type=search] { width:100%; }
 
