@@ -42,9 +42,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['product_id'])) {
             $_SESSION['cart'][$pid] = [
                 'product_id' => $pid,
                 'quantity' => $qty,
-                'product_name' => $prod['name'],
-                'product_description' => $prod['description'] ?? $prod['name'],
-                'product_price' => isset($prod['price']) ? (float)$prod['price'] : 0.0
+                'product_name' => getProductDisplayName($prod),
+                'product_description' => getProductDescription($prod) ?: getProductDisplayName($prod),
+                'product_price' => getProductPrice($prod)
             ];
         } else {
             // fallback to numeric qty if product not found
@@ -239,14 +239,15 @@ if (!empty($_SESSION['cart'])) {
             $qty = (int)$entry;
             $prod = getProductById((int)$pid);
             if ($prod) {
-                $subtotal = $prod['price'] * $qty;
+                $price = getProductPrice($prod);
+                $subtotal = $price * $qty;
                 $cartItems[] = [
                     'id' => (int)$pid,
-                    'name' => $prod['name'],
-                    'price' => $prod['price'],
+                    'name' => getProductDisplayName($prod),
+                    'price' => $price,
                     'quantity' => $qty,
                     'subtotal' => $subtotal,
-                    'description' => $prod['description'] ?? ''
+                    'description' => getProductDescription($prod)
                 ];
                 $total += $subtotal;
             } else {

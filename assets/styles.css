@@ -1080,6 +1080,23 @@ textarea.autosize {
   background: rgba(0,64,128,0.06);
 }
 
+/* Dark mode: make the Forgot your password link and Sign up button white and
+   adjust border/hover so they remain readable on dark backgrounds */
+html.theme-dark .login-helpers .forgot-link,
+body.theme-dark .login-helpers .forgot-link,
+html.theme-dark .login-helpers .signup-trigger,
+body.theme-dark .login-helpers .signup-trigger {
+  color: #ffffff;
+  background: transparent;
+  border-color: rgba(255,255,255,0.06);
+}
+html.theme-dark .login-helpers .forgot-link:hover,
+body.theme-dark .login-helpers .forgot-link:hover,
+html.theme-dark .login-helpers .signup-trigger:hover,
+body.theme-dark .login-helpers .signup-trigger:hover {
+  background: rgba(255,255,255,0.04);
+}
+
 .signup-helper {
   display:flex;
   gap:.5rem;
