@@ -133,7 +133,10 @@ require_once __DIR__ . '/includes/header.php';
 	</section>
 
 	<!-- Back to top -->
-	<button id="backToTop" class="back-to-top" aria-label="Back to top">↑</button>
+	<div id="backToTopWrap" class="back-to-top-wrap" aria-hidden="true">
+		<span class="back-to-top-label">Return To Top</span>
+		<button id="backToTop" class="back-to-top" aria-label="Back to top">↑</button>
+	</div>
 </main>
 
 <?php include __DIR__ . '/includes/footer.php'; ?>

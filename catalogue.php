@@ -445,4 +445,9 @@ include __DIR__ . '/includes/header.php';
     <?php endforeach; ?>
 </table>
 <?php endif; ?>
+    <!-- Back to top -->
+    <div id="backToTopWrap" class="back-to-top-wrap" aria-hidden="true">
+        <span class="back-to-top-label">Return To Top</span>
+        <button id="backToTop" class="back-to-top" aria-label="Back to top">↑</button>
+    </div>
 <?php include __DIR__ . '/includes/footer.php'; ?>

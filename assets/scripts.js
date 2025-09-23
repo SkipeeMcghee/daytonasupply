@@ -221,10 +221,11 @@ document.addEventListener('DOMContentLoaded', function () {
 	})();
 
 	// --- Back to top button ---
-	var back = document.querySelector('.back-to-top');
-	if (back) {
-		window.addEventListener('scroll', function () { back.style.display = (window.scrollY > 360) ? 'block' : 'none'; });
-		back.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+	var backWrap = document.getElementById('backToTopWrap');
+	var backBtn = document.getElementById('backToTop');
+	if (backWrap && backBtn) {
+		window.addEventListener('scroll', function () { backWrap.style.display = (window.scrollY > 360) ? 'flex' : 'none'; });
+		backBtn.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
 	}
 
 	// --- Order collapse/expand toggles on account page ---

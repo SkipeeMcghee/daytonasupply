@@ -47,7 +47,7 @@ if (!isset($_SESSION['admin'])) {
         <p class="error"><?php echo htmlspecialchars($loginError); ?></p>
     <?php endif; ?>
     <form method="post" action="">
-        <p>Password: <input type="password" name="password" required></p>
+        <p>Password: <input type="password" name="password" required class="search-variant"></p>
         <p><button type="submit">Login</button></p>
     </form>
     <?php
@@ -622,10 +622,15 @@ require_once __DIR__ . '/includes/header.php';
     <h4>Add Product</h4>
     <form method="post" action="">
         <input type="hidden" name="add_product" value="1">
-        <p>Name: <input type="text" name="name" required></p>
-        <p>Description: <input type="text" name="description"></p>
-        <p>Price: <input type="number" step="0.01" name="price" required></p>
+        <p>Name: <input type="text" name="name" required class="search-variant"></p>
+        <p>Description: <input type="text" name="description" class="search-variant"></p>
+        <p>Price: <input type="number" step="0.01" name="price" required class="search-variant"></p>
     <p><button type="submit" class="proceed-btn">Add Product</button></p>
     </form>
 </section>
+    <!-- Back to top -->
+    <div id="backToTopWrap" class="back-to-top-wrap" aria-hidden="true">
+        <span class="back-to-top-label">Return To Top</span>
+        <button id="backToTop" class="back-to-top" aria-label="Back to top">↑</button>
+    </div>
 <?php include __DIR__ . '/includes/footer.php'; ?>
