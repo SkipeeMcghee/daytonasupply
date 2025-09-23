@@ -67,7 +67,7 @@ body{
 .account-toggle:hover{background:rgba(255, 255, 255, 0.22)}
 .account-toggle:focus-visible{outline:3px solid rgba(255,255,255,0.4);outline-offset:2px}
 .acct-toggle-bar{width:16px;height:2px;background:#fff;display:block;border-radius:2px}
-.has-account.open .account-toggle{background:#08325f}
+.has-account.open .account-toggle{background:#0f56a1}
 @media (max-width:720px){.account-toggle{padding:6px 10px}}
 .has-account .account-link{color:#fff;text-decoration:none;font-weight:700}
 .has-account .account-menu{display:none;position:absolute;left:0;top:100%;background:#fff;color:var(--text);min-width:140px;padding:8px;border-radius:8px;box-shadow:0 8px 20px rgba(11,34,56,0.12);z-index:60}
