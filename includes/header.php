@@ -118,8 +118,12 @@ if ($loggedIn) {
                     <a class="action link-phone" href="tel:3867887009">Call: (386) 788-7009</a>
                     <?php if ($loggedIn): ?>
                         <div class="has-account action" tabindex="0" aria-haspopup="true" aria-expanded="false">
+                            <button type="button" class="account-toggle" aria-label="Toggle account menu" aria-controls="account-menu" aria-expanded="false">
+                                <span class="acct-toggle-bar"></span>
+                                <span class="acct-toggle-bar"></span>
+                            </button>
                             <a class="account-link" href="account.php">My Account</a>
-                            <div class="account-menu" role="menu" aria-label="Account menu">
+                            <div class="account-menu" id="account-menu" role="menu" aria-label="Account menu">
                                 <label class="dark-toggle" role="menuitem" style="display:flex;align-items:center;gap:.6rem;padding:8px 10px;">
                                     <span>Dark mode</span>
                                     <label class="dark-toggle" style="margin-left:.6rem;">

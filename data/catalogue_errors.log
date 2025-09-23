@@ -5139,3 +5139,240 @@
 #0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
 #1 C:\xampp\htdocs\daytonasupply\ajax\get_user_prefs.php(11): getDb()
 #2 {main}
+[2025-09-23T15:46:23-04:00] getDb mysql connection failed (57455ed8cbad): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\includes\functions.php(1016): getDb()
+#2 C:\xampp\htdocs\daytonasupply\account.php(153): getOrdersByCustomer(3)
+#3 {main}
+[2025-09-23T21:46:27+02:00] getDb mysql connection failed (942fba02e284): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\ajax\get_user_prefs.php(11): getDb()
+#2 {main}
+[2025-09-23T15:48:34-04:00] getDb mysql connection failed (7e509df1f986): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\includes\header.php(76): getDb()
+#2 C:\xampp\htdocs\daytonasupply\catalogue.php(371): include('C:\\xampp\\htdocs...')
+#3 {main}
+[2025-09-23T21:48:38+02:00] getDb mysql connection failed (fca8d36fef62): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\ajax\get_user_prefs.php(11): getDb()
+#2 {main}
+[2025-09-23T15:48:47-04:00] getDb mysql connection failed (05c203b2bb63): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\includes\functions.php(1016): getDb()
+#2 C:\xampp\htdocs\daytonasupply\account.php(153): getOrdersByCustomer(3)
+#3 {main}
+[2025-09-23T21:48:51+02:00] getDb mysql connection failed (1c78b285ff15): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\ajax\get_user_prefs.php(11): getDb()
+#2 {main}
+[2025-09-23T15:49:06-04:00] getDb mysql connection failed (15654f39b295): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\includes\functions.php(1016): getDb()
+#2 C:\xampp\htdocs\daytonasupply\account.php(153): getOrdersByCustomer(3)
+#3 {main}
+[2025-09-23T21:49:10+02:00] getDb mysql connection failed (9da0b1aac16f): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\ajax\get_user_prefs.php(11): getDb()
+#2 {main}
+[2025-09-23T15:51:50-04:00] getDb mysql connection failed (2ed291f80234): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\includes\functions.php(1016): getDb()
+#2 C:\xampp\htdocs\daytonasupply\account.php(153): getOrdersByCustomer(3)
+#3 {main}
+[2025-09-23T21:51:54+02:00] getDb mysql connection failed (e25caca7f494): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\ajax\get_user_prefs.php(11): getDb()
+#2 {main}
+[2025-09-23T15:53:03-04:00] getDb mysql connection failed (092f7cd4f4eb): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\includes\functions.php(1016): getDb()
+#2 C:\xampp\htdocs\daytonasupply\account.php(153): getOrdersByCustomer(3)
+#3 {main}
+[2025-09-23T21:53:08+02:00] getDb mysql connection failed (a7c6f23ee130): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\ajax\get_user_prefs.php(11): getDb()
+#2 {main}
+[2025-09-23T15:54:42-04:00] getDb mysql connection failed (a157e66a5687): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\includes\functions.php(1016): getDb()
+#2 C:\xampp\htdocs\daytonasupply\account.php(153): getOrdersByCustomer(3)
+#3 {main}
+[2025-09-23T21:54:46+02:00] getDb mysql connection failed (eb1230249fcf): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\ajax\get_user_prefs.php(11): getDb()
+#2 {main}
+[2025-09-23T15:58:42-04:00] getDb mysql connection failed (0f2ecb157e08): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\includes\functions.php(1016): getDb()
+#2 C:\xampp\htdocs\daytonasupply\account.php(153): getOrdersByCustomer(3)
+#3 {main}
+[2025-09-23T21:58:46+02:00] getDb mysql connection failed (f4a828e5544b): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\ajax\get_user_prefs.php(11): getDb()
+#2 {main}
+[2025-09-23T16:02:52-04:00] getDb mysql connection failed (d892c9a17e82): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\includes\functions.php(1016): getDb()
+#2 C:\xampp\htdocs\daytonasupply\account.php(153): getOrdersByCustomer(3)
+#3 {main}
+[2025-09-23T22:02:56+02:00] getDb mysql connection failed (26067f6f3335): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\ajax\get_user_prefs.php(11): getDb()
+#2 {main}
+[2025-09-23T22:03:20+02:00] getDb mysql connection failed (576a7f69c322): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\ajax\update_darkmode.php(17): getDb()
+#2 {main}
+[2025-09-23T22:03:24+02:00] getDb mysql connection failed (582ac452218d): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\ajax\update_darkmode.php(17): getDb()
+#2 {main}
+[2025-09-23T16:04:55-04:00] getDb mysql connection failed (6f00206581d3): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\includes\functions.php(1016): getDb()
+#2 C:\xampp\htdocs\daytonasupply\account.php(153): getOrdersByCustomer(3)
+#3 {main}
+[2025-09-23T22:04:59+02:00] getDb mysql connection failed (ce7b66695957): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\ajax\get_user_prefs.php(11): getDb()
+#2 {main}
+[2025-09-23T16:05:03-04:00] getDb mysql connection failed (cdbae9355287): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\includes\functions.php(1016): getDb()
+#2 C:\xampp\htdocs\daytonasupply\account.php(153): getOrdersByCustomer(3)
+#3 {main}
+[2025-09-23T22:05:07+02:00] getDb mysql connection failed (8918d340d446): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\ajax\get_user_prefs.php(11): getDb()
+#2 {main}
+[2025-09-23T16:05:38-04:00] getDb mysql connection failed (7a195566acf4): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\includes\functions.php(1016): getDb()
+#2 C:\xampp\htdocs\daytonasupply\account.php(153): getOrdersByCustomer(3)
+#3 {main}
+[2025-09-23T22:05:42+02:00] getDb mysql connection failed (97beeee09b99): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\ajax\get_user_prefs.php(11): getDb()
+#2 {main}
+[2025-09-23T16:08:01-04:00] getDb mysql connection failed (a86303febf3e): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\includes\functions.php(1016): getDb()
+#2 C:\xampp\htdocs\daytonasupply\account.php(153): getOrdersByCustomer(3)
+#3 {main}
+[2025-09-23T22:08:05+02:00] getDb mysql connection failed (901b34873aef): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\ajax\get_user_prefs.php(11): getDb()
+#2 {main}
+[2025-09-23T16:09:09-04:00] getDb mysql connection failed (fef4015a818d): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\includes\functions.php(1016): getDb()
+#2 C:\xampp\htdocs\daytonasupply\account.php(153): getOrdersByCustomer(3)
+#3 {main}
+[2025-09-23T22:09:13+02:00] getDb mysql connection failed (599c0f9a0ff0): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\ajax\get_user_prefs.php(11): getDb()
+#2 {main}
+[2025-09-23T22:09:50+02:00] getDb mysql connection failed (84812d1e8c37): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\ajax\update_darkmode.php(17): getDb()
+#2 {main}
+[2025-09-23T22:09:57+02:00] getDb mysql connection failed (15eb418708bb): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\ajax\update_darkmode.php(17): getDb()
+#2 {main}
+[2025-09-23T16:10:26-04:00] getDb mysql connection failed (4144d9bfdc9d): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\includes\functions.php(1016): getDb()
+#2 C:\xampp\htdocs\daytonasupply\account.php(153): getOrdersByCustomer(3)
+#3 {main}
+[2025-09-23T22:10:30+02:00] getDb mysql connection failed (19387f8c8023): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\ajax\get_user_prefs.php(11): getDb()
+#2 {main}
+[2025-09-23T16:10:40-04:00] getDb mysql connection failed (5cdcdb94ad43): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\includes\functions.php(1016): getDb()
+#2 C:\xampp\htdocs\daytonasupply\account.php(153): getOrdersByCustomer(3)
+#3 {main}
+[2025-09-23T22:10:44+02:00] getDb mysql connection failed (c18cfed127a2): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\ajax\get_user_prefs.php(11): getDb()
+#2 {main}
+[2025-09-23T16:13:56-04:00] getDb mysql connection failed (9cacb3dda576): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\includes\functions.php(1016): getDb()
+#2 C:\xampp\htdocs\daytonasupply\account.php(153): getOrdersByCustomer(3)
+#3 {main}
+[2025-09-23T22:14:00+02:00] getDb mysql connection failed (21eef558a0ba): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\ajax\get_user_prefs.php(11): getDb()
+#2 {main}
+[2025-09-23T22:15:08+02:00] getDb mysql connection failed (993ee79646ac): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\ajax\update_darkmode.php(17): getDb()
+#2 {main}
+[2025-09-23T22:15:12+02:00] getDb mysql connection failed (076b34203457): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\ajax\update_darkmode.php(17): getDb()
+#2 {main}
+[2025-09-23T22:15:16+02:00] getDb mysql connection failed (4194b660bd3a): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\ajax\update_darkmode.php(17): getDb()
+#2 {main}
+[2025-09-23T22:15:20+02:00] getDb mysql connection failed (9bd62d880bbc): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\ajax\update_darkmode.php(17): getDb()
+#2 {main}
+[2025-09-23T22:15:28+02:00] getDb mysql connection failed (23aeeb9ebaf3): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\ajax\update_darkmode.php(17): getDb()
+#2 {main}
+[2025-09-23T22:15:32+02:00] getDb mysql connection failed (525a9115a05f): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\ajax\update_darkmode.php(17): getDb()
+#2 {main}
+[2025-09-23T22:15:41+02:00] getDb mysql connection failed (3d9478090731): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\ajax\update_darkmode.php(17): getDb()
+#2 {main}
+[2025-09-23T22:15:49+02:00] getDb mysql connection failed (01694106e8ce): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\ajax\update_darkmode.php(17): getDb()
+#2 {main}
+[2025-09-23T16:18:46-04:00] getDb mysql connection failed (890bccdca9d6): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\includes\functions.php(1016): getDb()
+#2 C:\xampp\htdocs\daytonasupply\account.php(153): getOrdersByCustomer(3)
+#3 {main}
+[2025-09-23T22:18:50+02:00] getDb mysql connection failed (5d1de34082c4): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\ajax\get_user_prefs.php(11): getDb()
+#2 {main}
+[2025-09-23T16:19:13-04:00] getDb mysql connection failed (9b8a09c89991): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\includes\functions.php(1016): getDb()
+#2 C:\xampp\htdocs\daytonasupply\account.php(153): getOrdersByCustomer(3)
+#3 {main}
+[2025-09-23T22:19:17+02:00] getDb mysql connection failed (994a31548c7f): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\ajax\get_user_prefs.php(11): getDb()
+#2 {main}
+[2025-09-23T16:21:28-04:00] getDb mysql connection failed (d4d84bbc3a74): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\includes\header.php(76): getDb()
+#2 C:\xampp\htdocs\daytonasupply\catalogue.php(371): include('C:\\xampp\\htdocs...')
+#3 {main}
+[2025-09-23T22:21:32+02:00] getDb mysql connection failed (bbe0afa52501): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\ajax\get_user_prefs.php(11): getDb()
+#2 {main}
+[2025-09-23T16:22:37-04:00] getDb mysql connection failed (3e366a4063ea): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\includes\header.php(76): getDb()
+#2 C:\xampp\htdocs\daytonasupply\catalogue.php(371): include('C:\\xampp\\htdocs...')
+#3 {main}
+[2025-09-23T22:22:41+02:00] getDb mysql connection failed (1c5ebb0b9e36): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\ajax\get_user_prefs.php(11): getDb()
+#2 {main}

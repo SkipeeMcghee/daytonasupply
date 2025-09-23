@@ -156,13 +156,52 @@ document.addEventListener('DOMContentLoaded', function () {
 	(function accountMenuTolerant() {
 		var acct = document.querySelector('.has-account');
 		if (!acct) return;
+		var toggleBtn = acct.querySelector('.account-toggle');
 		var timer = null;
-		function open() { clearTimeout(timer); acct.classList.add('open'); acct.setAttribute('aria-expanded','true'); }
-		function close() { clearTimeout(timer); timer = setTimeout(function () { acct.classList.remove('open'); acct.setAttribute('aria-expanded','false'); }, 180); }
-		acct.addEventListener('mouseenter', open);
-		acct.addEventListener('mouseleave', close);
-		acct.addEventListener('focusin', open);
-		acct.addEventListener('focusout', function (e) { setTimeout(function () { if (!acct.contains(document.activeElement)) close(); }, 10); });
+		function setState(open) {
+			clearTimeout(timer);
+			if (open) {
+				acct.classList.add('open');
+				acct.setAttribute('aria-expanded','true');
+				if (toggleBtn) toggleBtn.setAttribute('aria-expanded','true');
+			} else {
+				acct.classList.remove('open');
+				acct.setAttribute('aria-expanded','false');
+				if (toggleBtn) toggleBtn.setAttribute('aria-expanded','false');
+			}
+		}
+		function delayedClose() { clearTimeout(timer); timer = setTimeout(function(){ setState(false); }, 160); }
+		acct.addEventListener('mouseenter', function(){
+			if (acct.classList.contains('suppress-hover')) return; // skip hover-open during suppression
+			setState(true);
+		});
+		acct.addEventListener('mouseleave', function(){
+			if (!(toggleBtn && document.activeElement === toggleBtn)) delayedClose();
+			acct.classList.remove('suppress-hover'); // re-enable hover once pointer leaves
+		});
+		if (toggleBtn) {
+			toggleBtn.addEventListener('click', function(e){
+				e.stopPropagation();
+				var isOpen = acct.classList.contains('open');
+				if (isOpen) {
+					setState(false);
+					acct.classList.add('suppress-hover'); // prevent immediate hover re-open
+					toggleBtn.blur();
+				} else {
+					setState(true);
+				}
+			});
+			toggleBtn.addEventListener('keydown', function(e){ if (e.key === ' ') { e.preventDefault(); toggleBtn.click(); } });
+		}
+		document.addEventListener('click', function(e){ if (!acct.contains(e.target)) setState(false); });
+		// Delegated fallback in case direct listener didn't bind (e.g., dynamic injection)
+		document.body.addEventListener('click', function(e){
+			var t = e.target.closest && e.target.closest('.account-toggle');
+			if (!t) return;
+			if (!acct.contains(t)) return;
+			var isOpen = acct.classList.contains('open');
+			setState(!isOpen);
+		});
 	})();
 
 	// --- Messaging slider (rotating short messages) ---

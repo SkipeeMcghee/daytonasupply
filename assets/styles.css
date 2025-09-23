@@ -62,11 +62,20 @@ body{
 
 /* Account menu (shown on hover/focus for keyboard users) */
 .has-account{position:relative}
+/* Small toggle button to explicitly open/close account menu */
+.account-toggle{background:rgba(255,255,255,0.14);border:0;border-radius:18px;padding:6px 8px;display:inline-flex;flex-direction:column;justify-content:space-between;gap:4px;cursor:pointer;transition:background .25s ease;}
+.account-toggle:hover{background:rgba(255, 255, 255, 0.22)}
+.account-toggle:focus-visible{outline:3px solid rgba(255,255,255,0.4);outline-offset:2px}
+.acct-toggle-bar{width:16px;height:2px;background:#fff;display:block;border-radius:2px}
+.has-account.open .account-toggle{background:#08325f}
+@media (max-width:720px){.account-toggle{padding:6px 10px}}
 .has-account .account-link{color:#fff;text-decoration:none;font-weight:700}
 .has-account .account-menu{display:none;position:absolute;left:0;top:100%;background:#fff;color:var(--text);min-width:140px;padding:8px;border-radius:8px;box-shadow:0 8px 20px rgba(11,34,56,0.12);z-index:60}
 .has-account .account-menu a{display:block;padding:8px 10px;color:var(--text);text-decoration:none;border-radius:6px}
 .has-account .account-menu a:hover{background:#f1f5fb;color:var(--brand)}
-.has-account:hover .account-menu, .has-account:focus-within .account-menu, .has-account.open .account-menu { display:block }
+.has-account.open .account-menu { display:block }
+/* Only show on hover when not in suppression state (used after a click-close) */
+.has-account:not(.suppress-hover):hover .account-menu { display:block }
 
 /* Dark mode: account dropdown should be dark with white text */
 html.theme-dark .has-account .account-menu,
@@ -142,15 +151,25 @@ html.theme-dark .f-social .social-icon, body.theme-dark .f-social .social-icon {
 @media (max-width: 720px) {
   .header-inner { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
   .brand { order: 1; flex: 0 0 auto; }
-  .header-actions { order: 2; display:flex; align-items:center; gap:8px; }
-  .header-actions .action { padding:.35rem .5rem; }
-  /* keep only cart visually prominent in the top row; move others to nav/search rows */
-  .header-actions .link-phone, .header-actions .has-account, .header-actions .action[href="login.php"] { display: none; }
-  .nav-cart { display:inline-flex; order:2; margin-left:auto; }
+  /* Keep cart prominent in the top row next to the logo */
+  /* Pin the cart to the top-right on mobile regardless of header flow */
+  .header-inner { position: relative; }
+  .nav-cart { display:inline-flex; position: absolute; right: 16px; top: 12px; margin-left:0; z-index:70; }
 
-  /* Search should be full width on its own row */
-  /* Ensure search always breaks below the top row */
-  .search-wrap { order:3; width:100% !important; display:block !important; margin-top:6px !important; flex-basis:100% !important; }
+  /* Search becomes the second row and spans full width */
+  .search-wrap { order:2; width:100% !important; display:block !important; margin-top:6px !important; flex-basis:100% !important; }
+  .search-form { width:100%; display:flex; gap:8px; }
+
+  /* Header actions (phone, My Account) move to their own full-width third row under the search
+    Align phone left and account to the right for clearer tap targets */
+  .header-actions { order:3; display:flex; align-items:center; gap:8px; width:100%; justify-content:space-between; }
+  /* Ensure phone sits at the left and My Account cluster sticks to the right */
+  .header-actions .link-phone { order: 1; }
+  .header-actions .has-account, .header-actions .action[href="login.php"] { order: 2; }
+  .header-actions .action { padding:.35rem .5rem; }
+  /* Show phone and account links on mobile; keep login link hidden when present */
+  .header-actions .link-phone, .header-actions .has-account { display:inline-flex; }
+  .header-actions .action[href="login.php"] { display: none; }
   .search-form { width:100%; display:flex; gap:8px; }
   .search-form input[type=search] { width:100%; }
 
