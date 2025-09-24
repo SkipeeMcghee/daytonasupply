@@ -314,7 +314,7 @@ if (!empty($_SESSION['cart'])) {
             <?php endforeach; ?>
             <tr class="cart-total-row">
                 <td class="cart-total-label" colspan="4"></td>
-                <td class="cart-total-amount numeric"><span class="total-label">Total:</span> <strong>$<?php echo number_format($total, 2); ?></strong></td>
+                <td class="cart-total-amount numeric"><span class="total-line"><span class="total-label">Total:</span><strong> $<?php echo number_format($total, 2); ?></strong></span></td>
                 <td class="cart-total-spacer"></td>
             </tr>
         </table>

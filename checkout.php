@@ -192,15 +192,15 @@ foreach ($cart as $pid => $entry) {
         <?php endforeach; ?>
         <tr class="cart-total-row">
             <td class="cart-total-label" colspan="4"></td>
-            <td class="cart-total-amount numeric"><span class="total-label">Subtotal:</span> <strong id="checkout-subtotal-amount">$<?php echo number_format($total, 2); ?></strong></td>
+            <td class="cart-total-amount numeric"><span class="total-line"><span class="total-label">Subtotal:</span><strong id="checkout-subtotal-amount"> $<?php echo number_format($total, 2); ?></strong></span></td>
         </tr>
         <tr class="cart-total-row" id="checkout-tax-row" style="display:none;">
             <td class="cart-total-label" colspan="4"></td>
-            <td class="cart-total-amount numeric"><span class="total-label">Sales Tax (6.5%):</span> <strong id="checkout-tax-amount">$0.00</strong></td>
+            <td class="cart-total-amount numeric"><span class="total-line"><span class="total-label">Sales Tax (6.5%):</span><strong id="checkout-tax-amount"> $0.00</strong></span></td>
         </tr>
         <tr class="cart-total-row">
             <td class="cart-total-label" colspan="4"></td>
-            <td class="cart-total-amount numeric"><span class="total-label">Total:</span> <strong id="checkout-total-amount">$<?php echo number_format($total, 2); ?></strong></td>
+            <td class="cart-total-amount numeric"><span class="total-line"><span class="total-label">Total:</span><strong id="checkout-total-amount"> $<?php echo number_format($total, 2); ?></strong></span></td>
         </tr>
     </table>
     <form method="post" action="" id="checkout-form">

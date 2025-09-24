@@ -1289,6 +1289,11 @@ html.theme-dark .proceed-btn.muted-btn:focus {
   .checkout-table td:nth-child(1) {
     display: none;
   }
+  /* Do not hide the first cell of totals rows (it is a label spanning columns, not SKU) */
+  .cart-table .cart-total-row td:first-child,
+  .checkout-table .cart-total-row td:first-child {
+    display: table-cell !important;
+  }
 }
 
 /* Dark-mode variants for table gridlines and stripes */
@@ -1377,6 +1382,7 @@ html.theme-dark .cart-table tr:hover td, body.theme-dark .cart-table tr:hover td
   }
   .cart-table .cart-total-row .cart-total-label { text-align: right !important; font-weight: bold !important; padding-right: 10px !important; }
   .cart-table .cart-total-row .cart-total-amount { text-align: right !important; font-weight: bold !important; white-space: nowrap; width: auto !important; display: inline-flex; align-items: baseline; justify-content: flex-end; gap: 8px; }
+  .cart-table .cart-total-row .cart-total-amount .total-line { display: inline-flex; align-items: baseline; gap: 6px; white-space: nowrap; }
   .cart-table .cart-total-row .cart-total-amount .total-label { display: inline-block; vertical-align: baseline; margin-right: 8px; opacity: 0.9; font-weight: 600; max-width: 60%; overflow: hidden; text-overflow: ellipsis; }
   .cart-table .cart-total-row .cart-total-spacer { width: 4%; }
 }
