@@ -370,6 +370,97 @@ if ($skuKey !== '') {
 
 include __DIR__ . '/includes/header.php';
 ?>
+<style>
+/* Hide the Name column on small screens */
+@media (max-width: 600px) {
+    table.catalogue-table th:nth-child(1),
+    table.catalogue-table td:nth-child(1) {
+        display: none;
+    }
+}
+/* Default width for Price column */
+table.catalogue-table th:nth-child(3),
+table.catalogue-table td:nth-child(3) {
+    width: 140px; /* baseline width */
+    white-space: nowrap;
+}
+/* On small screens, make the Price column half as wide */
+@media (max-width: 600px) {
+    table.catalogue-table th:nth-child(3),
+    table.catalogue-table td:nth-child(3) {
+        width: 70px; /* half of baseline */
+    }
+}
+/* On small screens, stack quantity input, Add button, and favorite button vertically */
+@media (max-width: 600px) {
+    table.catalogue-table td:nth-child(4) {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+    }
+    table.catalogue-table td:nth-child(4) form.cart-add {
+        display: flex !important; /* override inline-block */
+        flex-direction: column;
+        gap: 6px;
+        width: 100%;
+    }
+    table.catalogue-table td:nth-child(4) form.cart-add input[type="number"] {
+        display: block;
+        width: 100% !important;
+        box-sizing: border-box;
+        margin-bottom: 6px;
+    }
+    table.catalogue-table td:nth-child(4) form.cart-add button[type="submit"] {
+        display: block;
+        width: 100% !important;
+        box-sizing: border-box;
+    }
+    table.catalogue-table td:nth-child(4) .fav-toggle {
+        display: block;
+        margin-left: 0 !important; /* remove inline margin-left */
+        width: 100%;
+        text-align: left;
+    }
+}
+
+/* Ultra-small screens: tighten layout further to keep buttons in frame */
+@media (max-width: 420px) {
+    table.catalogue-table {
+        table-layout: fixed;
+        width: 100%;
+    }
+    table.catalogue-table th,
+    table.catalogue-table td {
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+        padding: 6px 4px;
+    }
+    /* Price even narrower on ultra-small screens */
+    table.catalogue-table th:nth-child(3),
+    table.catalogue-table td:nth-child(3) {
+        width: 60px;
+    }
+    /* Allow Add column to take remaining width */
+    table.catalogue-table th:nth-child(4),
+    table.catalogue-table td:nth-child(4) {
+        width: auto;
+    }
+    table.catalogue-table td:nth-child(4) form.cart-add {
+        display: flex !important;
+        flex-direction: column;
+        gap: 6px;
+        width: 100%;
+    }
+    table.catalogue-table td:nth-child(4) form.cart-add input[type="number"],
+    table.catalogue-table td:nth-child(4) form.cart-add button[type="submit"],
+    table.catalogue-table td:nth-child(4) .fav-toggle {
+        display: block;
+        width: 100% !important;
+    }
+}
+</style>
 <section class="page-hero">
     <h1>Catalog</h1>
     <p class="lead">Browse through our extensive product listings or click on a category below to go directly to a product group. Use the SEARCH box to find a product or product group. Click ADD to order a product. When ready, <a href="cart.php" class="proceed-btn btn-cart">PROCEED TO CART</a></p>
@@ -411,7 +502,7 @@ include __DIR__ . '/includes/header.php';
         <th>Name</th>
         <th>Description</th>
         <th>Price</th>
-        <th>Add to Cart</th>
+        <th>Actions</th>
     </tr>
     <?php foreach ($products as $p): ?>
         <tr id="product-<?= (int)$p['id'] ?>">
