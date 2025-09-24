@@ -8,6 +8,7 @@
 
 session_start();
 require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/functions.php';
 // Only proceed if admin is authenticated
 if (!isset($_SESSION['admin'])) {
     // Use relative path to manager portal when redirecting from within admin
@@ -182,6 +183,8 @@ try {
     }
 
     $db->commit();
+    // Invalidate any cached product listings so the portal/catalogue reflect updates
+    invalidateProductsCache();
     // Redirect back to the manager portal once done
     header('Location: ../managerportal.php');
     exit;

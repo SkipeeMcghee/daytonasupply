@@ -94,6 +94,11 @@ function getDb(): PDO
             // Record fallback reason so other code can detect temporary fallback
             $GLOBALS['DB_FALLBACK_REASON'] = $msg;
             error_log('getDb: falling back to SQLite due to MySQL error (see catalogue_errors.log)');
+            // Optionally prevent silent fallback in production by setting DB_STRICT=1
+            $strict = getenv('DB_STRICT');
+            if ($strict === '1' || $strict === 'true') {
+                throw $e;
+            }
             // Continue to the SQLite fallback below so the app remains usable.
         }
     }
@@ -367,14 +372,13 @@ function initDatabase(PDO $db): void
         $insAdmin->execute([':hash' => $defaultHash]);
     }
 
-    // If a pre-defined inventory JSON exists and products table is empty,
-    // seed the products from that file.  This allows the catalogue to
-    // populate automatically on first run without requiring manual
-    // insertion.  The file should contain a JSON array of objects with
-    // keys "name", "description", and "price".
+    // Optional first-run seeding from inventory.json (SQLite only).
+    // Disabled by default to avoid unintended overwrites; enable by setting
+    // ENABLE_INVENTORY_SEED=1 in the environment before first run.
     $prodCount = (int)$db->query('SELECT COUNT(*) FROM products')->fetchColumn();
     $inventoryFile = __DIR__ . '/../data/inventory.json';
-    if ($prodCount === 0 && is_readable($inventoryFile)) {
+    $seedEnabled = getenv('ENABLE_INVENTORY_SEED') === '1';
+    if ($prodCount === 0 && $seedEnabled && is_readable($inventoryFile)) {
         $json = file_get_contents($inventoryFile);
         $items = json_decode($json, true);
         if (is_array($items)) {
@@ -389,6 +393,9 @@ function initDatabase(PDO $db): void
                 }
             }
         }
+    } elseif ($prodCount === 0 && !$seedEnabled) {
+        // No seed performed; leave products empty until inventory is updated via admin
+        error_log('initDatabase: inventory seed skipped (ENABLE_INVENTORY_SEED not set)');
     }
 }
 

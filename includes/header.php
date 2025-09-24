@@ -100,6 +100,11 @@ if ($loggedIn) {
 </head>
 <?php $authClass = $loggedIn ? 'is-authenticated' : 'guest'; ?>
 <body class="<?php echo trim($serverThemeClass . ' ' . $authClass); ?>">
+    <?php if (!empty($_SESSION['admin']) && !empty($GLOBALS['DB_FALLBACK_REASON'])): ?>
+    <div style="background:#dc3545;color:#fff;padding:8px 12px;font-weight:600;">
+        Database fallback active: using SQLite because MySQL connection failed. Edits won’t affect MySQL until the connection succeeds.
+    </div>
+    <?php endif; ?>
     <header class="site-header" role="banner">
         <div class="header-inner container">
             <div class="brand" style="margin-right:auto; margin-left:0;">

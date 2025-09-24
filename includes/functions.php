@@ -190,6 +190,36 @@ function getAllProducts(): array
 }
 
 /**
+ * Retrieve all products directly from the database, bypassing any cache.
+ * Useful for admin/manager views where immediate consistency is required.
+ *
+ * @return array An array of associative arrays describing products.
+ */
+function getAllProductsFresh(): array
+{
+    $db = getDb();
+    $stmt = $db->query('SELECT * FROM products ORDER BY name ASC');
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+/**
+ * Invalidate the products cache used by getAllProducts(). This clears the APCu
+ * entry when available and deletes the on-disk cache file. Safe to call even if
+ * the cache does not exist.
+ */
+function invalidateProductsCache(): void
+{
+    $cacheKey = 'daytona_all_products_v1';
+    if (function_exists('apcu_delete')) {
+        @apcu_delete($cacheKey);
+    }
+    $cacheFile = __DIR__ . '/../data/cache_products.json';
+    if (is_file($cacheFile)) {
+        @unlink($cacheFile);
+    }
+}
+
+/**
  * Return list of columns for a table. Supports MySQL (SHOW COLUMNS) and SQLite (PRAGMA).
  * @param string $table
  * @return string[]
@@ -951,6 +981,8 @@ function getCustomerById(int $id): ?array
 function saveProduct(array $data, ?int $id = null): void
 {
     $db = getDb();
+    $driver = 'unknown';
+    try { $driver = $db->getAttribute(PDO::ATTR_DRIVER_NAME); } catch (Exception $_) {}
     if ($id === null) {
         $stmt = $db->prepare('INSERT INTO products(name, description, price) VALUES(:name, :description, :price)');
         $stmt->execute([
@@ -958,6 +990,8 @@ function saveProduct(array $data, ?int $id = null): void
             ':description' => $data['description'] ?? '',
             ':price' => (float)$data['price']
         ]);
+        $newId = (int)$db->lastInsertId();
+        error_log('saveProduct: insert id=' . $newId . ' via driver=' . $driver);
     } else {
         $stmt = $db->prepare('UPDATE products SET name=:name, description=:description, price=:price WHERE id=:id');
         $stmt->execute([
@@ -966,7 +1000,11 @@ function saveProduct(array $data, ?int $id = null): void
             ':description' => $data['description'] ?? '',
             ':price' => (float)$data['price']
         ]);
+        $rc = (int)$stmt->rowCount();
+        error_log('saveProduct: update id=' . $id . ' affected=' . $rc . ' via driver=' . $driver);
     }
+    // Ensure subsequent reads reflect the new data immediately
+    invalidateProductsCache();
 }
 
 /**
@@ -979,6 +1017,8 @@ function deleteProduct(int $id): void
     $db = getDb();
     $stmt = $db->prepare('DELETE FROM products WHERE id = :id');
     $stmt->execute([':id' => $id]);
+    // Invalidate product caches so UIs reflect the deletion
+    invalidateProductsCache();
 }
 
 /**

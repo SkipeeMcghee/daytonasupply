@@ -168,22 +168,77 @@ if (isset($_GET['delete_product'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Save products
     if (isset($_POST['save_products'])) {
-        $products = getAllProducts();
-        foreach ($products as $prod) {
-            $id = (int)$prod['id'];
-            $nameField = 'name_' . $id;
-            $descField = 'desc_' . $id;
-            $priceField = 'price_' . $id;
-            if (isset($_POST[$nameField], $_POST[$priceField])) {
-                $data = [
-                    'name' => normalizeScalar($_POST[$nameField] ?? '', 128, ''),
-                    'description' => normalizeScalar($_POST[$descField] ?? '', 512, ''),
-                    'price' => (float)($_POST[$priceField] ?? 0.0)
-                ];
-                saveProduct($data, $id);
+        $db = getDb();
+        $driver = 'unknown';
+        try { $driver = $db->getAttribute(PDO::ATTR_DRIVER_NAME); } catch (Exception $_) {}
+
+        // Prefer JSON payload to bypass PHP max_input_vars limits
+        $updates = [];
+        if (!empty($_POST['products_json'])) {
+            $decoded = json_decode((string)$_POST['products_json'], true);
+            if (is_array($decoded)) {
+                foreach ($decoded as $idStr => $vals) {
+                    $id = (int)$idStr;
+                    if ($id <= 0) continue;
+                    $name = normalizeScalar((string)($vals['name'] ?? ''), 128, '');
+                    $desc = normalizeScalar((string)($vals['description'] ?? ''), 512, '');
+                    $num = (string)($vals['price'] ?? '0');
+                    $num = str_replace([',', ' '], '', $num);
+                    if (!preg_match('/^-?\d*(?:\.\d+)?$/', $num)) { $num = '0'; }
+                    $price = number_format((float)$num, 2, '.', '');
+                    $updates[$id] = ['name' => $name, 'description' => $desc, 'price' => $price];
+                }
+            }
+        } else {
+            // Fallback: build updates from individual inputs (may be truncated by max_input_vars)
+            foreach ($_POST as $key => $val) {
+                if (!is_string($key)) continue;
+                if (preg_match('/^(name|desc|price)_(\d+)$/', $key, $m)) {
+                    $field = $m[1];
+                    $id = (int)$m[2];
+                    if ($id <= 0) continue;
+                    if (!isset($updates[$id])) $updates[$id] = ['name' => null, 'description' => null, 'price' => null];
+                    if ($field === 'name') {
+                        $updates[$id]['name'] = normalizeScalar((string)$val, 128, '');
+                    } elseif ($field === 'desc') {
+                        $updates[$id]['description'] = normalizeScalar((string)$val, 512, '');
+                    } elseif ($field === 'price') {
+                        $num = (string)$val;
+                        $num = str_replace([',', ' '], '', $num);
+                        if (!preg_match('/^-?\d*(?:\.\d+)?$/', $num)) { $num = '0'; }
+                        $updates[$id]['price'] = number_format((float)$num, 2, '.', '');
+                    }
+                }
             }
         }
-    header('Location: managerportal.php');
+
+        if (!empty($updates)) {
+            // Start transaction where supported
+            $inTx = false;
+            try { $db->beginTransaction(); $inTx = true; } catch (Exception $_) {}
+
+            $stmt = $db->prepare('UPDATE products SET name = :name, description = :description, price = :price WHERE id = :id');
+            $updatedCount = 0;
+            foreach ($updates as $id => $vals) {
+                $name = (string)($vals['name'] ?? '');
+                $desc = (string)($vals['description'] ?? '');
+                $price = (string)($vals['price'] ?? '0.00');
+                $stmt->execute([':id' => (int)$id, ':name' => $name, ':description' => $desc, ':price' => $price]);
+                $updatedCount += (int)$stmt->rowCount();
+            }
+            if ($inTx) { try { $db->commit(); } catch (Exception $_) {} }
+            error_log('saveProducts: direct updates executed for ' . count($updates) . ' products; rows affected=' . $updatedCount);
+        }
+
+        // Invalidate caches and force a fresh reload
+        invalidateProductsCache();
+        $cacheFile = __DIR__ . '/data/cache_products.json';
+        if (file_exists($cacheFile)) { @unlink($cacheFile); }
+
+        header('Cache-Control: no-cache, no-store, must-revalidate');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+        header('Location: managerportal.php?updated=' . time() . '&nocache=' . mt_rand());
         exit;
     }
     // Add a new product
@@ -265,7 +320,26 @@ if ($filter === 'archived') {
 // Customers: separate lists for unverified and verified
 $unverifiedCustomers = getCustomersByVerified(false);
 $verifiedCustomers = getCustomersByVerified(true);
-$products = getAllProducts();
+
+// Debug: Check database driver and add timestamp
+$db = getDb();
+$driver = 'unknown';
+try { $driver = $db->getAttribute(PDO::ATTR_DRIVER_NAME); } catch (Exception $_) {}
+error_log('managerportal: loading products via driver=' . $driver . ' at ' . date('H:i:s'));
+
+// If we just updated products, force cache bypass
+if (isset($_GET['updated']) || isset($_GET['nocache'])) {
+    invalidateProductsCache();
+    $cacheFile = __DIR__ . '/data/cache_products.json';
+    if (file_exists($cacheFile)) {
+        unlink($cacheFile);
+    }
+    error_log('managerportal: forced cache clear due to updated parameter');
+}
+
+// Use a fresh DB read to ensure UI reflects the latest data immediately
+$products = getAllProductsFresh();
+error_log('managerportal: loaded ' . count($products) . ' products');
 
 // Whether we're showing archived orders (used by the toggle link below)
 $showArchived = ($filter === 'archived');
@@ -277,6 +351,12 @@ require_once __DIR__ . '/includes/header.php';
 <h2>Manager Portal</h2>
 
 <!-- Toolbar removed; Update Inventory button moved to Products section -->
+
+<?php if (isset($_GET['updated'])): ?>
+    <div style="margin:10px 0; padding:10px; background:#e7f5ff; border:1px solid #b3e0ff; border-radius:6px; color:#0b5ed7;">
+        Product changes saved at <?php echo htmlspecialchars(date('n/j/Y g:i:s A')); ?>.
+    </div>
+<?php endif; ?>
 
 <section id="orders-section">
     <h3>Orders</h3>
@@ -595,20 +675,21 @@ require_once __DIR__ . '/includes/header.php';
 <section>
     <h3>Products</h3>
     <!-- Update Inventory button moved below the products table to sit beside Save Product Changes -->
-    <form method="post" action="">
+    <form method="post" action="" id="productsForm">
         <input type="hidden" name="save_products" value="1">
+        <input type="hidden" name="products_json" id="products_json" value="">
         <table class="admin-table">
             <tr><th>ID</th><th>Name</th><th>Description</th><th>Price</th><th>Actions</th></tr>
-            <?php $rowNum = 1; foreach ($products as $prod): ?>
+            <?php foreach ($products as $prod): ?>
                 <tr>
-                    <!-- Display a sequential row number instead of the raw product ID -->
-                    <td><?php echo $rowNum; ?></td>
-                    <td><input type="text" name="name_<?php echo $prod['id']; ?>" value="<?php echo htmlspecialchars($prod['name']); ?>"></td>
-                    <td><input type="text" name="desc_<?php echo $prod['id']; ?>" value="<?php echo htmlspecialchars($prod['description']); ?>"></td>
-                    <td><input type="number" step="0.01" name="price_<?php echo $prod['id']; ?>" value="<?php echo number_format($prod['price'], 2); ?>"></td>
-                    <td><a class="mgr-btn mgr-product-delete" href="?delete_product=<?php echo $prod['id']; ?>" onclick="return confirm('Delete this product?');">Delete</a></td>
+                    <!-- Show the real product ID for clarity -->
+                    <td><?php echo (int)$prod['id']; ?></td>
+                    <td><input type="text" name="name_<?php echo (int)$prod['id']; ?>" value="<?php echo htmlspecialchars($prod['name']); ?>"></td>
+                    <td><input type="text" name="desc_<?php echo (int)$prod['id']; ?>" value="<?php echo htmlspecialchars($prod['description']); ?>"></td>
+                    <!-- Avoid number_format to prevent commas; let the browser handle display/format -->
+                    <td><input type="number" step="0.01" name="price_<?php echo (int)$prod['id']; ?>" value="<?php echo htmlspecialchars((string)$prod['price']); ?>"></td>
+                    <td><a class="mgr-btn mgr-product-delete" href="?delete_product=<?php echo (int)$prod['id']; ?>" onclick="return confirm('Delete this product?');">Delete</a></td>
                 </tr>
-                <?php $rowNum++; ?>
             <?php endforeach; ?>
             <?php if (empty($products)): ?>
                 <tr><td colspan="5">No products found.</td></tr>
@@ -619,6 +700,40 @@ require_once __DIR__ . '/includes/header.php';
         <a href="admin/update_inventory.php" style="background:#0b5ed7; color:#fff; padding:8px 14px; border-radius:6px; text-decoration:none; font-weight:600;">Update Inventory</a>
     </p>
     </form>
+    <script>
+    // Serialize the products table into a single JSON payload to avoid hitting PHP max_input_vars
+    (function(){
+        var form = document.getElementById('productsForm');
+        if (!form) return;
+        form.addEventListener('submit', function(){
+            try {
+                var rows = form.querySelectorAll('table.admin-table tr');
+                var data = {};
+                for (var i = 1; i < rows.length; i++) { // skip header row
+                    var r = rows[i];
+                    var idCell = r.children && r.children[0];
+                    if (!idCell) continue;
+                    var idText = idCell.textContent ? idCell.textContent.trim() : '';
+                    var id = parseInt(idText, 10);
+                    if (!id || id <= 0) continue;
+                    var nameInput = r.querySelector('input[name="name_' + id + '"]');
+                    var descInput = r.querySelector('input[name="desc_' + id + '"]');
+                    var priceInput = r.querySelector('input[name="price_' + id + '"]');
+                    if (!nameInput && !descInput && !priceInput) continue;
+                    var name = nameInput ? nameInput.value : '';
+                    var desc = descInput ? descInput.value : '';
+                    var price = priceInput ? priceInput.value : '0';
+                    data[id] = { name: name, description: desc, price: price };
+                }
+                var hidden = document.getElementById('products_json');
+                hidden.value = JSON.stringify(data);
+            } catch (e) {
+                // If serialization fails, allow normal submission of individual inputs
+                console.error('products_json serialization failed', e);
+            }
+        });
+    })();
+    </script>
     <h4>Add Product</h4>
     <form method="post" action="">
         <input type="hidden" name="add_product" value="1">

@@ -5416,3 +5416,11 @@
 #0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
 #1 C:\xampp\htdocs\daytonasupply\ajax\get_user_prefs.php(11): getDb()
 #2 {main}
+[2025-09-24T10:51:54-04:00] getDb mysql connection failed (bcb2293690bf): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\tools\test_product_save.php(15): getDb()
+#2 {main}
+[2025-09-24T10:53:55-04:00] getDb mysql connection failed (cc26132c1f36): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\tools\test_sbo_product.php(13): getDb()
+#2 {main}
