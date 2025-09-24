@@ -153,9 +153,8 @@ foreach ($cart as $pid => $entry) {
 }
 ?>
 
-<section class="page-hero">
+<div class="container"><div class="form-card">
     <h2>Checkout</h2>
-</section>
 <?php if ($message): ?>
     <div class="message"><?php echo htmlspecialchars($message); ?></div>
 <?php else: ?>
@@ -168,10 +167,21 @@ foreach ($cart as $pid => $entry) {
             <th class="numeric">Price</th>
         </tr>
         <?php foreach ($items as $it): ?>
-            <?php $prod = getProductById((int)$it['id']);
-                  // The product 'name' field is used as the visible SKU/code.
-                  $sku = $prod ? htmlspecialchars($prod['name']) : htmlspecialchars($it['name']);
-                  $description = $prod ? htmlspecialchars($prod['description'] ?? $prod['name']) : htmlspecialchars($it['name']); ?>
+            <?php
+                // Prefer snapshot/cart-provided fields to keep checkout consistent with cart display
+                $sku = isset($it['name']) ? htmlspecialchars($it['name']) : '';
+                $description = isset($it['description']) ? htmlspecialchars($it['description']) : '';
+                if ($sku === '' || $description === '') {
+                    $prod = getProductById((int)$it['id']);
+                    if ($prod) {
+                        if ($sku === '') $sku = htmlspecialchars($prod['name']);
+                        if ($description === '') $description = htmlspecialchars($prod['description'] ?? $prod['name']);
+                    } else {
+                        if ($sku === '') $sku = 'Product #' . (int)$it['id'];
+                        if ($description === '') $description = $sku;
+                    }
+                }
+            ?>
             <tr>
                 <td><?php echo $sku; ?></td>
                 <td><?php echo $description; ?></td>
@@ -181,15 +191,15 @@ foreach ($cart as $pid => $entry) {
             </tr>
         <?php endforeach; ?>
         <tr class="cart-total-row">
-            <td colspan="4"></td>
+            <td class="cart-total-label" colspan="4"></td>
             <td class="cart-total-amount numeric"><span class="total-label">Subtotal:</span> <strong id="checkout-subtotal-amount">$<?php echo number_format($total, 2); ?></strong></td>
         </tr>
         <tr class="cart-total-row" id="checkout-tax-row" style="display:none;">
-            <td colspan="4"></td>
+            <td class="cart-total-label" colspan="4"></td>
             <td class="cart-total-amount numeric"><span class="total-label">Sales Tax (6.5%):</span> <strong id="checkout-tax-amount">$0.00</strong></td>
         </tr>
         <tr class="cart-total-row">
-            <td colspan="4"></td>
+            <td class="cart-total-label" colspan="4"></td>
             <td class="cart-total-amount numeric"><span class="total-label">Total:</span> <strong id="checkout-total-amount">$<?php echo number_format($total, 2); ?></strong></td>
         </tr>
     </table>
@@ -230,18 +240,22 @@ foreach ($cart as $pid => $entry) {
             var lead = document.getElementById('checkout-lead'); if (lead) lead.style.display = 'none';
         <?php endif; ?>
         
-        // Ensure totals always sit in the Price column (last) regardless of screen size
-        (function fixCheckoutTotalsColspans(){
-            var totalRows = document.querySelectorAll('.cart-total-row');
-            totalRows.forEach(function(row){
-                var labelCell = row.querySelector('.cart-total-label');
-                var amountCell = row.querySelector('.cart-total-amount');
-                if (labelCell) labelCell.setAttribute('colspan', '4'); // up to Rate
-                if (amountCell) amountCell.setAttribute('colspan', '1'); // Price column only
+        // Adjust totals label colspan to span all but the last column; when SKU is hidden at <=735px, reduce by 1
+        function adjustCheckoutTotalsColspan(){
+            var mobile = window.matchMedia && window.matchMedia('(max-width: 735px)').matches;
+            document.querySelectorAll('.checkout-table .cart-total-row').forEach(function(row){
+                var firstCell = row.querySelector('td');
+                if (firstCell && firstCell.colSpan) {
+                    // When SKU hides (<=735px), there are 4 visible columns before Price
+                    firstCell.colSpan = mobile ? 3 : 4;
+                }
             });
-        })();
+        }
+        adjustCheckoutTotalsColspan();
+        window.addEventListener('resize', adjustCheckoutTotalsColspan);
     })();
     </script>
 <?php endif; ?>
+</div></div>
 
 <?php include __DIR__ . '/includes/footer.php'; ?>

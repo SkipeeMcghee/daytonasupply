@@ -1277,11 +1277,16 @@ html.theme-dark .proceed-btn.muted-btn:focus {
 
 /* Numeric column alignment kept as before but ensure padding matches */
 .cart-table th.numeric, .cart-table td.numeric { text-align: right; }
+.cart-table .cart-total-amount.numeric { text-align: right !important; min-width: 100px; }
+/* Let totals amount cell expand to fit currency values even if the last column is narrow (e.g., Remove) */
+.cart-table .cart-total-row td.cart-total-amount { width: auto !important; }
 
 /* Hide the SKU column (first column) on narrow screens for cart/checkout */
-@media (max-width: 600px) {
+@media (max-width: 735px) {
   .cart-table th:nth-child(1),
-  .cart-table td:nth-child(1) {
+  .cart-table td:nth-child(1),
+  .checkout-table th:nth-child(1),
+  .checkout-table td:nth-child(1) {
     display: none;
   }
 }
@@ -1310,7 +1315,7 @@ html.theme-dark .cart-table tr:hover td, body.theme-dark .cart-table tr:hover td
 }
 
 /* Mobile mini table: fit all visible columns within viewport on small screens */
-@media (max-width: 600px) {
+@media (max-width: 735px) {
   /* Override generic mobile table scrolling for cart/checkout: show a compact, fixed-layout table instead */
   .cart-table {
     display: table !important;
@@ -1334,18 +1339,18 @@ html.theme-dark .cart-table tr:hover td, body.theme-dark .cart-table tr:hover td
   /* SKU is hidden via earlier rule; set widths for remaining columns by index
      (2) Description, (3) Quantity, (4) Rate, (5) Price, (6) Remove (cart only) */
   /* Description ~40% narrower than previous (from ~56% -> ~34%); distribute extra to other cols */
-  .cart-table th:nth-child(2), .cart-table td:nth-child(2) { width: 34%; }
+  .cart-table th:nth-child(2), .cart-table td:nth-child(2) { width: 32%; }
   .cart-table th:nth-child(3), .cart-table td:nth-child(3) { width: 18%; text-align: center; }
   .cart-table th:nth-child(4), .cart-table td:nth-child(4) { width: 22%; }
-  .cart-table th:nth-child(5), .cart-table td:nth-child(5) { width: 22%; }
+  .cart-table th:nth-child(5), .cart-table td:nth-child(5) { width: 24%; }
   .cart-table th:nth-child(6), .cart-table td:nth-child(6) { width: 4%; text-align: center; }
 
   /* Checkout table column widths when SKU hidden: (2) Desc, (3) Qty, (4) Rate, (5) Price */
   .checkout-table th:nth-child(1), .checkout-table td:nth-child(1) { display: none; }
-  .checkout-table th:nth-child(2), .checkout-table td:nth-child(2) { width: 38%; }
+  .checkout-table th:nth-child(2), .checkout-table td:nth-child(2) { width: 36%; }
   .checkout-table th:nth-child(3), .checkout-table td:nth-child(3) { width: 18%; text-align: center; }
   .checkout-table th:nth-child(4), .checkout-table td:nth-child(4) { width: 22%; text-align: right; }
-  .checkout-table th:nth-child(5), .checkout-table td:nth-child(5) { width: 22%; text-align: right; }
+  .checkout-table th:nth-child(5), .checkout-table td:nth-child(5) { width: 24%; text-align: right; }
 
   /* Compact quantity input and remove button */
   .cart-table input[type=number] { width: 2.6em; padding: 2px 4px; }
@@ -1370,24 +1375,9 @@ html.theme-dark .cart-table tr:hover td, body.theme-dark .cart-table tr:hover td
     overflow: visible !important; /* Ensure text isn't clipped */
     min-height: 44px; /* Give enough height for the text */
   }
-  .cart-table .cart-total-row .cart-total-label {
-    text-align: right !important;
-    font-weight: bold !important;
-    padding-right: 10px !important;
-    min-width: 120px; /* Ensure enough room for "Subtotal:", "Total:" etc. */
-  }
-  .cart-table .cart-total-row .cart-total-amount {
-    text-align: right !important;
-    font-weight: bold !important;
-    min-width: 80px; /* Ensure enough room for dollar amounts */
-    white-space: nowrap;
-    display: block; /* helps match numeric col alignment */
-  }
-  .cart-table .cart-total-row .cart-total-amount .total-label {
-    font-weight: 600;
-    margin-right: 8px;
-    opacity: 0.9;
-  }
+  .cart-table .cart-total-row .cart-total-label { text-align: right !important; font-weight: bold !important; padding-right: 10px !important; }
+  .cart-table .cart-total-row .cart-total-amount { text-align: right !important; font-weight: bold !important; white-space: nowrap; width: auto !important; display: inline-flex; align-items: baseline; justify-content: flex-end; gap: 8px; }
+  .cart-table .cart-total-row .cart-total-amount .total-label { display: inline-block; vertical-align: baseline; margin-right: 8px; opacity: 0.9; font-weight: 600; max-width: 60%; overflow: hidden; text-overflow: ellipsis; }
   .cart-table .cart-total-row .cart-total-spacer { width: 4%; }
 }
 
@@ -1396,10 +1386,10 @@ html.theme-dark .cart-table tr:hover td, body.theme-dark .cart-table tr:hover td
   .cart-table th, .cart-table td { padding: 6px 4px; }
   .cart-table input[type=number] { width: 2.2em; }
   /* Slight re-balance for ultra-narrow screens with narrower Description */
-  .cart-table th:nth-child(2), .cart-table td:nth-child(2) { width: 36%; }
+  .cart-table th:nth-child(2), .cart-table td:nth-child(2) { width: 34%; }
   .cart-table th:nth-child(3), .cart-table td:nth-child(3) { width: 18%; }
   .cart-table th:nth-child(4), .cart-table td:nth-child(4) { width: 22%; }
-  .cart-table th:nth-child(5), .cart-table td:nth-child(5) { width: 20%; }
+  .cart-table th:nth-child(5), .cart-table td:nth-child(5) { width: 22%; }
   .cart-table th:nth-child(6), .cart-table td:nth-child(6) { width: 4%; }
   
   /* Ensure total rows remain readable on ultra-small screens */
@@ -1456,6 +1446,16 @@ body.theme-dark .cart-table .cart-total-row .cart-total-amount strong {
   cursor: pointer;
 }
 .cart-remove-btn:hover { color: #8b1b1b; transform: translateY(-1px); }
+
+/* Dark mode: keep the X button transparent and high-contrast */
+html.theme-dark .cart-remove-btn,
+body.theme-dark .cart-remove-btn {
+  background: transparent !important;
+  border: 0 !important;
+  color: #ff6b6b !important; /* slightly brighter red for dark bg */
+}
+html.theme-dark .cart-remove-btn:hover,
+body.theme-dark .cart-remove-btn:hover { color: #ff8b8b !important; }
 
 /* Hover effects for Update Cart and Proceed to Checkout */
 .proceed-btn.muted-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 0 rgba(11,34,56,0.06); }

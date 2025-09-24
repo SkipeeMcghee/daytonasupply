@@ -265,9 +265,9 @@ if (!empty($_SESSION['cart'])) {
     }
 }
 ?>
-<section class="page-hero">
+<div class="container">
+  <div class="form-card">
     <h2>Your Cart</h2>
-</section>
 <?php if ($message): ?>
     <div class="message"><?php echo htmlspecialchars($message); ?></div>
 <?php endif; ?>
@@ -281,8 +281,8 @@ if (!empty($_SESSION['cart'])) {
                 <th>SKU</th>
                 <th>Description</th>
                 <th>Quantity</th>
-                <th>Rate</th>
-                <th>Price</th>
+                <th class="numeric">Rate</th>
+                <th class="numeric">Price</th>
                 <th></th>
             </tr>
             <?php foreach ($cartItems as $item): ?>
@@ -305,17 +305,17 @@ if (!empty($_SESSION['cart'])) {
                     <td><?php echo $sku; ?></td>
                     <td><?php echo $description; ?></td>
                     <td><input type="number" name="qty_<?php echo $item['id']; ?>" value="<?php echo $item['quantity']; ?>" min="0" style="width:60px"></td>
-                    <td>$<?php echo number_format($item['price'], 2); ?></td>
-                    <td>$<?php echo number_format($item['subtotal'], 2); ?></td>
+                    <td class="numeric">$<?php echo number_format($item['price'], 2); ?></td>
+                    <td class="numeric">$<?php echo number_format($item['subtotal'], 2); ?></td>
                         <td style="text-align:center;">
                             <button type="button" class="cart-remove-btn" title="Remove item" data-item-id="<?php echo $item['id']; ?>">×</button>
                         </td>
                 </tr>
             <?php endforeach; ?>
             <tr class="cart-total-row">
-                <td colspan="4"></td>
+                <td class="cart-total-label" colspan="4"></td>
                 <td class="cart-total-amount numeric"><span class="total-label">Total:</span> <strong>$<?php echo number_format($total, 2); ?></strong></td>
-                <td></td>
+                <td class="cart-total-spacer"></td>
             </tr>
         </table>
     <p><button type="submit" class="proceed-btn muted-btn">Update Cart</button></p>
@@ -337,7 +337,20 @@ if (!empty($_SESSION['cart'])) {
             });
         });
         
-        // Totals row now places label and value inside the Price column cell directly.
+        // Ensure totals row spans the correct number of columns at <=600px
+        function adjustCartTotalsColspan(){
+            var mobile = window.matchMedia && window.matchMedia('(max-width: 735px)').matches;
+            document.querySelectorAll('.cart-table .cart-total-row').forEach(function(row){
+                var firstCell = row.querySelector('td');
+                if (firstCell && firstCell.colSpan) {
+                    // For cart: desktop 6 columns -> label spans 4; mobile hides SKU -> 5 visible -> label spans 3
+                    firstCell.colSpan = mobile ? 3 : 4;
+                }
+                // amount lives in the Price column only; last cell remains a spacer
+            });
+        }
+        adjustCartTotalsColspan();
+        window.addEventListener('resize', adjustCartTotalsColspan);
     });
     </script>
     <?php if (isset($_SESSION['customer'])): ?>
@@ -346,4 +359,6 @@ if (!empty($_SESSION['cart'])) {
         <p><a href="login.php?next=checkout.php" class="proceed-btn btn-checkout">Proceed to Checkout</a></p>
     <?php endif; ?>
 <?php endif; ?>
+  </div>
+</div>
 <?php include __DIR__ . '/includes/footer.php'; ?>
