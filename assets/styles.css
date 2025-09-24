@@ -1278,6 +1278,14 @@ html.theme-dark .proceed-btn.muted-btn:focus {
 /* Numeric column alignment kept as before but ensure padding matches */
 .cart-table th.numeric, .cart-table td.numeric { text-align: right; }
 
+/* Hide the SKU column (first column) on narrow screens for cart/checkout */
+@media (max-width: 600px) {
+  .cart-table th:nth-child(1),
+  .cart-table td:nth-child(1) {
+    display: none;
+  }
+}
+
 /* Dark-mode variants for table gridlines and stripes */
 html.theme-dark .cart-table th, body.theme-dark .cart-table th {
   background: rgba(255,255,255,0.02);
@@ -1299,6 +1307,142 @@ body.theme-dark .cart-table tr:nth-child(even) td {
 }
 html.theme-dark .cart-table tr:hover td, body.theme-dark .cart-table tr:hover td {
   background: rgba(255,255,255,0.03);
+}
+
+/* Mobile mini table: fit all visible columns within viewport on small screens */
+@media (max-width: 600px) {
+  /* Override generic mobile table scrolling for cart/checkout: show a compact, fixed-layout table instead */
+  .cart-table {
+    display: table !important;
+    width: 100% !important;
+    overflow: visible !important;
+    table-layout: fixed;
+    font-size: 13px;
+  }
+  /* Checkout table has no Remove column; tighten widths accordingly */
+  .checkout-table {
+    display: table !important;
+    width: 100% !important;
+    table-layout: fixed;
+  }
+  .cart-table th, .cart-table td {
+    padding: 8px 6px;
+    white-space: normal;
+    min-width: 0;
+    line-height: 1.15;
+  }
+  /* SKU is hidden via earlier rule; set widths for remaining columns by index
+     (2) Description, (3) Quantity, (4) Rate, (5) Price, (6) Remove (cart only) */
+  /* Description ~40% narrower than previous (from ~56% -> ~34%); distribute extra to other cols */
+  .cart-table th:nth-child(2), .cart-table td:nth-child(2) { width: 34%; }
+  .cart-table th:nth-child(3), .cart-table td:nth-child(3) { width: 18%; text-align: center; }
+  .cart-table th:nth-child(4), .cart-table td:nth-child(4) { width: 22%; }
+  .cart-table th:nth-child(5), .cart-table td:nth-child(5) { width: 22%; }
+  .cart-table th:nth-child(6), .cart-table td:nth-child(6) { width: 4%; text-align: center; }
+
+  /* Checkout table column widths when SKU hidden: (2) Desc, (3) Qty, (4) Rate, (5) Price */
+  .checkout-table th:nth-child(1), .checkout-table td:nth-child(1) { display: none; }
+  .checkout-table th:nth-child(2), .checkout-table td:nth-child(2) { width: 38%; }
+  .checkout-table th:nth-child(3), .checkout-table td:nth-child(3) { width: 18%; text-align: center; }
+  .checkout-table th:nth-child(4), .checkout-table td:nth-child(4) { width: 22%; text-align: right; }
+  .checkout-table th:nth-child(5), .checkout-table td:nth-child(5) { width: 22%; text-align: right; }
+
+  /* Compact quantity input and remove button */
+  .cart-table input[type=number] { width: 2.6em; padding: 2px 4px; }
+  .cart-remove-btn { font-size: 1rem; padding: 4px; }
+
+  /* Ensure footer totals align to the far right edge on small screens */
+  .cart-table td.numeric, .cart-table th.numeric { text-align: right !important; }
+  /* When the remove column is present, allow totals amount to reach far right by spanning */
+  .cart-table tr:last-child td.numeric { text-align: right; }
+  
+  /* Style total rows on mobile for better visibility and alignment */
+  .cart-table .cart-total-row {
+    background: rgba(11,34,56,0.03);
+    border-top: 2px solid rgba(11,34,56,0.15);
+  }
+  .cart-table .cart-total-row td {
+    padding: 12px 6px !important;
+    font-weight: bold !important;
+    border-top: 2px solid rgba(11,34,56,0.15) !important;
+    font-size: 14px !important; /* Ensure text is readable */
+    white-space: nowrap; /* Prevent text wrapping */
+    overflow: visible !important; /* Ensure text isn't clipped */
+    min-height: 44px; /* Give enough height for the text */
+  }
+  .cart-table .cart-total-row .cart-total-label {
+    text-align: right !important;
+    font-weight: bold !important;
+    padding-right: 10px !important;
+    min-width: 120px; /* Ensure enough room for "Subtotal:", "Total:" etc. */
+  }
+  .cart-table .cart-total-row .cart-total-amount {
+    text-align: right !important;
+    font-weight: bold !important;
+    min-width: 80px; /* Ensure enough room for dollar amounts */
+    white-space: nowrap;
+    display: block; /* helps match numeric col alignment */
+  }
+  .cart-table .cart-total-row .cart-total-amount .total-label {
+    font-weight: 600;
+    margin-right: 8px;
+    opacity: 0.9;
+  }
+  .cart-table .cart-total-row .cart-total-spacer { width: 4%; }
+}
+
+@media (max-width: 420px) {
+  .cart-table { font-size: 12px; }
+  .cart-table th, .cart-table td { padding: 6px 4px; }
+  .cart-table input[type=number] { width: 2.2em; }
+  /* Slight re-balance for ultra-narrow screens with narrower Description */
+  .cart-table th:nth-child(2), .cart-table td:nth-child(2) { width: 36%; }
+  .cart-table th:nth-child(3), .cart-table td:nth-child(3) { width: 18%; }
+  .cart-table th:nth-child(4), .cart-table td:nth-child(4) { width: 22%; }
+  .cart-table th:nth-child(5), .cart-table td:nth-child(5) { width: 20%; }
+  .cart-table th:nth-child(6), .cart-table td:nth-child(6) { width: 4%; }
+  
+  /* Ensure total rows remain readable on ultra-small screens */
+  .cart-table .cart-total-row td {
+    padding: 10px 4px !important;
+    font-size: 13px !important;
+  }
+}
+
+/* Dark mode styles for total rows */
+html.theme-dark .cart-table .cart-total-row,
+body.theme-dark .cart-table .cart-total-row {
+  background: rgba(255,255,255,0.04);
+  border-top: 2px solid rgba(255,255,255,0.1);
+}
+html.theme-dark .cart-table .cart-total-row td,
+body.theme-dark .cart-table .cart-total-row td {
+  border-top: 2px solid rgba(255,255,255,0.1) !important;
+  color: #ffffff !important;
+}
+
+/* Ensure total row text is always visible and prominent */
+.cart-table .cart-total-row td {
+  color: #0b2238 !important; /* Dark blue for better contrast */
+  font-size: 15px !important; /* Slightly larger text */
+  line-height: 1.2 !important;
+}
+.cart-table .cart-total-row .cart-total-label strong,
+.cart-table .cart-total-row .cart-total-amount strong {
+  color: inherit !important;
+  font-weight: 700 !important;
+}
+
+/* Override any inherited text color that might make totals invisible */
+html.theme-dark .cart-table .cart-total-row td,
+body.theme-dark .cart-table .cart-total-row td {
+  color: #ffffff !important;
+}
+html.theme-dark .cart-table .cart-total-row .cart-total-label strong,
+html.theme-dark .cart-table .cart-total-row .cart-total-amount strong,
+body.theme-dark .cart-table .cart-total-row .cart-total-label strong,
+body.theme-dark .cart-table .cart-total-row .cart-total-amount strong {
+  color: #ffffff !important;
 }
 
 /* Style the remove X button in the cart as a visible red control */

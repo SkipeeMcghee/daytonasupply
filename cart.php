@@ -312,9 +312,10 @@ if (!empty($_SESSION['cart'])) {
                         </td>
                 </tr>
             <?php endforeach; ?>
-            <tr>
-                <td colspan="4" style="text-align:right"><strong>Total:</strong></td>
-                <td><strong>$<?php echo number_format($total, 2); ?></strong></td>
+            <tr class="cart-total-row">
+                <td colspan="4"></td>
+                <td class="cart-total-amount numeric"><span class="total-label">Total:</span> <strong>$<?php echo number_format($total, 2); ?></strong></td>
+                <td></td>
             </tr>
         </table>
     <p><button type="submit" class="proceed-btn muted-btn">Update Cart</button></p>
@@ -335,8 +336,14 @@ if (!empty($_SESSION['cart'])) {
                 }
             });
         });
+        
+        // Totals row now places label and value inside the Price column cell directly.
     });
     </script>
-    <p><a href="checkout.php" class="proceed-btn btn-checkout">Proceed to Checkout</a></p>
+    <?php if (isset($_SESSION['customer'])): ?>
+        <p><a href="checkout.php" class="proceed-btn btn-checkout">Proceed to Checkout</a></p>
+    <?php else: ?>
+        <p><a href="login.php?next=checkout.php" class="proceed-btn btn-checkout">Proceed to Checkout</a></p>
+    <?php endif; ?>
 <?php endif; ?>
 <?php include __DIR__ . '/includes/footer.php'; ?>

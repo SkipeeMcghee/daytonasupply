@@ -69,6 +69,10 @@ include __DIR__ . '/includes/header.php';
         <?php endif; ?>
 
         <form method="post" class="vertical-form" action="login.php">
+            <?php $nextParam = isset($_GET['next']) ? normalizeScalar($_GET['next'], 512, '') : ''; ?>
+            <?php if ($nextParam): ?>
+                <input type="hidden" name="next" value="<?= htmlspecialchars($nextParam) ?>">
+            <?php endif; ?>
             <div class="form-row">
                 <label for="login_email">Email</label>
                 <div class="field"><input id="login_email" type="email" name="email" required autocomplete="email"></div>

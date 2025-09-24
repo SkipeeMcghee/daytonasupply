@@ -1,7 +1,11 @@
 <?php
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/functions.php';
-require_once __DIR__ . '/includes/header.php';
+
+// Ensure the session is started before performing auth checks/redirects
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 $title = 'Checkout';
 
@@ -14,11 +18,14 @@ if (!$cart) {
     return;
 }
 
-// Require login
+// Require login: if not authenticated, send to login with a safe return to checkout
 if (!isset($_SESSION['customer'])) {
-    header('Location: login.php');
+    header('Location: login.php?next=checkout.php');
     exit;
 }
+
+// With authentication confirmed, include the page header (emits HTML)
+require_once __DIR__ . '/includes/header.php';
 
 $customer = $_SESSION['customer'];
 $message = '';
@@ -152,7 +159,7 @@ foreach ($cart as $pid => $entry) {
 <?php if ($message): ?>
     <div class="message"><?php echo htmlspecialchars($message); ?></div>
 <?php else: ?>
-    <table class="cart-table">
+    <table class="cart-table checkout-table">
         <tr>
             <th>SKU</th>
             <th>Description</th>
@@ -173,17 +180,17 @@ foreach ($cart as $pid => $entry) {
                 <td class="numeric">$<?php echo number_format($it['subtotal'], 2); ?></td>
             </tr>
         <?php endforeach; ?>
-        <tr>
-            <td colspan="4" style="text-align:right"><strong>Subtotal:</strong></td>
-            <td class="numeric" id="checkout-subtotal"><strong>$<?php echo number_format($total, 2); ?></strong></td>
+        <tr class="cart-total-row">
+            <td colspan="4"></td>
+            <td class="cart-total-amount numeric"><span class="total-label">Subtotal:</span> <strong id="checkout-subtotal-amount">$<?php echo number_format($total, 2); ?></strong></td>
         </tr>
-        <tr id="checkout-tax-row" style="display:none;">
-            <td colspan="4" style="text-align:right"><strong>Sales Tax (6.5%):</strong></td>
-            <td class="numeric" id="checkout-tax-amount">$0.00</td>
+        <tr class="cart-total-row" id="checkout-tax-row" style="display:none;">
+            <td colspan="4"></td>
+            <td class="cart-total-amount numeric"><span class="total-label">Sales Tax (6.5%):</span> <strong id="checkout-tax-amount">$0.00</strong></td>
         </tr>
-        <tr>
-            <td colspan="4" style="text-align:right"><strong>Total:</strong></td>
-            <td class="numeric" id="checkout-total"><strong>$<?php echo number_format($total, 2); ?></strong></td>
+        <tr class="cart-total-row">
+            <td colspan="4"></td>
+            <td class="cart-total-amount numeric"><span class="total-label">Total:</span> <strong id="checkout-total-amount">$<?php echo number_format($total, 2); ?></strong></td>
         </tr>
     </table>
     <form method="post" action="" id="checkout-form">
@@ -195,22 +202,22 @@ foreach ($cart as $pid => $entry) {
     <script>
     (function(){
         var taxCheckbox = document.getElementById('apply_tax');
-        var subtotalEl = document.getElementById('checkout-subtotal');
-        var taxRow = document.getElementById('checkout-tax-row');
-        var taxAmtEl = document.getElementById('checkout-tax-amount');
-        var totalEl = document.getElementById('checkout-total');
+    var subtotalAmt = document.getElementById('checkout-subtotal-amount');
+    var taxRow = document.getElementById('checkout-tax-row');
+    var taxAmtEl = document.getElementById('checkout-tax-amount');
+    var totalAmt = document.getElementById('checkout-total-amount');
         function parseMoney(s){ return parseFloat(s.replace(/[^0-9.-]+/g,'')) || 0; }
         function update() {
-            var sub = parseMoney(subtotalEl.textContent || subtotalEl.innerText || '0');
+            var sub = parseMoney(subtotalAmt.textContent || subtotalAmt.innerText || '0');
             if (taxCheckbox && taxCheckbox.checked) {
                 var tax = Math.round(sub * 0.065 * 100) / 100;
                 taxAmtEl.textContent = '$' + tax.toFixed(2);
                 taxRow.style.display = '';
-                totalEl.textContent = '$' + ( (Math.round((sub + tax) * 100))/100 ).toFixed(2);
+                totalAmt.textContent = '$' + ( (Math.round((sub + tax) * 100))/100 ).toFixed(2);
             } else {
                 taxRow.style.display = 'none';
                 taxAmtEl.textContent = '$0.00';
-                totalEl.textContent = '$' + sub.toFixed(2);
+                totalAmt.textContent = '$' + sub.toFixed(2);
             }
         }
         if (taxCheckbox) {
@@ -222,6 +229,17 @@ foreach ($cart as $pid => $entry) {
         <?php if ($message): ?>
             var lead = document.getElementById('checkout-lead'); if (lead) lead.style.display = 'none';
         <?php endif; ?>
+        
+        // Ensure totals always sit in the Price column (last) regardless of screen size
+        (function fixCheckoutTotalsColspans(){
+            var totalRows = document.querySelectorAll('.cart-total-row');
+            totalRows.forEach(function(row){
+                var labelCell = row.querySelector('.cart-total-label');
+                var amountCell = row.querySelector('.cart-total-amount');
+                if (labelCell) labelCell.setAttribute('colspan', '4'); // up to Rate
+                if (amountCell) amountCell.setAttribute('colspan', '1'); // Price column only
+            });
+        })();
     })();
     </script>
 <?php endif; ?>
