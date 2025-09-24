@@ -11,7 +11,7 @@
   },
   {
     "name": "BAT-1505",
-    "description": "Bowl Cleaner HCL AcidTHEO CHEM",
+    "description": "Bowl Cleaner HCL Acid THEO CHEM",
     "price": 4.11
   },
   {
@@ -412,7 +412,7 @@
   {
     "name": "CLD-2295",
     "description": "Cleaner Floor Neutral/PH7 Gallon 4/Case",
-    "price": 9.27
+    "price": 12.5
   },
   {
     "name": "CLD-2675",
@@ -682,7 +682,7 @@
   {
     "name": "FLO-3315",
     "description": "ABCO Looped End Mop, Wide Band, Blended with Blue Mesh Mop Tape, Large, Single",
-    "price": 15.99
+    "price": 18.21
   },
   {
     "name": "FLO-3316",
@@ -1129,11 +1129,7 @@
     "description": "White Multi-Depth Bookfolds14 1/8x8 5/8x 1 50/bundle",
     "price": 0.67
   },
-  {
-    "name": "NONSTOCK",
-    "description": "",
-    "price": 0.01
-  },
+  
   {
     "name": "OFF-1400",
     "description": "Copy Paper #20 White 8 1/2' x 11' 10 x 500/Case",
@@ -1201,7 +1197,7 @@
   },
   {
     "name": "PAC-2082",
-    "description": "Packing List Enclosed Panel Face Envelopes, 7\" x 5-1/2\", Orange/Black, 1000/Case",
+    "description": "Packing List Enclosed Panel Face Envelopes, 7” x 5-1/2”, Orange/Black ,1000/Case",
     "price": 48.48
   },
   {
@@ -1212,12 +1208,12 @@
   {
     "name": "PAC-2250",
     "description": "Film Stretch 3\" 80 Gauge 1000' 18 Rolls/Case With Handle",
-    "price": 150.48
+    "price": 76.95
   },
   {
     "name": "PAC-2252",
     "description": "Film Stretch 5' 80 Gauge 1000' 12 Rolls/Case With Handle",
-    "price": 101.5
+    "price": 91.95
   },
   {
     "name": "PAC-2260",
@@ -1362,7 +1358,7 @@
   {
     "name": "PAC-4810",
     "description": "Kraft Paper Roll, 24 in x 720 ft, 50lb",
-    "price": 41.76
+    "price": 44.76
   },
   {
     "name": "PAC-4830",
@@ -1393,6 +1389,11 @@
     "name": "PAC-4885",
     "description": "Peanuts 20CF Bag White",
     "price": 46.28
+  },
+  {
+    "name": "PAC-4889",
+    "description": "Anti-Static Packing Peanuts, 14 Cubic ft Bag, Pink",
+    "price": 32.71
   },
   {
     "name": "PAC-4890",
@@ -1444,11 +1445,7 @@
     "description": "55 Gallon Fibre Barrel With Lid",
     "price": 81.89
   },
-  {
-    "name": "Pack and Ship",
-    "description": "",
-    "price": 0.0
-  },
+ 
   {
     "name": "PAD-2000",
     "description": "Corrugated Pad 16.5 x 56.5 32ECT Kraft",
@@ -1992,7 +1989,7 @@
   {
     "name": "SBO-1220",
     "description": "RSC 6 x 6 x 3 ECT32 25/Bundle",
-    "price": 0.64
+    "price": 0.51
   },
   {
     "name": "SBO-1230",
@@ -2442,7 +2439,7 @@
   {
     "name": "SBO-3950",
     "description": "RSC 16 x 6 x 4 32ECT 25/Bundle",
-    "price": 1.55
+    "price": 1.65
   },
   {
     "name": "SBO-3960",
@@ -2617,7 +2614,7 @@
   {
     "name": "SBO-4980",
     "description": "RSC 18 x 18 x 18 32ECT 15/Bundle",
-    "price": 4.09
+    "price": 3.96
   },
   {
     "name": "SBO-4983",
@@ -2806,7 +2803,7 @@
   },
   {
     "name": "SBO-6240",
-    "description": "RSC 24 x 16 x 12 32ECT 25/Bundle",
+    "description": "RSC 24 x 16 x 12 32ECT",
     "price": 3.55
   },
   {
@@ -2890,9 +2887,9 @@
     "price": 2.75
   },
   {
-    "name": "SBO- 6765",
+    "name": "SBO-6765",
     "description": "RSC 26 x 26 x 2",
-    "price": 0.0
+    "price": 9.95
   },
   {
     "name": "SBO-6770",
@@ -3296,7 +3293,7 @@
   },
   {
     "name": "SOB-4795",
-    "description": "FOL 18 x 14 x 28 350# DW PRINTED 2 PANEL",
+    "description": "FOL 18 x 14 x 28 350# DWPRINTED 2 PANELCOMPLETE PARACHUTE SOLUTIONSWILL ONLY ACCEPT =/- 10%USE D...",
     "price": 11.51
   },
   {
@@ -3368,6 +3365,11 @@
     "name": "TAP-2115",
     "description": "Tape Carton Sealing 3\" x 110yd 1.6mil 24 Rolls/Case",
     "price": 79.99
+  },
+  {
+    "name": "TAP-2118",
+    "description": "Carton Tape 3IN Clear 2.1 Mil",
+    "price": 89.99
   },
   {
     "name": "TAP-2120",
