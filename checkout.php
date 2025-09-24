@@ -191,16 +191,16 @@ foreach ($cart as $pid => $entry) {
             </tr>
         <?php endforeach; ?>
         <tr class="cart-total-row">
-            <td class="cart-total-label" colspan="4"></td>
-            <td class="cart-total-amount numeric"><span class="total-line"><span class="total-label">Subtotal:</span><strong id="checkout-subtotal-amount"> $<?php echo number_format($total, 2); ?></strong></span></td>
+            <td class="cart-total-label" colspan="4"><strong>Subtotal:</strong></td>
+            <td class="cart-total-amount numeric"><strong id="checkout-subtotal-amount">$<?php echo number_format($total, 2); ?></strong></td>
         </tr>
         <tr class="cart-total-row" id="checkout-tax-row" style="display:none;">
-            <td class="cart-total-label" colspan="4"></td>
-            <td class="cart-total-amount numeric"><span class="total-line"><span class="total-label">Sales Tax (6.5%):</span><strong id="checkout-tax-amount"> $0.00</strong></span></td>
+            <td class="cart-total-label" colspan="4"><strong>Sales Tax (6.5%):</strong></td>
+            <td class="cart-total-amount numeric"><strong id="checkout-tax-amount">$0.00</strong></td>
         </tr>
         <tr class="cart-total-row">
-            <td class="cart-total-label" colspan="4"></td>
-            <td class="cart-total-amount numeric"><span class="total-line"><span class="total-label">Total:</span><strong id="checkout-total-amount"> $<?php echo number_format($total, 2); ?></strong></span></td>
+            <td class="cart-total-label" colspan="4"><strong>Total:</strong></td>
+            <td class="cart-total-amount numeric"><strong id="checkout-total-amount">$<?php echo number_format($total, 2); ?></strong></td>
         </tr>
     </table>
     <form method="post" action="" id="checkout-form">
@@ -245,8 +245,9 @@ foreach ($cart as $pid => $entry) {
             var mobile = window.matchMedia && window.matchMedia('(max-width: 735px)').matches;
             document.querySelectorAll('.checkout-table .cart-total-row').forEach(function(row){
                 var firstCell = row.querySelector('td');
-                if (firstCell && firstCell.colSpan) {
-                    // When SKU hides (<=735px), there are 4 visible columns before Price
+                if (firstCell) {
+                    // Desktop: 5 columns (SKU, Desc, Qty, Rate, Price) -> span 4 before Price
+                    // Mobile (<=735px): SKU hidden -> 4 columns (Desc, Qty, Rate, Price) -> span 3 before Price
                     firstCell.colSpan = mobile ? 3 : 4;
                 }
             });

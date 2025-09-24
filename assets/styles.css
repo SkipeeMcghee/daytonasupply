@@ -1277,9 +1277,10 @@ html.theme-dark .proceed-btn.muted-btn:focus {
 
 /* Numeric column alignment kept as before but ensure padding matches */
 .cart-table th.numeric, .cart-table td.numeric { text-align: right; }
-.cart-table .cart-total-amount.numeric { text-align: right !important; min-width: 100px; }
-/* Let totals amount cell expand to fit currency values even if the last column is narrow (e.g., Remove) */
-.cart-table .cart-total-row td.cart-total-amount { width: auto !important; }
+.cart-table .cart-total-row .cart-total-amount { padding-right: 10px !important; }
+.cart-table .cart-total-amount.numeric { text-align: right !important; min-width: 96px; }
+/* Keep totals column using the standard column width so it matches the header; no special width override */
+/* (Removed the previous width override that could misalign the column) */
 
 /* Hide the SKU column (first column) on narrow screens for cart/checkout */
 @media (max-width: 735px) {
@@ -1348,6 +1349,8 @@ html.theme-dark .cart-table tr:hover td, body.theme-dark .cart-table tr:hover td
   .cart-table th:nth-child(3), .cart-table td:nth-child(3) { width: 18%; text-align: center; }
   .cart-table th:nth-child(4), .cart-table td:nth-child(4) { width: 22%; }
   .cart-table th:nth-child(5), .cart-table td:nth-child(5) { width: 24%; }
+  /* Leave a touch of breathing room on the right so totals don't touch the edge */
+  .cart-table td:nth-child(5), .checkout-table td:nth-child(5) { padding-right: 10px; }
   .cart-table th:nth-child(6), .cart-table td:nth-child(6) { width: 4%; text-align: center; }
 
   /* Checkout table column widths when SKU hidden: (2) Desc, (3) Qty, (4) Rate, (5) Price */
@@ -1356,6 +1359,7 @@ html.theme-dark .cart-table tr:hover td, body.theme-dark .cart-table tr:hover td
   .checkout-table th:nth-child(3), .checkout-table td:nth-child(3) { width: 18%; text-align: center; }
   .checkout-table th:nth-child(4), .checkout-table td:nth-child(4) { width: 22%; text-align: right; }
   .checkout-table th:nth-child(5), .checkout-table td:nth-child(5) { width: 24%; text-align: right; }
+  .checkout-table .cart-total-row .cart-total-amount { padding-right: 10px !important; }
 
   /* Compact quantity input and remove button */
   .cart-table input[type=number] { width: 2.6em; padding: 2px 4px; }
@@ -1381,8 +1385,8 @@ html.theme-dark .cart-table tr:hover td, body.theme-dark .cart-table tr:hover td
     min-height: 44px; /* Give enough height for the text */
   }
   .cart-table .cart-total-row .cart-total-label { text-align: right !important; font-weight: bold !important; padding-right: 10px !important; }
-  .cart-table .cart-total-row .cart-total-amount { text-align: right !important; font-weight: bold !important; white-space: nowrap; width: auto !important; display: inline-flex; align-items: baseline; justify-content: flex-end; gap: 8px; }
-  .cart-table .cart-total-row .cart-total-amount .total-line { display: inline-flex; align-items: baseline; gap: 6px; white-space: nowrap; }
+  .cart-table .cart-total-row .cart-total-label { text-align: right !important; font-weight: 700; }
+  .cart-table .cart-total-row .cart-total-amount { text-align: right !important; font-weight: 700; white-space: nowrap; }
   .cart-table .cart-total-row .cart-total-amount .total-label { display: inline-block; vertical-align: baseline; margin-right: 8px; opacity: 0.9; font-weight: 600; max-width: 60%; overflow: hidden; text-overflow: ellipsis; }
   .cart-table .cart-total-row .cart-total-spacer { width: 4%; }
 }

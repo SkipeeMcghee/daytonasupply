@@ -313,8 +313,8 @@ if (!empty($_SESSION['cart'])) {
                 </tr>
             <?php endforeach; ?>
             <tr class="cart-total-row">
-                <td class="cart-total-label" colspan="4"></td>
-                <td class="cart-total-amount numeric"><span class="total-line"><span class="total-label">Total:</span><strong> $<?php echo number_format($total, 2); ?></strong></span></td>
+                <td class="cart-total-label" colspan="4"><strong>Total:</strong></td>
+                <td class="cart-total-amount numeric"><strong>$<?php echo number_format($total, 2); ?></strong></td>
                 <td class="cart-total-spacer"></td>
             </tr>
         </table>
@@ -342,11 +342,11 @@ if (!empty($_SESSION['cart'])) {
             var mobile = window.matchMedia && window.matchMedia('(max-width: 735px)').matches;
             document.querySelectorAll('.cart-table .cart-total-row').forEach(function(row){
                 var firstCell = row.querySelector('td');
-                if (firstCell && firstCell.colSpan) {
-                    // For cart: desktop 6 columns -> label spans 4; mobile hides SKU -> 5 visible -> label spans 3
+                if (firstCell) {
+                    // Desktop: 6 columns (SKU, Desc, Qty, Rate, Price, Remove) -> span 4 before Price
+                    // Mobile (<=735px): SKU hidden -> 5 columns -> span 3 before Price
                     firstCell.colSpan = mobile ? 3 : 4;
                 }
-                // amount lives in the Price column only; last cell remains a spacer
             });
         }
         adjustCartTotalsColspan();
