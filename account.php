@@ -179,8 +179,8 @@ include __DIR__ . '/includes/header.php';
                 </ul>
         <?php endif; ?>
 
-        <h2>Your Details</h2>
-        <form id="account_form" method="post" action="account.php" class="vertical-form">
+    <h2 id="account-details">Your Details</h2>
+    <form id="account_form" method="post" action="account.php" class="vertical-form">
                 <div class="form-grid cols-2">
                     <div class="form-row">
                         <label>Name
@@ -284,7 +284,7 @@ include __DIR__ . '/includes/header.php';
     });
     </script>
         <hr>
-        <section style="margin-top:2em;">
+        <section style="margin-top:2em;" id="change-password">
             <h3>Change your password</h3>
             <p>Current Password: <input type="password" name="current_password" autocomplete="new-password"></p>
             <p>New Password (leave blank to keep current): <input type="password" name="password" autocomplete="new-password"></p>
@@ -382,3 +382,48 @@ include __DIR__ . '/includes/header.php';
   </div>
 </div>
 <?php include __DIR__ . '/includes/footer.php'; ?>
+<script>
+// Ensure anchored sections (Account Details, Change Password, Orders) place the heading at top of the viewport (beneath sticky header)
+(function(){
+    function scrollWithOffset(id, behavior){
+        var el = document.getElementById(id);
+        if(!el) return;
+        var header = document.querySelector('.site-header');
+        var offset = header ? header.offsetHeight : 0;
+        var top = el.getBoundingClientRect().top + window.pageYOffset - offset - 4; // small gap
+        window.scrollTo({top: top < 0 ? 0 : top, behavior: behavior || 'auto'});
+    }
+    function handleInitial(){
+        if(location.hash){
+            var id = location.hash.substring(1);
+            // Delay a tick to allow fonts/layout to settle
+            setTimeout(function(){ scrollWithOffset(id, 'auto'); }, 30);
+        }
+    }
+    function enhanceInternalAnchors(){
+        var selector = 'a[href$="#account-details"],a[href$="#change-password"],a[href$="#your-orders"],a[href^="#account-details"],a[href^="#change-password"],a[href^="#your-orders"]';
+        document.querySelectorAll(selector).forEach(function(a){
+            a.addEventListener('click', function(e){
+                // Same-page only
+                var url = new URL(a.href, location.href);
+                if(url.pathname.replace(/\/+$/,'') === location.pathname.replace(/\/+$/,'')){
+                    var target = (url.hash || '').substring(1);
+                    if(target){
+                        e.preventDefault();
+                        history.pushState(null, '', '#' + target);
+                        scrollWithOffset(target, 'smooth');
+                    }
+                }
+            });
+        });
+    }
+    document.addEventListener('DOMContentLoaded', function(){
+        handleInitial();
+        enhanceInternalAnchors();
+        window.addEventListener('hashchange', function(){
+            var id = location.hash.substring(1);
+            if(id) scrollWithOffset(id, 'auto');
+        });
+    });
+})();
+</script>

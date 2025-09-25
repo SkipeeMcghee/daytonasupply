@@ -71,7 +71,14 @@ body{
 @media (max-width:720px){.account-toggle{padding:6px 10px}}
 .has-account .account-link{color:#fff;text-decoration:none;font-weight:700}
 .has-account .account-menu{display:none;position:absolute;left:0;top:100%;background:#fff;color:var(--text);min-width:140px;padding:8px;border-radius:8px;box-shadow:0 8px 20px rgba(11,34,56,0.12);z-index:60}
+.has-account.edge-right{margin-left:auto}
+.has-account.edge-right .account-link{display:inline-block}
+.has-account.edge-right .account-menu{left:auto;right:0}
 .has-account .account-menu a{display:block;padding:8px 10px;color:var(--text);text-decoration:none;border-radius:6px}
+.has-account .account-menu a{white-space:nowrap}
+.has-account .account-menu .account-menu-item.darkmode-row{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:8px 10px;white-space:nowrap}
+.has-account .account-menu .account-menu-item.darkmode-row .label{font-size:.9rem;font-weight:500}
+.has-account .account-menu .account-menu-item.darkmode-row .dark-toggle{margin:0}
 .has-account .account-menu a:hover{background:#f1f5fb;color:var(--brand)}
 .has-account.open .account-menu { display:block }
 /* Only show on hover when not in suppression state (used after a click-close) */
@@ -148,6 +155,29 @@ html.theme-dark .f-social .social-icon, body.theme-dark .f-social .social-icon {
 
 /* Mobile header layout: prioritize logo left and cart right on a single top row,
    then stack search and nav on separate rows for better touch layout */
+@media (max-width: 1440px) {
+  /* Enable wrapping at wider screens per request */
+  .header-inner { display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+  .brand { order: 1; flex: 0 0 auto; }
+  /* Keep cart pinned */
+  .header-inner { position: relative; }
+  .nav-cart { position:absolute; right:16px; top:12px; z-index:70; }
+  /* Second row: header actions (call + account/login + cart already pinned) */
+  .header-actions { order:2; width:100%; display:flex; align-items:center; gap:12px; justify-content:space-between; }
+  /* Third row: search spans full width */
+  .search-wrap { order:3; width:100% !important; margin-top:6px !important; }
+  .search-form { width:100%; }
+  /* Nav below search (stacked) */
+  .main-nav .nav-inner { padding:6px 0; }
+  .main-nav .nav-toggle { display:inline-flex; }
+  .main-nav .nav-menu { display:block; width:100%; }
+  .nav-cats { display:block; padding:8px 0; }
+  .nav-cats a, .nav-cats button { display:block; width:100%; padding:10px 12px; border-radius:8px; margin-bottom:6px; background:var(--card); color:var(--text); }
+  /* Auth visibility rules still apply */
+  body.guest .header-actions .has-account { display:none !important; }
+  body.guest .header-actions .login-register { display:inline-flex; }
+  body.is-authenticated .header-actions .login-register { display:none !important; }
+}
 @media (max-width: 720px) {
   .header-inner { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
   .brand { order: 1; flex: 0 0 auto; }
@@ -156,12 +186,12 @@ html.theme-dark .f-social .social-icon, body.theme-dark .f-social .social-icon {
   .header-inner { position: relative; }
   .nav-cart { display:inline-flex; position: absolute; right: 16px; top: 12px; margin-left:0; z-index:70; }
 
-  /* Search becomes the second row and spans full width */
-  .search-wrap { order:2; width:100% !important; display:block !important; margin-top:6px !important; flex-basis:100% !important; }
+  /* For narrow mobile: maintain search last (third row) */
+  .search-wrap { order:3; width:100% !important; display:block !important; margin-top:6px !important; flex-basis:100% !important; }
   .search-form { width:100%; display:flex; gap:8px; }
 
-  /* Header actions row: phone left; account OR login/register right */
-  .header-actions { order:3; display:flex; align-items:center; gap:8px; width:100%; justify-content:space-between; }
+  /* Header actions row: phone left; account/login right */
+  .header-actions { order:2; display:flex; align-items:center; gap:8px; width:100%; justify-content:space-between; }
   .header-actions .action { padding:.35rem .5rem; }
   .header-actions .link-phone { order:1; display:inline-flex; }
   .header-actions .has-account { order:2; display:inline-flex; }
@@ -557,6 +587,21 @@ html.theme-dark .carousel-dots button.active { background: #e8f6ff; }
 .catalogue-table th, .catalogue-table td { text-align: left; }
 .catalogue-table thead th{background:#f6f8fb;border-bottom:2px solid #e6eef8;font-weight:700}
 .catalogue-table tr:nth-child(even) td{background:#fbfdff}
+/* Flash highlight for newly added product row (light mode) */
+@keyframes rowFlashFade {
+  0% { background: #ffe9a8; }
+  40% { background: #ffe9a8; }
+  100% { background: transparent; }
+}
+.catalogue-table tr.flash-added td { animation: rowFlashFade 1400ms ease forwards; }
+/* Dark mode variant of flash highlight */
+@keyframes rowFlashFadeDark {
+  0% { background: #553f00; }
+  40% { background: #553f00; }
+  100% { background: transparent; }
+}
+html.theme-dark .catalogue-table tr.flash-added td,
+body.theme-dark .catalogue-table tr.flash-added td { animation: rowFlashFadeDark 1400ms ease forwards; }
 .catalogue-table tr:last-child td{border-bottom:none}
 
 /* Mobile-first constraint: ensure catalogue table fits narrow portrait screens.
@@ -633,6 +678,13 @@ html.theme-dark .sku-btn.active, body.theme-dark .sku-btn.active {
   box-shadow: 0 3px 10px rgba(255,255,255,0.035);
   background: var(--brand);
   color: #fff;
+}
+/* Preserve depressed look on hover immediately after activation in dark mode */
+html.theme-dark .sku-btn.active:hover, body.theme-dark .sku-btn.active:hover {
+  transform: translateY(0) !important;
+  box-shadow: 0 3px 10px rgba(255,255,255,0.035) !important;
+  background: var(--brand) !important;
+  color: #fff !important;
 }
 
 /* Make shop buttons slightly bolder with hard shadow */

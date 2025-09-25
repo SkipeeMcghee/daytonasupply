@@ -215,7 +215,11 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['product_id'],
         $searchParam = '?search=' . urlencode($_GET['search']);
     }
     $fragment = '#product-' . $pid;
-    header('Location: catalogue.php' . $searchParam . $fragment);
+    // If an added_id was posted (we inject it client-side), propagate for highlight
+    $addedId = isset($_POST['product_id']) ? (int)$_POST['product_id'] : null;
+    $highlightFragment = $addedId ? ('#added-' . $addedId) : $fragment;
+    $addedParam = $addedId ? ('&added_id=' . $addedId) : '';
+    header('Location: catalogue.php' . $searchParam . $addedParam . $highlightFragment);
     exit;
 }
 
@@ -535,6 +539,64 @@ table.catalogue-table td:nth-child(3) {
         </tr>
     <?php endforeach; ?>
 </table>
+    <script>
+    // AJAX add-to-cart with green flash highlight.
+    document.addEventListener('DOMContentLoaded', function(){
+        var cartCountEl = document.getElementById('cart-count');
+
+        function flashRow(pid){
+            var row = document.getElementById('product-' + pid);
+            if (!row) return;
+            row.classList.remove('flash-added');
+            void row.offsetWidth; // reflow to restart animation
+            row.classList.add('flash-added');
+            // Remove class after animation to allow re-trigger later
+            setTimeout(function(){ row.classList.remove('flash-added'); }, 1600);
+        }
+
+        document.querySelectorAll('form.cart-add').forEach(function(form){
+            form.addEventListener('submit', function(ev){
+                ev.preventDefault();
+                var pid = form.querySelector('input[name="product_id"]').value;
+                var qtyInput = form.querySelector('input[name="quantity"]');
+                var submitBtn = form.querySelector('button[type="submit"]');
+                if (submitBtn) { submitBtn.disabled = true; }
+
+                var fd = new FormData(form);
+                // Mark as AJAX
+                fetch('catalogue.php', {
+                    method: 'POST',
+                    body: fd,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                }).then(function(r){ return r.ok ? r.json() : Promise.reject(); })
+                .then(function(data){
+                    if (data && data.success) {
+                        flashRow(data.productId || pid);
+                        if (cartCountEl && typeof data.cartCount !== 'undefined') {
+                            cartCountEl.textContent = data.cartCount;
+                        }
+                        // Temporarily show Added state on the button
+                        if (submitBtn) {
+                            var original = submitBtn.textContent;
+                            submitBtn.textContent = 'Added';
+                            submitBtn.classList.add('just-added');
+                            setTimeout(function(){
+                                submitBtn.textContent = original;
+                                submitBtn.classList.remove('just-added');
+                                submitBtn.disabled = false;
+                            }, 1400);
+                        }
+                    } else {
+                        // fallback full submit
+                        form.submit();
+                    }
+                }).catch(function(){
+                    form.submit();
+                });
+            });
+        });
+    });
+    </script>
 <?php endif; ?>
     <!-- Back to top -->
     <div id="backToTopWrap" class="back-to-top-wrap" aria-hidden="true">

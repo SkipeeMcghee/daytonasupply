@@ -1,11 +1,11 @@
 <?php
-// Login page for customers. Handles authentication and redirects to account page.
+// Login page for customers. Handles authentication and (on success) now redirects to the homepage (index.php)
 session_start();
 require __DIR__ . '/includes/db.php';
 require __DIR__ . '/includes/functions.php';
 
-// If customer already logged in, send them straight to their account
-// If already authenticated, redirect to 'next' if provided and safe, otherwise account page
+// If customer already logged in, send them straight to their intended page or the homepage.
+// If already authenticated, redirect to 'next' if provided and safe, otherwise index.php
 if (isset($_SESSION['customer'])) {
     $next = normalizeScalar($_GET['next'] ?? '', 512, '');
     if ($next && strpos($next, '/') !== 0 && strpos($next, 'http') === false) {
@@ -13,7 +13,7 @@ if (isset($_SESSION['customer'])) {
         header('Location: ' . $next);
         exit;
     }
-    header('Location: account.php');
+    header('Location: index.php');
     exit;
 }
 
@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($customer) {
         // Check if the account has been verified
         if (!empty($customer['is_verified']) && (int)$customer['is_verified'] === 1) {
-            // Store customer data in session and redirect to account page
+            // Store customer data in session and redirect to homepage (unless a safe next target is supplied)
             $_SESSION['customer'] = $customer;
                 // Redirect to a safe 'next' parameter if provided
                 $next = normalizeScalar($_GET['next'] ?? $_POST['next'] ?? '', 512, '');
@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     header('Location: ' . $next);
                     exit;
                 }
-                header('Location: account.php');
+                header('Location: index.php');
                 exit;
         } else {
             $error = 'Please verify your email address before logging in.';

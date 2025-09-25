@@ -123,20 +123,24 @@ if ($loggedIn) {
                 <div class="header-actions">
                     <a class="action link-phone" href="tel:3867887009">Call: (386) 788-7009</a>
                     <?php if ($loggedIn): ?>
-                        <div class="has-account action" tabindex="0" aria-haspopup="true" aria-expanded="false">
+                        <div class="has-account action edge-right" tabindex="0" aria-haspopup="true" aria-expanded="false">
                             <button type="button" class="account-toggle" aria-label="Toggle account menu" aria-controls="account-menu" aria-expanded="false">
                                 <span class="acct-toggle-bar"></span>
                                 <span class="acct-toggle-bar"></span>
                             </button>
                             <a class="account-link" href="account.php">My Account</a>
                             <div class="account-menu" id="account-menu" role="menu" aria-label="Account menu">
-                                <label class="dark-toggle" role="menuitem" style="display:flex;align-items:center;gap:.6rem;padding:8px 10px;">
-                                    <span>Dark mode</span>
-                                    <label class="dark-toggle" style="margin-left:.6rem;">
+                                <a role="menuitem" href="account.php#account-details">Account Details</a>
+                                <a role="menuitem" href="account.php#change-password">Change Your Password</a>
+                                <a role="menuitem" href="account.php#your-orders">Orders</a>
+                                <div class="menu-separator" aria-hidden="true"></div>
+                                <div class="account-menu-item darkmode-row" role="menuitem" aria-label="Dark mode toggle">
+                                    <span class="label">Dark Mode</span>
+                                    <label class="dark-toggle control">
                                         <input type="checkbox" id="darkmode_toggle" name="darkmode_toggle" <?php echo ($serverThemeClass === 'theme-dark') ? 'checked' : ''; ?> />
                                         <span class="dark-toggle-switch" aria-hidden="true"></span>
                                     </label>
-                                </label>
+                                </div>
                                 <a role="menuitem" href="logout.php">Log out</a>
                             </div>
                         </div>
