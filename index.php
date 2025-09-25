@@ -26,7 +26,8 @@ require_once __DIR__ . '/includes/header.php';
 						<div class="slide-copy">
 							<h2 class="slide-title">Order Faster — Account Tools for Businesses</h2>
 							<p class="slide-sub">View past orders, browse products and place orders in minutes.</p>
-							<p><a class="cta" href="login.php">Create an Account</a></p>
+							<?php $createAcctHref = isset($_SESSION['customer']) ? 'account.php' : 'signup.php'; ?>
+							<p><a class="cta" href="<?php echo $createAcctHref; ?>">Create an Account</a></p>
 						</div>
 					</article>
 					<article class="carousel-slide" aria-hidden="true">
