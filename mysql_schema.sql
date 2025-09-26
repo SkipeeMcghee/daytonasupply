@@ -76,3 +76,11 @@ CREATE TABLE IF NOT EXISTS admin (
     id INT AUTO_INCREMENT PRIMARY KEY,
     password_hash VARCHAR(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Per-customer favorites table
+CREATE TABLE IF NOT EXISTS favorites (
+    id INT NOT NULL,
+    sku VARCHAR(255) NOT NULL,
+    PRIMARY KEY (id, sku),
+    CONSTRAINT fk_favorites_customer FOREIGN KEY (id) REFERENCES customers(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

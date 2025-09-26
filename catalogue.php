@@ -66,28 +66,17 @@ try {
 
 $title = 'Catalog';
 
-// If the form to add a product was submitted, update the session cart
-// Toggle favorite handler (AJAX-aware)
+// Toggle favorite handler (AJAX-aware, DB-backed). Requires login.
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['favorite_product_id'])) {
     $fid = (int)$_POST['favorite_product_id'];
-    if (!isset($_SESSION['favorites']) || !is_array($_SESSION['favorites'])) {
-        $_SESSION['favorites'] = [];
+    $favorited = false;
+    if (!empty($_SESSION['customer']) && !empty($_SESSION['customer']['id'])) {
+        $favorited = toggleFavoriteForCustomerProduct((int)$_SESSION['customer']['id'], $fid);
     }
-    if (in_array($fid, $_SESSION['favorites'], true)) {
-        // unfavorite
-        $_SESSION['favorites'] = array_values(array_filter($_SESSION['favorites'], function($v) use ($fid) { return $v != $fid; }));
-        $favorited = false;
-    } else {
-        $_SESSION['favorites'][] = $fid;
-        $favorited = true;
-    }
-    $isAjax = false;
-    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
-        $isAjax = true;
-    }
+    $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
     if ($isAjax) {
         header('Content-Type: application/json');
-        echo json_encode(['success' => true, 'favorited' => $favorited, 'productId' => $fid]);
+        echo json_encode(['success' => true, 'favorited' => $favorited, 'productId' => $fid, 'requiresLogin' => empty($_SESSION['customer']['id'])]);
         exit;
     }
     // non-AJAX fallback: redirect back
@@ -330,10 +319,25 @@ try {
     exit;
 }
 
-// If showing favorites, filter the products list by session favorites
+// Build favorites set for the logged-in user
+$favoriteSkuSet = [];
+if (!empty($_SESSION['customer']['id'])) {
+    $favSkus = getFavoriteSkusByCustomerId((int)$_SESSION['customer']['id']);
+    if ($favSkus) {
+        foreach ($favSkus as $s) { $favoriteSkuSet[$s] = true; }
+    }
+}
+// If showing favorites, filter the products list by the stored favorites (by product name/SKU)
 if ($showMode === 'favorites') {
-    $favoriteIds = $_SESSION['favorites'] ?? [];
-    $products = array_values(array_filter($products, function($p) use ($favoriteIds) { return in_array((int)$p['id'], $favoriteIds, true); }));
+    if (!empty($favoriteSkuSet)) {
+        $products = array_values(array_filter($products, function($p) use ($favoriteSkuSet) {
+            $sku = getProductDisplayName($p);
+            return $sku !== '' && isset($favoriteSkuSet[$sku]);
+        }));
+    } else {
+        // Not logged in or no favorites — show none
+        $products = [];
+    }
 }
 
 // Load shared SKU filters and grouping from includes/sku_filters.php
@@ -409,7 +413,8 @@ table.catalogue-table td:nth-child(3) {
         gap: 6px;
         width: 100%;
     }
-    table.catalogue-table td:nth-child(4) form.cart-add input[type="number"] {
+    table.catalogue-table td:nth-child(4) form.cart-add input[type="number"],
+    table.catalogue-table td:nth-child(4) form.cart-add select.qty-preset {
         display: block;
         width: 100% !important;
         box-sizing: border-box;
@@ -458,6 +463,7 @@ table.catalogue-table td:nth-child(3) {
         width: 100%;
     }
     table.catalogue-table td:nth-child(4) form.cart-add input[type="number"],
+    table.catalogue-table td:nth-child(4) form.cart-add select.qty-preset,
     table.catalogue-table td:nth-child(4) form.cart-add button[type="submit"],
     table.catalogue-table td:nth-child(4) .fav-toggle {
         display: block;
@@ -465,6 +471,7 @@ table.catalogue-table td:nth-child(3) {
     }
 }
 </style>
+<div class="container"><div class="form-card">
 <section class="page-hero">
     <h1>Catalog</h1>
     <p class="lead">Browse through our extensive product listings or click on a category below to go directly to a product group. Use the SEARCH box to find a product or product group. Click ADD to order a product. When ready, <a href="cart.php" class="proceed-btn btn-cart">PROCEED TO CART</a></p>
@@ -519,17 +526,28 @@ table.catalogue-table td:nth-child(3) {
                     <input type="hidden" name="product_name" value="<?= htmlspecialchars($p['name']) ?>">
                     <input type="hidden" name="product_description" value="<?= htmlspecialchars($p['description'] ?? $p['name']) ?>">
                     <input type="hidden" name="product_price" value="<?= htmlspecialchars(number_format((float)($p['price'] ?? 0), 2, '.', '')) ?>">
-                    <input type="number" name="quantity" value="1" min="1" style="width:3em;">
+                    <span class="qty-wrap" style="display:inline-flex;gap:6px;align-items:center;">
+                        <input type="number" name="quantity" value="1" min="1" step="1" style="width:4.5em;">
+                        <select class="qty-preset" aria-label="Quick quantity" style="padding:6px 8px;border:1px solid #d7e1ea;border-radius:6px;">
+                            <option value="1">1</option>
+                            <option value="5">5</option>
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="75">75</option>
+                            <option value="100">100</option>
+                        </select>
+                    </span>
                     <?php if ($search !== ''): ?>
                         <input type="hidden" name="search" value="<?= htmlspecialchars($search) ?>">
                     <?php endif; ?>
                     <button type="submit">Add</button>
                 </form>
                 <?php
-                    $favIds = $_SESSION['favorites'] ?? [];
-                    $isFav = in_array((int)$p['id'], $favIds, true);
+                    $skuName = getProductDisplayName($p);
+                    $isFav = $skuName !== '' && isset($favoriteSkuSet[$skuName]);
                 ?>
-                <button class="fav-toggle <?php echo $isFav ? 'fav-on' : ''; ?>" data-product-id="<?= (int)$p['id'] ?>" aria-pressed="<?= $isFav ? 'true' : 'false' ?>" title="Add to favorites" style="background:transparent;border:0;padding:4px;cursor:pointer;margin-left:8px;vertical-align:middle;">
+                <button class="fav-toggle <?php echo $isFav ? 'fav-on' : ''; ?>" data-product-id="<?= (int)$p['id'] ?>" aria-pressed="<?= $isFav ? 'true' : 'false' ?>" title="<?= $isFav ? 'Remove from favorites' : 'Add to favorites' ?>" style="background:transparent;border:0;padding:4px;cursor:pointer;margin-left:8px;vertical-align:middle;">
                     <!-- SVG star: hollow by default (white stroke), filled yellow when .fav-on is present -->
                     <svg class="fav-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                         <path d="M12 .587l3.668 7.431 8.2 1.192-5.934 5.787 1.402 8.169L12 18.897l-7.336 3.866 1.402-8.169L.132 9.21l8.2-1.192z" />
@@ -539,65 +557,23 @@ table.catalogue-table td:nth-child(3) {
         </tr>
     <?php endforeach; ?>
 </table>
+    
+<?php endif; ?>
     <script>
-    // AJAX add-to-cart with green flash highlight.
+    // Sync preset dropdown to quantity input; keep custom typing intact
     document.addEventListener('DOMContentLoaded', function(){
-        var cartCountEl = document.getElementById('cart-count');
-
-        function flashRow(pid){
-            var row = document.getElementById('product-' + pid);
-            if (!row) return;
-            row.classList.remove('flash-added');
-            void row.offsetWidth; // reflow to restart animation
-            row.classList.add('flash-added');
-            // Remove class after animation to allow re-trigger later
-            setTimeout(function(){ row.classList.remove('flash-added'); }, 1600);
-        }
-
         document.querySelectorAll('form.cart-add').forEach(function(form){
-            form.addEventListener('submit', function(ev){
-                ev.preventDefault();
-                var pid = form.querySelector('input[name="product_id"]').value;
-                var qtyInput = form.querySelector('input[name="quantity"]');
-                var submitBtn = form.querySelector('button[type="submit"]');
-                if (submitBtn) { submitBtn.disabled = true; }
-
-                var fd = new FormData(form);
-                // Mark as AJAX
-                fetch('catalogue.php', {
-                    method: 'POST',
-                    body: fd,
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                }).then(function(r){ return r.ok ? r.json() : Promise.reject(); })
-                .then(function(data){
-                    if (data && data.success) {
-                        flashRow(data.productId || pid);
-                        if (cartCountEl && typeof data.cartCount !== 'undefined') {
-                            cartCountEl.textContent = data.cartCount;
-                        }
-                        // Temporarily show Added state on the button
-                        if (submitBtn) {
-                            var original = submitBtn.textContent;
-                            submitBtn.textContent = 'Added';
-                            submitBtn.classList.add('just-added');
-                            setTimeout(function(){
-                                submitBtn.textContent = original;
-                                submitBtn.classList.remove('just-added');
-                                submitBtn.disabled = false;
-                            }, 1400);
-                        }
-                    } else {
-                        // fallback full submit
-                        form.submit();
-                    }
-                }).catch(function(){
-                    form.submit();
-                });
+            var num = form.querySelector('input[name="quantity"]');
+            var sel = form.querySelector('select.qty-preset');
+            if (!num || !sel) return;
+            sel.addEventListener('change', function(){
+                var v = parseInt(sel.value, 10);
+                if (!isNaN(v) && v > 0) { num.value = String(v); }
             });
         });
     });
     </script>
-<?php endif; ?>
+</div></div>
     <!-- Back to top -->
     <div id="backToTopWrap" class="back-to-top-wrap" aria-hidden="true">
         <span class="back-to-top-label">Return To Top</span>

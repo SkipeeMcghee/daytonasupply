@@ -366,6 +366,58 @@ function getProductPrice(array $prod): float
 }
 
 /**
+ * Get the list of favorite SKUs for a customer from the favorites table.
+ * The favorites table is expected to have columns (id, sku) where id = customer id.
+ * Returns an array of SKU strings (product name values).
+ */
+function getFavoriteSkusByCustomerId(int $customerId): array
+{
+    $db = getDb();
+    try {
+        // Ensure the table exists; if not, this will throw and we return empty
+        $stmt = $db->prepare('SELECT sku FROM favorites WHERE id = :id');
+        $stmt->execute([':id' => $customerId]);
+        $rows = $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
+        return array_values(array_filter(array_map('strval', (array)$rows)));
+    } catch (Exception $e) {
+        error_log('getFavoriteSkusByCustomerId error: ' . $e->getMessage());
+        return [];
+    }
+}
+
+/**
+ * Toggle a favorite for a given customer and product id.
+ * Uses the product name as the SKU value in favorites.sku per requirements.
+ * Returns true if now favorited, false if removed or on failure.
+ */
+function toggleFavoriteForCustomerProduct(int $customerId, int $productId): bool
+{
+    $db = getDb();
+    try {
+        $prod = getProductById($productId);
+        if (!$prod) return false;
+        $sku = getProductDisplayName($prod);
+        if ($sku === '') return false;
+        // Check if exists
+        $check = $db->prepare('SELECT 1 FROM favorites WHERE id = :id AND sku = :sku LIMIT 1');
+        $check->execute([':id' => $customerId, ':sku' => $sku]);
+        $exists = (bool)$check->fetchColumn();
+        if ($exists) {
+            $del = $db->prepare('DELETE FROM favorites WHERE id = :id AND sku = :sku');
+            $del->execute([':id' => $customerId, ':sku' => $sku]);
+            return false; // now unfavorited
+        } else {
+            $ins = $db->prepare('INSERT INTO favorites (id, sku) VALUES (:id, :sku)');
+            $ins->execute([':id' => $customerId, ':sku' => $sku]);
+            return true; // now favorited
+        }
+    } catch (Exception $e) {
+        error_log('toggleFavoriteForCustomerProduct error: ' . $e->getMessage());
+        return false;
+    }
+}
+
+/**
  * Create a new order record and its associated items.  The cart array
  * must map product IDs to quantities.  The total is calculated
  * automatically.

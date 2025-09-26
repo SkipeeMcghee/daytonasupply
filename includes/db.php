@@ -73,6 +73,7 @@ function getDb(): PDO
             // historical order snapshots are recorded when creating orders.
             try {
                 ensureMySQLOrderSnapshotSchema($db);
+                ensureMySQLFavoritesSchema($db);
             } catch (Exception $schemaEx) {
                 // Log but allow connection to proceed; createOrder will fail if
                 // schema is not suitable. We log to help diagnostics.
@@ -253,6 +254,13 @@ function migrateDatabase(PDO $db): void
         ip TEXT NOT NULL,
         attempted_at TEXT NOT NULL
     )');
+
+    // Ensure favorites table exists for SQLite: composite primary key (id, sku)
+    $db->exec('CREATE TABLE IF NOT EXISTS favorites (
+        id INTEGER NOT NULL,
+        sku TEXT NOT NULL,
+        PRIMARY KEY (id, sku)
+    )');
 }
 
 /**
@@ -300,6 +308,22 @@ function ensureMySQLOrderSnapshotSchema(PDO $db): void
     if (!in_array('product_price', $cols, true)) {
         $db->exec("ALTER TABLE order_items ADD COLUMN product_price DECIMAL(12,2) NULL");
     }
+}
+
+/**
+ * Ensure the MySQL schema contains the favorites table used to store per-customer favorites.
+ * Table structure: favorites(id INT NOT NULL, sku VARCHAR(255) NOT NULL, PRIMARY KEY(id, sku))
+ */
+function ensureMySQLFavoritesSchema(PDO $db): void
+{
+    $driver = $db->getAttribute(PDO::ATTR_DRIVER_NAME);
+    if (strcasecmp($driver, 'mysql') !== 0) return;
+    $db->exec("CREATE TABLE IF NOT EXISTS favorites (
+        id INT NOT NULL,
+        sku VARCHAR(255) NOT NULL,
+        PRIMARY KEY (id, sku),
+        CONSTRAINT fk_favorites_customer FOREIGN KEY (id) REFERENCES customers(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 }
 
 
@@ -355,6 +379,13 @@ function initDatabase(PDO $db): void
     $db->exec('CREATE TABLE IF NOT EXISTS admin (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         password_hash TEXT NOT NULL
+    )');
+
+    // Favorites table for SQLite
+    $db->exec('CREATE TABLE IF NOT EXISTS favorites (
+        id INTEGER NOT NULL,
+        sku TEXT NOT NULL,
+        PRIMARY KEY (id, sku)
     )');
 
     // Seed a default admin account if none exists yet.  We only want to

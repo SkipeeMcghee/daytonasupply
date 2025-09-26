@@ -5,6 +5,10 @@ document.addEventListener('DOMContentLoaded', function () {
 		var form = e.target;
 		if (form.classList && form.classList.contains('cart-add')) {
 			e.preventDefault();
+			if (form._adding) return; // debounce double submits
+			form._adding = true;
+			var submitBtn = form.querySelector('button[type="submit"]');
+			if (submitBtn) submitBtn.disabled = true;
 			var data = new FormData(form);
 			var xhr = new XMLHttpRequest();
 			xhr.open('POST', form.action || window.location.href);
@@ -22,6 +26,12 @@ document.addEventListener('DOMContentLoaded', function () {
 						}
 						var row = document.getElementById('product-' + res.productId);
 						if (row) {
+							// Flash green highlight on the row
+							row.classList.remove('flash-added');
+							void row.offsetWidth; // restart animation
+							row.classList.add('flash-added');
+							setTimeout(function(){ if (row) row.classList.remove('flash-added'); }, 1600);
+
 							var msg = document.createElement('div');
 							msg.className = 'added-msg';
 							msg.textContent = 'Added';
@@ -44,6 +54,10 @@ document.addEventListener('DOMContentLoaded', function () {
 						alert('Unable to add item to cart');
 					}
 				} catch (err) { console.error('Add-to-cart error', err); }
+				finally {
+					form._adding = false;
+					if (submitBtn) submitBtn.disabled = false;
+				}
 			};
 			xhr.send(data);
 		}
@@ -138,8 +152,20 @@ document.addEventListener('DOMContentLoaded', function () {
 					try {
 						var json = JSON.parse(xhr.responseText || '{}');
 						if (json && json.success) {
+							if (json.requiresLogin) {
+								// Redirect to login preserving return URL
+								var next = window.location.pathname + window.location.search + window.location.hash;
+								window.location.href = 'login.php?next=' + encodeURIComponent(next);
+								return;
+							}
 							if (json.favorited) btn.classList.add('fav-on'); else btn.classList.remove('fav-on');
 							btn.setAttribute('aria-pressed', json.favorited ? 'true' : 'false');
+							btn.title = json.favorited ? 'Remove from favorites' : 'Add to favorites';
+							// If currently viewing favorites list, remove the row on unfavorite
+							if (!json.favorited && /(?:^|[?&])show=favorites(?:&|$)/.test(window.location.search)) {
+								var row = btn.closest && btn.closest('tr');
+								if (row && row.parentNode) row.parentNode.removeChild(row);
+							}
 						} else {
 							// fallback to a page reload if AJAX failed
 							window.location.reload();

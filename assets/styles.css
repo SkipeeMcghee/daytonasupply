@@ -102,6 +102,24 @@ body.theme-dark .has-account .account-menu a:hover {
   color: #fff;
 }
 
+/* Dark mode styling for catalogue quantity dropdown */
+html.theme-dark .catalogue-table select.qty-preset,
+body.theme-dark .catalogue-table select.qty-preset {
+  background: #1b1b1b !important;
+  color: #fff !important;
+  border-color: rgba(255,255,255,0.2) !important;
+}
+html.theme-dark .catalogue-table select.qty-preset:focus,
+body.theme-dark .catalogue-table select.qty-preset:focus {
+  outline: 2px solid rgba(255,255,255,0.25);
+  outline-offset: 1px;
+}
+html.theme-dark .catalogue-table select.qty-preset option,
+body.theme-dark .catalogue-table select.qty-preset option {
+  background: #1b1b1b;
+  color: #fff;
+}
+
 /* Make header action controls visually consistent and add subtle dividers */
 .header-actions .action {
   display:inline-flex;
@@ -483,6 +501,20 @@ html.theme-dark .carousel-control, body.theme-dark .carousel-control {
   background: rgba(255,255,255,0.08);
   color: #fff;
 }
+
+/* Catalogue: show only the arrow for the quantity preset when closed */
+.catalogue-table select.qty-preset {
+  /* Keep native arrow via default appearance; hide the selected text */
+  color: transparent !important; /* hide selected value (override dark-mode white) */
+  -webkit-text-fill-color: transparent; /* Safari/WebKit */
+  text-shadow: 0 0 0 transparent; /* avoid antialiased ghosting */
+  width: 2.6em; /* compact width to emphasize arrow */
+  min-width: 2.4em;
+  padding-left: 0.4em; /* keep some click area */
+}
+/* Ensure option list text is visible when open (OS-driven UI) */
+.catalogue-table select.qty-preset option { color: var(--text); background: #fff; }
+/* Dark mode variants for the option list are defined earlier */
 html.theme-dark .carousel-dots button { background: rgba(255,255,255,0.18); }
 html.theme-dark .carousel-dots button.active { background: #e8f6ff; }
 
