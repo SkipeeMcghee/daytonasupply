@@ -223,6 +223,7 @@ $showMode = normalizeScalar($_GET['show'] ?? 'all', 32, 'all');
 // UI renders the corresponding button as active.
 $skuKey = normalizeScalar($_GET['sku'] ?? '', 64, '');
 $catParam = normalizeScalar($_GET['cat'] ?? '', 64, '');
+$subParam = normalizeScalar($_GET['sub'] ?? '', 64, '');
 if ($skuKey === '' && $catParam !== '') {
     // Deterministic slug -> SKU filter label map for the homepage category tiles.
     $slugMap = [
@@ -374,6 +375,28 @@ if ($skuKey !== '') {
         }
         return false;
     }));
+}
+
+// Optional subcategory filter: Corrugated Cube Boxes (e.g., RSC 4 x 4 x 4)
+// When sub=cube and the selected SKU category is CORRUGATED BOXES, narrow results to items with cubic dimensions.
+if ($subParam === 'cube') {
+    // Determine if current filter context is Corrugated Boxes
+    $isCorrugated = false;
+    if ($skuKey !== '') {
+        $isCorrugated = (strcasecmp($matchedKey ?? $skuKey, 'CORRUGATED BOXES') === 0);
+    } elseif ($catParam !== '') {
+        $isCorrugated = (strcasecmp($catParam, 'corrugated') === 0);
+    }
+    if ($isCorrugated) {
+        $products = array_values(array_filter($products, function($p){
+            $name = (string)($p['name'] ?? '');
+            $desc = (string)($p['description'] ?? '');
+            $hay = $name . ' ' . $desc;
+            // Match dimension triplets like 4 x 4 x 4 (allow spaces and case-insensitive); numbers can be 1-3 digits.
+            if (preg_match('/\b(\d{1,3})\s*[x×]\s*\1\s*[x×]\s*\1\b/i', $hay)) return true;
+            return false;
+        }));
+    }
 }
 
 include __DIR__ . '/includes/header.php';

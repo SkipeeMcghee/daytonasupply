@@ -589,10 +589,12 @@ html.theme-dark .carousel-dots button.active { background: #e8f6ff; }
   padding: 10px;
   /* strong dark overlay to guarantee readability */
   background: linear-gradient(180deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.72) 100%);
+  /* keep overlay content safely inside the image area */
+  box-sizing: border-box;
 }
 /* Ensure headings and buttons contrast on dark overlay */
 .category-card .cat-body h3{color:#fff;margin:0;font-size:1rem;text-shadow:0 1px 2px rgba(0,0,0,0.6)}
-.category-card .cat-body .shop-btn{background:#ffffff;color:var(--text);border:0;padding:8px 10px;border-radius:8px;box-shadow:0 4px 10px rgba(0,0,0,0.12)}
+.category-card .cat-body .shop-btn{background:#ffffff;color:var(--text);border:0;padding:8px 10px;border-radius:8px;box-shadow:0 4px 10px rgba(0,0,0,0.12);white-space:normal;line-height:1.05;display:inline-block;max-width:48%;text-align:center}
 
 /* Slightly darken images to help text pop when overlay still collides with bright areas */
 .category-card img{filter:brightness(0.94);}
@@ -609,7 +611,7 @@ html.theme-dark .carousel-dots button.active { background: #e8f6ff; }
 .theme-dark .dark-toggle-switch::after{background:#fff}
 
 @media (prefers-reduced-motion: reduce){ .dark-toggle-switch, .dark-toggle-switch::after { transition:none !important } }
-.category-card:focus .shop-btn,.category-card:hover .shop-btn{background:var(--brand);color:#fff}
+.category-card:focus .shop-btn,.category-card:hover .shop-btn{background:var(--brand);color:#fff;transform:none}
 
 /* Catalogue table gridlines and polished table styles */
 .catalogue-table{width:100%;border-collapse:separate;border-spacing:0;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 6px 18px rgba(11,34,56,0.06)}

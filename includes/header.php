@@ -163,7 +163,7 @@ if ($loggedIn) {
                         $skuFilters = is_array($skuData) && isset($skuData['filters']) ? $skuData['filters'] : [];
                         $skuGroups = is_array($skuData) && isset($skuData['groups']) ? $skuData['groups'] : [];
                         ?>
-                        <li class="has-mega products-item"><a class="cat-btn" href="catalogue.php">Products</a>
+                        <li class="has-mega products-item"><a class="cat-btn" href="products.php">Products</a>
                             <div class="mega" role="menu">
                                 <?php foreach ($skuGroups as $groupLabel => $labels): ?>
                                     <div class="mega-col">
