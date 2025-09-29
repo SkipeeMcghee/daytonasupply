@@ -369,7 +369,22 @@ function ensureMySQLFavoritesSchema(PDO $db): void
             $db->exec('ALTER TABLE favorites ADD PRIMARY KEY (id, sku)');
             $db->commit();
         }
-    } catch (Exception $e) { error_log('ensureMySQLFavoritesSchema PK check/fix error: ' . $e->getMessage()); try { $db->rollBack(); } catch (Exception $_) {} }
+        // Drop any stray unique index on sku that would prevent multiple favorites per user
+        $uniques = $db->query("SHOW INDEX FROM favorites WHERE Non_unique=0 AND Key_name<>'PRIMARY'");
+        while ($idx = $uniques->fetch(PDO::FETCH_ASSOC)) {
+            $key = $idx['Key_name'] ?? '';
+            if ($key) {
+                // Inspect columns for this index
+                $colsStmt = $db->prepare('SHOW INDEX FROM favorites WHERE Key_name = :k');
+                $colsStmt->execute([':k' => $key]);
+                $colNames = [];
+                while ($cr = $colsStmt->fetch(PDO::FETCH_ASSOC)) { $colNames[] = strtolower($cr['Column_name'] ?? ''); }
+                if (count($colNames) === 1 && $colNames[0] === 'sku') {
+                    try { $db->exec('DROP INDEX `' . str_replace('`','',$key) . '` ON favorites'); } catch (Exception $di) { error_log('ensureMySQLFavoritesSchema drop unique sku index failed: ' . $di->getMessage()); }
+                }
+            }
+        }
+    } catch (Exception $e) { error_log('ensureMySQLFavoritesSchema PK/unique check error: ' . $e->getMessage()); try { $db->rollBack(); } catch (Exception $_) {} }
 }
 
 /**
@@ -522,6 +537,21 @@ function ensureSQLiteFavoritesSchema(PDO $db): void
             $db->exec('ALTER TABLE favorites_new RENAME TO favorites');
             $db->commit();
         }
+        // Drop any unique index on sku-only
+        try {
+            $ilist = $db->query("PRAGMA index_list('favorites')");
+            while ($ir = $ilist->fetch(PDO::FETCH_ASSOC)) {
+                $iname = $ir['name'] ?? null; $unique = (int)($ir['unique'] ?? 0);
+                if ($iname && $unique === 1) {
+                    $iinfo = $db->query("PRAGMA index_info('" . str_replace("'","''", $iname) . "')");
+                    $cols = [];
+                    while ($ci = $iinfo->fetch(PDO::FETCH_ASSOC)) { $cols[] = strtolower($ci['name'] ?? ''); }
+                    if (count($cols) === 1 && $cols[0] === 'sku') {
+                        try { $db->exec('DROP INDEX IF EXISTS ' . $iname); } catch (Exception $dx) { error_log('ensureSQLiteFavoritesSchema drop unique sku index failed: ' . $dx->getMessage()); }
+                    }
+                }
+            }
+        } catch (Exception $e2) { error_log('ensureSQLiteFavoritesSchema index_list error: ' . $e2->getMessage()); }
     } catch (Exception $e) {
         try { $db->rollBack(); } catch (Exception $_) {}
         error_log('ensureSQLiteFavoritesSchema error: ' . $e->getMessage());
