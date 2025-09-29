@@ -32,22 +32,38 @@ document.addEventListener('DOMContentLoaded', function () {
 							row.classList.add('flash-added');
 							setTimeout(function(){ if (row) row.classList.remove('flash-added'); }, 1600);
 
-							var msg = document.createElement('div');
-							msg.className = 'added-msg';
-							msg.textContent = 'Added';
-							msg.style.position = 'absolute';
-							msg.style.background = '#198754';
-							msg.style.color = '#fff';
-							msg.style.padding = '6px 10px';
-							msg.style.borderRadius = '6px';
-							msg.style.zIndex = 9999;
-							var btn = row.querySelector('button[type="submit"]');
-							if (btn) {
-								var rect = btn.getBoundingClientRect();
-								msg.style.top = (window.scrollY + rect.top - 10) + 'px';
-								msg.style.left = (window.scrollX + rect.left + rect.width + 8) + 'px';
-								document.body.appendChild(msg);
-								setTimeout(function () { msg.parentNode && msg.parentNode.removeChild(msg); }, 1400);
+							// Added notification: banner on small screens, popup near button on larger
+							var isSmall = window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
+							if (isSmall) {
+								var banner = document.getElementById('added-banner');
+								if (!banner) {
+									banner = document.createElement('div');
+									banner.id = 'added-banner';
+									banner.className = 'added-banner';
+									banner.setAttribute('role', 'status');
+									document.body.appendChild(banner);
+								}
+								banner.textContent = 'Added to cart';
+								banner.classList.add('show');
+								setTimeout(function(){ banner && banner.classList.remove('show'); }, 1600);
+							} else {
+								var msg = document.createElement('div');
+								msg.className = 'added-msg';
+								msg.textContent = 'Added';
+								msg.style.position = 'absolute';
+								msg.style.background = '#198754';
+								msg.style.color = '#fff';
+								msg.style.padding = '6px 10px';
+								msg.style.borderRadius = '6px';
+								msg.style.zIndex = 9999;
+								var btn = row.querySelector('button[type="submit"]');
+								if (btn) {
+									var rect = btn.getBoundingClientRect();
+									msg.style.top = (window.scrollY + rect.top - 10) + 'px';
+									msg.style.left = (window.scrollX + rect.left + rect.width + 8) + 'px';
+									document.body.appendChild(msg);
+									setTimeout(function () { msg.parentNode && msg.parentNode.removeChild(msg); }, 1400);
+								}
 							}
 						}
 					} else {
@@ -162,7 +178,9 @@ document.addEventListener('DOMContentLoaded', function () {
 							btn.setAttribute('aria-pressed', json.favorited ? 'true' : 'false');
 							btn.title = json.favorited ? 'Remove from favorites' : 'Add to favorites';
 							// If currently viewing favorites list, remove the row on unfavorite
-							if (!json.favorited && /(?:^|[?&])show=favorites(?:&|$)/.test(window.location.search)) {
+							var q = window.location.search || '';
+							var inFavView = /(?:^|[?&])show=favorites(?:&|$)/.test(q) || /(?:^|[?&])favorites=1(?:&|$)/.test(q) || /(?:^|[?&])fav=1(?:&|$)/.test(q);
+							if (!json.favorited && inFavView) {
 								var row = btn.closest && btn.closest('tr');
 								if (row && row.parentNode) row.parentNode.removeChild(row);
 							}

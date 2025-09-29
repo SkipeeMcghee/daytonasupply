@@ -195,14 +195,20 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['product_id'],
         exit;
     }
     // Redirect back to catalogue to implement the Post/Redirect/Get pattern and
-    // keep the user on this page. Preserve the search term if provided and
-    // add a fragment so the browser scrolls to the product just added.
-    $searchParam = '';
-    if (!empty($_POST['search'])) {
-        $searchParam = '?search=' . urlencode($_POST['search']);
-    } elseif (!empty($_GET['search'])) {
-        $searchParam = '?search=' . urlencode($_GET['search']);
-    }
+    // keep the user on this page. Preserve current filters (search/category/sub/favorites/onsale)
+    // and add a fragment so the browser scrolls to the product just added.
+    $params = [];
+    $src = function($k){ return $_POST[$k] ?? ($_GET[$k] ?? null); };
+    $sv = $src('search'); if ($sv !== null && $sv !== '') { $params['search'] = (string)$sv; }
+    $skuV = $src('sku'); if ($skuV !== null && $skuV !== '') { $params['sku'] = (string)$skuV; }
+    $subV = $src('sub'); if ($subV !== null && $subV !== '') { $params['sub'] = (string)$subV; }
+    $favV = $src('favorites'); if ($favV !== null && $favV !== '' && (int)$favV === 1) { $params['favorites'] = 1; }
+    $saleV = $src('onsale'); if ($saleV !== null && $saleV !== '' && (int)$saleV === 1) { $params['onsale'] = 1; }
+    // Backward compat: if legacy show param present and equals favorites/onsale, reflect it
+    $showV = $src('show');
+    if (!isset($params['favorites']) && $showV === 'favorites') { $params['favorites'] = 1; }
+    if (!isset($params['onsale']) && $showV === 'onsale') { $params['onsale'] = 1; }
+    $searchParam = !empty($params) ? ('?' . http_build_query($params)) : '';
     $fragment = '#product-' . $pid;
     // If an added_id was posted (we inject it client-side), propagate for highlight
     $addedId = isset($_POST['product_id']) ? (int)$_POST['product_id'] : null;
@@ -214,8 +220,16 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['product_id'],
 
 // Retrieve search term from the query string
 $search = normalizeScalar($_GET['search'] ?? '', 150, '');
-// Favorites filter
-$showMode = normalizeScalar($_GET['show'] ?? 'all', 32, 'all');
+// Independent toggle filters: favorites and on sale
+// Backward compatibility: also honor legacy show=favorites|onsale
+$favoritesOn = false;
+$onSaleOn = false;
+if (isset($_GET['favorites'])) { $favoritesOn = (bool)((int)$_GET['favorites']); }
+elseif (isset($_GET['fav'])) { $favoritesOn = (bool)((int)$_GET['fav']); }
+elseif (isset($_GET['show']) && $_GET['show'] === 'favorites') { $favoritesOn = true; }
+if (isset($_GET['onsale'])) { $onSaleOn = (bool)((int)$_GET['onsale']); }
+elseif (isset($_GET['sale'])) { $onSaleOn = (bool)((int)$_GET['sale']); }
+elseif (isset($_GET['show']) && $_GET['show'] === 'onsale') { $onSaleOn = true; }
 // SKU/type filter key
 // Accept either `sku` (short code or label) or `cat` (slug from index.php) so
 // links like catalogue.php?cat=foam work as expected. We map a slug to the
@@ -329,7 +343,7 @@ if (!empty($_SESSION['customer']['id'])) {
     }
 }
 // If showing favorites, filter the products list by the stored favorites (by product name/SKU)
-if ($showMode === 'favorites') {
+if ($favoritesOn) {
     if (!empty($favoriteSkuSet)) {
         $products = array_values(array_filter($products, function($p) use ($favoriteSkuSet) {
             $sku = getProductDisplayName($p);
@@ -339,6 +353,11 @@ if ($showMode === 'favorites') {
         // Not logged in or no favorites — show none
         $products = [];
     }
+}
+
+// If showing on-sale only, filter to products with active deals (deal=1)
+if ($onSaleOn) {
+    $products = array_values(array_filter($products, function($p){ return !empty($p['deal']); }));
 }
 
 // Load shared SKU filters and grouping from includes/sku_filters.php
@@ -494,6 +513,34 @@ table.catalogue-table td:nth-child(3) {
     }
 }
 </style>
+<style>
+/* Show the dropdown on all screen sizes; hide the pill buttons */
+.catalogue-cats-select-wrap { display: block !important; }
+.catalogue-cats-buttons { display: none !important; }
+</style>
+<style>
+/* On-sale visuals: tint full row and show compact green badge next to favorite.
+    Do not use !important so the flash-added animation can temporarily override. */
+.catalogue-table tr.sale-row td { background: #f1fbf4; }
+html.theme-dark .catalogue-table tr.sale-row td,
+body.theme-dark .catalogue-table tr.sale-row td { background: rgba(16,185,129,0.16); }
+.on-sale-badge {
+    display: inline-flex;
+    align-items: center;
+    background: #16a34a; /* emerald-600 */
+    color: #fff;
+    border-radius: 999px;
+    padding: 4px 8px;
+    font-weight: 800;
+    font-size: 12px;
+    line-height: 1;
+    margin-left: 8px;
+    vertical-align: middle;
+}
+@media (max-width: 600px) {
+    .on-sale-badge { display:block; margin-left:0; }
+}
+</style>
 <div class="container"><div class="form-card">
 <section class="page-hero">
     <h1>Catalog</h1>
@@ -502,20 +549,78 @@ table.catalogue-table td:nth-child(3) {
 <div style="margin-bottom:8px; display:flex; gap:10px; align-items:center;">
     <div style="font-weight:700;">View:</div>
     <?php
-        $allActive = ($showMode !== 'favorites');
-        $favActive = ($showMode === 'favorites');
-        $allUrl = 'catalogue.php' . ($search ? '?search=' . urlencode($search) : '');
-        $favUrl = 'catalogue.php?show=favorites' . ($search ? '&search=' . urlencode($search) : '');
+        // Active states: Show All is active when no specific category is selected
+        $showAllActive = ($skuKey === '');
+        $favActive = $favoritesOn;
+        $saleActive = $onSaleOn;
+        // Helper to build URLs preserving current context
+        $baseParams = [];
+        if ($search !== '') { $baseParams['search'] = $search; }
+        if ($skuKey !== '') { $baseParams['sku'] = $skuKey; }
+        if ($subParam !== '') { $baseParams['sub'] = $subParam; }
+        if ($favoritesOn) { $baseParams['favorites'] = 1; }
+        if ($onSaleOn) { $baseParams['onsale'] = 1; }
+        $buildUrl = function(array $params) {
+            $qs = http_build_query($params);
+            return 'catalogue.php' . ($qs ? ('?' . $qs) : '');
+        };
+        // Show All: clear the category (and sub), keep search and toggles
+        $allParams = $baseParams;
+        unset($allParams['sku'], $allParams['sub']);
+        $allUrl = $buildUrl($allParams);
+        // Favorites toggle: flip favorites flag but preserve everything else
+        $favParams = $baseParams;
+        if ($favActive) { unset($favParams['favorites']); } else { $favParams['favorites'] = 1; }
+        $favUrl = $buildUrl($favParams);
+        // On Sale toggle: flip onsale flag but preserve everything else
+        $saleParams = $baseParams;
+        if ($saleActive) { unset($saleParams['onsale']); } else { $saleParams['onsale'] = 1; }
+        $saleUrl = $buildUrl($saleParams);
     ?>
-    <a href="<?= htmlspecialchars($allUrl) ?>" class="sku-btn<?= $allActive ? ' active' : '' ?>">Show All</a>
-    <a href="<?= htmlspecialchars($favUrl) ?>" class="sku-btn<?= $favActive ? ' active' : '' ?>">Favorites <span class="mini-star">★</span></a>
+    <a href="<?= htmlspecialchars($allUrl) ?>" class="sku-btn<?= $showAllActive ? ' active' : '' ?>">Show All</a>
+    <a href="<?= htmlspecialchars($favUrl) ?>" class="sku-btn<?= $favActive ? ' active' : '' ?>" aria-pressed="<?= $favActive ? 'true' : 'false' ?>">Favorites <span class="mini-star">★</span></a>
+    <a href="<?= htmlspecialchars($saleUrl) ?>" class="sku-btn<?= $saleActive ? ' active' : '' ?>" aria-pressed="<?= $saleActive ? 'true' : 'false' ?>">On Sale</a>
 </div>
-<div style="margin-bottom:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+<!-- Category dropdown (all sizes) with divisions -->
+<div class="catalogue-cats-select-wrap" style="margin-bottom:12px; display:block;">
+    <label for="catalogueCategorySelect" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;">Select category</label>
+    <select id="catalogueCategorySelect" style="padding:8px 10px;border:1px solid #d7e1ea;border-radius:8px;min-width:280px;max-width:100%;">
+        <?php
+            // Build dropdown option URLs preserving search and toggle filters
+            $skuData = @include __DIR__ . '/includes/sku_filters.php';
+            $skuGroups = is_array($skuData) && isset($skuData['groups']) ? $skuData['groups'] : [];
+            $optBase = [];
+            if ($search !== '') { $optBase['search'] = $search; }
+            if ($favoritesOn) { $optBase['favorites'] = 1; }
+            if ($onSaleOn) { $optBase['onsale'] = 1; }
+            $allUrl = 'catalogue.php' . (!empty($optBase) ? ('?' . http_build_query($optBase)) : '');
+        ?>
+        <option value="<?= htmlspecialchars($allUrl) ?>"<?= $skuKey === '' ? ' selected' : '' ?>>All categories</option>
+        <?php foreach ($skuGroups as $groupLabel => $labels): ?>
+            <optgroup label="<?= htmlspecialchars($groupLabel) ?>">
+                <?php foreach ($labels as $label): if (!isset($skuFilters[$label])) continue; 
+                    $key = urlencode($label);
+                    $params = $optBase;
+                    $params['sku'] = $label;
+                    $url = 'catalogue.php?' . http_build_query($params);
+                    $isActiveSku = (strtoupper($skuKey) === strtoupper($label));
+                ?>
+                    <option value="<?= htmlspecialchars($url) ?>"<?= $isActiveSku ? ' selected' : '' ?>><?= htmlspecialchars($label) ?></option>
+                <?php endforeach; ?>
+            </optgroup>
+        <?php endforeach; ?>
+    </select>
+</div>
+<div class="catalogue-cats-buttons" style="margin-bottom:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
     <?php foreach ($skuFilters as $label => $codes):
-        // build a short key safe for URLs (use label words joined with underscore)
+        // build a URL preserving search and toggles
         $key = urlencode($label);
-        $url = 'catalogue.php?sku=' . $key;
-        if ($search) $url .= '&search=' . urlencode($search);
+        $params = [];
+        if ($search !== '') { $params['search'] = $search; }
+        if ($favoritesOn) { $params['favorites'] = 1; }
+        if ($onSaleOn) { $params['onsale'] = 1; }
+        $params['sku'] = $label;
+        $url = 'catalogue.php?' . http_build_query($params);
         $isActiveSku = (strtoupper($skuKey) === strtoupper($label));
     ?>
         <a href="<?= htmlspecialchars($url) ?>" class="sku-btn<?= $isActiveSku ? ' active' : '' ?>" data-sku="<?= htmlspecialchars($label) ?>"><?= htmlspecialchars($label) ?></a>
@@ -523,10 +628,31 @@ table.catalogue-table td:nth-child(3) {
 </div>
 <form method="get" action="catalogue.php" style="margin-bottom:1em;">
     <input type="text" name="search" value="<?= htmlspecialchars($search) ?>" placeholder="Search products...">
+    <?php if ($skuKey !== ''): ?>
+        <input type="hidden" name="sku" value="<?= htmlspecialchars($skuKey) ?>">
+    <?php endif; ?>
+    <?php if ($subParam !== ''): ?>
+        <input type="hidden" name="sub" value="<?= htmlspecialchars($subParam) ?>">
+    <?php endif; ?>
+    <?php if ($favoritesOn): ?>
+        <input type="hidden" name="favorites" value="1">
+    <?php endif; ?>
+    <?php if ($onSaleOn): ?>
+        <input type="hidden" name="onsale" value="1">
+    <?php endif; ?>
     <button type="submit" class="proceed-btn">Search</button>
     <?php if ($search !== ''): ?>
-        <a href="catalogue.php">Clear</a>
+        <?php
+            $clearParams = [];
+            if ($skuKey !== '') { $clearParams['sku'] = $skuKey; }
+            if ($subParam !== '') { $clearParams['sub'] = $subParam; }
+            if ($favoritesOn) { $clearParams['favorites'] = 1; }
+            if ($onSaleOn) { $clearParams['onsale'] = 1; }
+            $clearUrl = 'catalogue.php' . (!empty($clearParams) ? ('?' . http_build_query($clearParams)) : '');
+        ?>
+        <a href="<?= htmlspecialchars($clearUrl) ?>">Clear</a>
     <?php endif; ?>
+    
 </form>
 <?php if (empty($products)): ?>
     <p>No products found.</p>
@@ -539,9 +665,13 @@ table.catalogue-table td:nth-child(3) {
         <th>Actions</th>
     </tr>
     <?php foreach ($products as $p): ?>
-        <tr id="product-<?= (int)$p['id'] ?>">
+        <?php $onSale = !empty($p['deal']); ?>
+        <tr id="product-<?= (int)$p['id'] ?>"<?= $onSale ? ' class="sale-row"' : '' ?>>
             <td><?= htmlspecialchars($p['name']) ?></td>
-            <td><?= htmlspecialchars($p['description']) ?></td>
+            <td>
+                <?= htmlspecialchars($p['description']) ?>
+                <?php if ($onSale): ?><span class="on-sale-badge">On Sale!</span><?php endif; ?>
+            </td>
             <td>$<?= number_format($p['price'], 2) ?></td>
             <td>
                 <form method="post" action="catalogue.php" class="cart-add" style="margin:0; display:inline-block;">
@@ -563,6 +693,18 @@ table.catalogue-table td:nth-child(3) {
                     </span>
                     <?php if ($search !== ''): ?>
                         <input type="hidden" name="search" value="<?= htmlspecialchars($search) ?>">
+                    <?php endif; ?>
+                    <?php if ($skuKey !== ''): ?>
+                        <input type="hidden" name="sku" value="<?= htmlspecialchars($skuKey) ?>">
+                    <?php endif; ?>
+                    <?php if ($subParam !== ''): ?>
+                        <input type="hidden" name="sub" value="<?= htmlspecialchars($subParam) ?>">
+                    <?php endif; ?>
+                    <?php if ($favoritesOn): ?>
+                        <input type="hidden" name="favorites" value="1">
+                    <?php endif; ?>
+                    <?php if ($onSaleOn): ?>
+                        <input type="hidden" name="onsale" value="1">
                     <?php endif; ?>
                     <button type="submit">Add</button>
                 </form>
@@ -595,7 +737,18 @@ table.catalogue-table td:nth-child(3) {
             });
         });
     });
-    </script>
+        </script>
+        <script>
+        // Mobile category dropdown navigation
+        (function(){
+            var sel = document.getElementById('catalogueCategorySelect');
+            if (!sel) return;
+            sel.addEventListener('change', function(){
+                var url = sel.value || '';
+                if (url) window.location.href = url;
+            });
+        })();
+        </script>
 </div></div>
     <!-- Back to top -->
     <div id="backToTopWrap" class="back-to-top-wrap" aria-hidden="true">

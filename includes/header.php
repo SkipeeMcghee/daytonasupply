@@ -170,7 +170,7 @@ if ($loggedIn) {
                                         <h4><?php echo htmlspecialchars($groupLabel); ?></h4>
                                         <ul>
                                             <?php foreach ($labels as $label): if (!isset($skuFilters[$label])) continue; ?>
-                                                <?php $url = 'catalogue.php?sku=' . urlencode($label); ?>
+                                                <?php $slug = strtolower(preg_replace('/[^a-z0-9]+/i', '-', $label)); $url = 'products.php?cat=' . urlencode($slug); ?>
                                                 <li><a href="<?php echo htmlspecialchars($url); ?>"><?php echo htmlspecialchars($label); ?></a></li>
                                             <?php endforeach; ?>
                                         </ul>
@@ -178,6 +178,7 @@ if ($loggedIn) {
                                 <?php endforeach; ?>
                             </div>
                         </li>
+                        <li><a href="deals.php">Deals</a></li>
                         <li><a href="about.php">About Us</a></li>
                         <li><a href="contact.php">Contact Us</a></li>
                         <li><a href="shipping.php">Shipping</a></li>

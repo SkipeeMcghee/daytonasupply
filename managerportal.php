@@ -164,6 +164,26 @@ if (isset($_GET['delete_product'])) {
     exit;
 }
 
+// Toggle deal flag for a product (GET action for simplicity)
+if (isset($_GET['toggle_deal'])) {
+    $prodId = (int)$_GET['toggle_deal'];
+    $db = getDb();
+    try {
+        // Ensure column exists; for MySQL ensure helper already runs at connect, SQLite migration covers others.
+        $row = getProductById($prodId);
+        if ($row) {
+            $newVal = (!empty($row['deal']) && (int)$row['deal'] === 1) ? 0 : 1;
+            $stmt = $db->prepare('UPDATE products SET deal = :deal WHERE id = :id');
+            $stmt->execute([':deal' => $newVal, ':id' => $prodId]);
+        }
+    } catch (Exception $e) {
+        error_log('toggle_deal error: ' . $e->getMessage());
+    }
+    invalidateProductsCache();
+    header('Location: managerportal.php#products');
+    exit;
+}
+
 // Handle POST actions for saving products, adding products, and saving customers
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Save products
@@ -672,14 +692,34 @@ require_once __DIR__ . '/includes/header.php';
     </form>
 </section>
 
-<section>
+<section id="products">
     <h3>Products</h3>
+    <?php
+        // Derive list of active deals for display
+        $activeDeals = array_values(array_filter($products, function($p){ return !empty($p['deal']); }));
+    ?>
+    <h4>Active Deals</h4>
+    <table class="admin-table">
+        <tr><th>ID</th><th>Name</th><th>Description</th><th>Price</th><th>Actions</th></tr>
+        <?php foreach ($activeDeals as $d): ?>
+            <tr>
+                <td><?= (int)$d['id'] ?></td>
+                <td><?= htmlspecialchars($d['name']) ?></td>
+                <td><?= htmlspecialchars($d['description']) ?></td>
+                <td>$<?= number_format((float)$d['price'], 2) ?></td>
+                <td><a class="mgr-btn" href="?toggle_deal=<?= (int)$d['id'] ?>" style="background:#dc3545;color:#fff;" onclick="return confirm('Remove this item from Deals?');">Unset Deal</a></td>
+            </tr>
+        <?php endforeach; ?>
+        <?php if (empty($activeDeals)): ?>
+            <tr><td colspan="5">No active deals.</td></tr>
+        <?php endif; ?>
+    </table>
     <!-- Update Inventory button moved below the products table to sit beside Save Product Changes -->
     <form method="post" action="" id="productsForm">
         <input type="hidden" name="save_products" value="1">
         <input type="hidden" name="products_json" id="products_json" value="">
         <table class="admin-table">
-            <tr><th>ID</th><th>Name</th><th>Description</th><th>Price</th><th>Actions</th></tr>
+            <tr><th>ID</th><th>Name</th><th>Description</th><th>Price</th><th>Deal</th><th>Actions</th></tr>
             <?php foreach ($products as $prod): ?>
                 <tr>
                     <!-- Show the real product ID for clarity -->
@@ -688,11 +728,15 @@ require_once __DIR__ . '/includes/header.php';
                     <td><input type="text" name="desc_<?php echo (int)$prod['id']; ?>" value="<?php echo htmlspecialchars($prod['description']); ?>"></td>
                     <!-- Avoid number_format to prevent commas; let the browser handle display/format -->
                     <td><input type="number" step="0.01" name="price_<?php echo (int)$prod['id']; ?>" value="<?php echo htmlspecialchars((string)$prod['price']); ?>"></td>
+                    <td>
+                        <?php $isDeal = !empty($prod['deal']); ?>
+                        <a class="mgr-btn" href="?toggle_deal=<?php echo (int)$prod['id']; ?>" style="background: <?php echo $isDeal ? '#dc3545' : '#198754'; ?>; color:#fff;" onclick="return confirm('<?php echo $isDeal ? 'Unset this deal?' : 'Mark this item as a Deal?'; ?>');"><?php echo $isDeal ? 'Unset' : 'Set'; ?> Deal</a>
+                    </td>
                     <td><a class="mgr-btn mgr-product-delete" href="?delete_product=<?php echo (int)$prod['id']; ?>" onclick="return confirm('Delete this product?');">Delete</a></td>
                 </tr>
             <?php endforeach; ?>
             <?php if (empty($products)): ?>
-                <tr><td colspan="5">No products found.</td></tr>
+                <tr><td colspan="6">No products found.</td></tr>
             <?php endif; ?>
         </table>
     <p style="display:flex;gap:8px;align-items:center;">

@@ -90,6 +90,15 @@ $message = 'Cart updated.';
     }
 }
 
+// Handle clear cart action (empties the entire cart)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear_cart'])) {
+    // Empty the session cart entirely
+    if (isset($_SESSION['cart'])) {
+        $_SESSION['cart'] = [];
+    }
+    $message = 'Cart cleared.';
+}
+
 // After handling POST updates, ensure any on-disk or cookie snapshots reflect
 // the authoritative session state. This prevents stale snapshots from being
 // reloaded on subsequent requests and restores deleted items.
@@ -318,7 +327,10 @@ if (!empty($_SESSION['cart'])) {
                 <td class="cart-total-spacer"></td>
             </tr>
         </table>
-    <p><button type="submit" class="proceed-btn muted-btn">Update Cart</button></p>
+    <p style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <button type="submit" class="proceed-btn muted-btn">Update Cart</button>
+        <button type="submit" name="clear_cart" value="1" class="proceed-btn btn-danger">Clear Cart</button>
+    </p>
     </form>
     <script>
     // Replace remove buttons behaviour: set the qty input to 0 and submit the form
@@ -351,6 +363,15 @@ if (!empty($_SESSION['cart'])) {
         }
         adjustCartTotalsColspan();
         window.addEventListener('resize', adjustCartTotalsColspan);
+
+        // Confirm before clearing the entire cart
+        var clearBtn = document.querySelector('button[name="clear_cart"]');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', function (e) {
+                var ok = confirm('Are you sure you want to remove all items from your cart?');
+                if (!ok) { e.preventDefault(); }
+            });
+        }
     });
     </script>
     <?php if (isset($_SESSION['customer'])): ?>

@@ -120,6 +120,30 @@ body.theme-dark .catalogue-table select.qty-preset option {
   color: #fff;
 }
 
+/* Light mode: make qty preset select clearly visible with dark chevron */
+.catalogue-table select.qty-preset {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-color: #ffffff;
+  color: var(--text);
+  border: 1px solid #d7e1ea;
+  padding-right: 28px; /* room for chevron */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 20 20' fill='none'><path d='M5 7l5 5 5-5' stroke='%230b2238' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 14px 14px;
+}
+
+/* Dark mode: swap chevron to white */
+html.theme-dark .catalogue-table select.qty-preset,
+body.theme-dark .catalogue-table select.qty-preset {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 20 20' fill='none'><path d='M5 7l5 5 5-5' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 8px center !important;
+  background-size: 14px 14px !important;
+}
+
 /* Make header action controls visually consistent and add subtle dividers */
 .header-actions .action {
   display:inline-flex;
@@ -592,6 +616,66 @@ html.theme-dark .carousel-dots button.active { background: #e8f6ff; }
   /* keep overlay content safely inside the image area */
   box-sizing: border-box;
 }
+
+  /* Deals grid tweaks: keep action buttons compact inside image overlay */
+  .deals-grid .category-card .cat-body .shop-btn.deals-add{
+    padding: 8px 12px;
+    line-height: 1;
+    border: none;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle; /* remove baseline descent gap below inline-blocks */
+    box-shadow: none; /* avoid hanging visual area below on desktop */
+    font-weight: 800;
+    width: auto;
+    max-width: none; /* override generic 48% cap */
+    white-space: nowrap;
+    box-sizing: border-box;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Neutralize global hover lift/shadow for compact deals CTA */
+  .deals-grid .shop-btn.deals-add:hover,
+  .deals-grid .shop-btn.deals-add:active{
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.16);
+  }
+
+  /* Keep the mini form inline without adding extra line-height space */
+  .deals-grid .category-card .cat-body form.cart-add{
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* Deals: collapse extra card height — override global square aspect and hover effects */
+  .deals-grid .category-card{
+    aspect-ratio: auto; /* grow to content height only */
+    display: block;     /* do not force flex column behavior */
+    transform: none;    /* disable lift */
+    box-shadow: none;   /* disable card shadow */
+    transition: none;   /* remove hover transition for a tighter feel */
+  }
+  .deals-grid .category-card:hover,
+  .deals-grid .category-card:focus-within{
+    transform: none;
+    box-shadow: none;
+  }
+  .deals-grid .category-card::before{ display:none !important; }
+  /* Ensure the image defines the card height (match markup’s 220px) */
+  .deals-grid .category-card img{ height:220px; width:100%; object-fit:cover; display:block; }
+
+  /* Vertical spacing between deal cards */
+  .deals-grid{ gap: 24px 16px; }
+
+  /* Keep button color stable when hovering the whole card; only change on direct button hover */
+  .deals-grid .category-card:hover .shop-btn.deals-add,
+  .deals-grid .category-card:focus-within .shop-btn.deals-add{
+    background: #0b5ed7;
+    color: #fff;
+  }
 /* Ensure headings and buttons contrast on dark overlay */
 .category-card .cat-body h3{color:#fff;margin:0;font-size:1rem;text-shadow:0 1px 2px rgba(0,0,0,0.6);flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
 .category-card .cat-body .shop-btn{background:#ffffff;color:var(--text);border:0;padding:8px 10px;border-radius:8px;box-shadow:0 4px 10px rgba(0,0,0,0.12);white-space:normal;line-height:1.05;display:inline-block;max-width:48%;text-align:center}
@@ -642,6 +726,8 @@ html.theme-dark .carousel-dots button.active { background: #e8f6ff; }
 }
 html.theme-dark .catalogue-table tr.flash-added td,
 body.theme-dark .catalogue-table tr.flash-added td { animation: rowFlashFadeDark 1400ms ease forwards; }
+.added-banner{position:fixed;left:0;right:0;top:-60px;background:#198754;color:#fff;text-align:center;padding:10px 12px;font-weight:800;z-index:9999;transition:top .2s ease}
+.added-banner.show{top:0}
 .catalogue-table tr:last-child td{border-bottom:none}
 
 /* Mobile-first constraint: ensure catalogue table fits narrow portrait screens.
@@ -757,6 +843,10 @@ html.theme-dark .sku-btn.active:hover, body.theme-dark .sku-btn.active:hover {
   .promo-grid{grid-template-columns:repeat(3,1fr)}
   .categories-grid{grid-template-columns:repeat(3,1fr)}
   .footer-grid{grid-template-columns:2fr 1fr 1fr 1fr}
+}
+/* Collapse deals grid to one column on tablets/phones at 768px and narrower */
+@media (max-width: 768px) {
+  .deals-grid { grid-template-columns: 1fr !important; }
 }
 @media(min-width:1100px){
   .container{padding:0 24px}
@@ -1336,6 +1426,21 @@ html.theme-dark .proceed-btn.btn-catalog, body.theme-dark .proceed-btn.btn-catal
 
 /* Muted variant used on cart update buttons */
 .proceed-btn.muted-btn { background: #f6f8fb; color: var(--text); box-shadow: 0 6px 0 rgba(11,34,56,0.06); border: 1px solid rgba(6,18,30,0.04); }
+
+/* Danger variant — used for Clear Cart */
+.proceed-btn.btn-danger {
+  background: linear-gradient(180deg,#ef4444,#dc2626); /* slightly lighter red top */
+  color: #fff;
+  box-shadow: 0 6px 0 rgba(11,34,56,0.06);
+}
+.proceed-btn.btn-danger:hover { transform: translateY(-3px); box-shadow: 0 10px 0 rgba(11,34,56,0.06); }
+.proceed-btn.btn-danger:active { transform: translateY(1px); box-shadow: 0 3px 0 rgba(0,0,0,0.06); }
+.proceed-btn.btn-danger:focus { outline: 3px solid rgba(239,68,68,0.35); outline-offset: 3px; }
+
+/* Dark mode adjust for danger variant */
+html.theme-dark .proceed-btn.btn-danger, body.theme-dark .proceed-btn.btn-danger {
+  box-shadow: 0 8px 20px rgba(255,255,255,0.03);
+}
 
 /* Dark mode: make the muted Update Cart button legible with white text on dark background */
 html.theme-dark .proceed-btn.muted-btn,
