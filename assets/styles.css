@@ -34,7 +34,7 @@ body{
 .no-break{white-space:nowrap}
 
 /* Header */
-.site-header{background:var(--brand);border-bottom:1px solid rgba(255,255,255,0.08);position:sticky;top:0;z-index:50}
+.site-header{background:var(--brand);border-bottom:1px solid rgba(255,255,255,0.08);position:sticky;top:0;z-index:2000}
 .header-inner{display:flex;align-items:center;gap:12px;padding:12px 0}
 .brand{display:flex;align-items:center;margin-left:0}
 .brand .logo{height:44px;width:auto;filter:brightness(0) invert(1);display:block}
@@ -70,7 +70,7 @@ body{
 .has-account.open .account-toggle{background:#0f56a1}
 @media (max-width:720px){.account-toggle{padding:6px 10px}}
 .has-account .account-link{color:#fff;text-decoration:none;font-weight:700}
-.has-account .account-menu{display:none;position:absolute;left:0;top:100%;background:#fff;color:var(--text);min-width:140px;padding:8px;border-radius:8px;box-shadow:0 8px 20px rgba(11,34,56,0.12);z-index:60}
+.has-account .account-menu{display:none;position:absolute;left:0;top:100%;background:#fff;color:var(--text);min-width:140px;padding:8px;border-radius:8px;box-shadow:0 8px 20px rgba(11,34,56,0.12);z-index:4000}
 .has-account.edge-right{margin-left:auto}
 .has-account.edge-right .account-link{display:inline-block}
 .has-account.edge-right .account-menu{left:auto;right:0}
@@ -191,6 +191,9 @@ html.theme-dark .f-social .social-icon, body.theme-dark .f-social .social-icon {
     border-left: none;
     margin-left: .35rem;
     padding-left: .35rem;
+  /* Make the nav menu span the container width and reset margins */
+  .main-nav .nav-menu { width: 100% !important; margin-left: 0 !important; margin-right: 0 !important; }
+  .main-nav .nav-cats { margin-left: 0 !important; margin-right: 0 !important; }
   }
   .search-wrap .search-btn { padding:6px 8px; }
 }
@@ -214,7 +217,7 @@ html.theme-dark .f-social .social-icon, body.theme-dark .f-social .social-icon {
   .main-nav .nav-toggle { display:inline-flex; }
   .main-nav .nav-menu { display:block; width:100%; }
   .nav-cats { display:block; padding:8px 0; }
-  .nav-cats a, .nav-cats button { display:block; width:100%; padding:10px 12px; border-radius:8px; margin-bottom:6px; background:var(--card); color:var(--text); }
+  .nav-cats a, .nav-cats button:not(.mega-close) { display:block; width:100%; padding:10px 12px; border-radius:8px; margin-bottom:6px; background:var(--card); color:var(--text); }
   /* Auth visibility rules still apply */
   body.guest .header-actions .has-account { display:none !important; }
   body.guest .header-actions .login-register { display:inline-flex; }
@@ -255,7 +258,22 @@ html.theme-dark .f-social .social-icon, body.theme-dark .f-social .social-icon {
   .main-nav .nav-toggle { display:inline-flex; }
   .main-nav .nav-menu { display:block; width:100%; }
   .nav-cats { display:block; padding:8px 0; }
-  .nav-cats a, .nav-cats button { display:block; width:100%; padding:10px 12px; border-radius:8px; margin-bottom:6px; background:var(--card); color:var(--text); }
+  .nav-cats a, .nav-cats button:not(.mega-close) { display:block; width:100%; padding:10px 12px; border-radius:8px; margin-bottom:6px; background:var(--card); color:var(--text); }
+}
+/* On screens ≤768px: render lower nav as two rows of three */
+@media (max-width: 768px) {
+  /* Hide the nav toggle so it doesn't reserve space on the left */
+  .main-nav .nav-toggle { display: none !important; }
+  /* Center the nav inner so the grid is perfectly centered */
+  .main-nav .nav-inner { justify-content: center !important; }
+  .main-nav .nav-menu { display: block; width: 100%; }
+  .nav-cats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 10px; padding: 8px 0; }
+  .nav-cats li { list-style: none; }
+  .nav-cats a, .nav-cats button:not(.mega-close) {
+    width: 100%; margin: 0; text-align: center;
+    padding: 10px 12px; border-radius: 8px;
+    background: var(--card); color: var(--text);
+  }
 }
 /* Restore the cart button to the previous appearance (accent outline on brand header) */
 .nav-cart{background:#fff;padding:8px 10px;border-radius:8px;font-weight:700;text-decoration:none;border:2px solid rgba(0,64,128,0.08)}
@@ -313,20 +331,48 @@ body.theme-dark .site-header .header-actions .nav-cart:active {
 /* Navigation */
 .main-nav{background:var(--brand);color:#fff}
 .nav-inner{display:flex;align-items:center;gap:12px;padding:8px 0}
+.main-nav, .nav-inner { position: relative; z-index: 2500; }
 .nav-toggle{background:transparent;border:0;color:#fff;padding:8px 12px;font-weight:700}
 .nav-menu{display:block}
-.nav-cats{list-style:none;margin:0;padding:8px 0;display:flex;gap:10px;flex-wrap:wrap}
+.nav-cats{list-style:none;margin:0;padding:8px 0;display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
 /* Standardize lower nav links so all behave like buttons */
-.nav-cats a,.nav-cats button{color:#fff;background:transparent;border:0;padding:8px 10px;border-radius:6px;font-weight:700;line-height:1}
-.nav-cats a:hover, .nav-cats button:hover{background:rgba(255,255,255,0.06)}
+.nav-cats a,.nav-cats button:not(.mega-close){color:#fff;background:transparent;border:0;padding:8px 10px;border-radius:6px;font-weight:700;line-height:1;text-decoration:none}
+.nav-cats a:hover, .nav-cats button:hover{background:rgba(255,255,255,0.06);text-decoration:none}
 .nav-cats .cat-btn{background:transparent;color:#fff;border:0;padding:8px 10px;border-radius:6px;font-weight:700;cursor:pointer;line-height:1}
 .nav-cats .cat-btn:hover{background:rgba(255,255,255,0.06)}
-.nav-cats .has-mega, .nav-cats .products-item{position:relative}
-.mega{position:absolute;left:0;top:100%;background:#fff;color:var(--text);padding:18px;display:none;box-shadow:0 10px 30px rgba(11,34,56,0.12);border-radius:8px;width:min(880px,95vw)}
+.nav-cats .has-mega, .nav-cats .products-item{position:relative; z-index: 2600}
+.mega{position:absolute;left:0;top:100%;background:#fff;color:var(--text);padding:18px;display:none;box-shadow:0 10px 30px rgba(11,34,56,0.12);border-radius:8px;width:min(880px,95vw);z-index:3000}
+.mega .mega-close{
+  position:absolute;top:8px;right:8px;
+  background:transparent !important;
+  color:#dc3545 !important;
+  border:0;
+  width:28px !important;height:28px !important;
+  display:inline-flex !important;align-items:center;justify-content:center;
+  padding:0 !important;margin:0 !important;
+  line-height:1 !important;text-align:center;
+  border-radius:50%;font-weight:800;cursor:pointer;
+}
+.mega .mega-close:hover{background:transparent}
+.mega .mega-close:focus-visible{outline:3px solid rgba(220,53,69,0.4);outline-offset:2px}
 .mega-col{float:left;width:33%;padding:6px}
 .mega h4{margin:0 0 8px;font-size:14px;letter-spacing:0.06em}
 .has-mega:hover .mega,.has-mega:focus-within .mega,
 .products-item:hover .mega, .products-item:focus-within .mega {display:block}
+/* When suppress-hover is set on the container, do not show the mega on hover */
+.has-mega.suppress-hover:hover .mega, .products-item.suppress-hover:hover .mega { display: none !important; }
+
+/* Center lower nav across the full width on desktop */
+.main-nav .nav-toggle { display: none; }
+.main-nav .nav-menu { flex: 1 1 auto; }
+.main-nav .nav-inner { justify-content: center; }
+
+/* Restore mobile behavior: show toggle and let menu span 100% under search */
+@media (max-width: 720px) {
+  .main-nav .nav-toggle { display: inline-flex; }
+  .main-nav .nav-inner { justify-content: flex-start; }
+  .main-nav .nav-menu { flex: 0 0 100%; }
+}
 
 /* Ensure anchors inside the white mega menu are readable and list bullets are removed */
 .mega ul{list-style:none;margin:0;padding:0}
@@ -337,6 +383,22 @@ body.theme-dark .site-header .header-actions .nav-cart:active {
 /* Make All Products behave like the categories hover (show a simple dropdown) */
 .nav-cats .all-products{position:relative}
 .nav-cats .all-products:hover + .mega, .nav-cats .all-products:focus + .mega { display: block; }
+
+/* Directions map card */
+.map-card{background:var(--card);border-radius:12px;box-shadow:0 10px 30px rgba(11,34,56,0.06);overflow:hidden}
+.map-aspect{position:relative;width:100%;padding-bottom:56.25%;background:#e9f2fb}
+.map-frame{position:absolute;inset:0;width:100%;height:100%;border:0}
+.map-meta{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:12px 14px;border-top:1px solid rgba(11,34,56,0.08)}
+.map-actions{display:flex;gap:10px;flex-wrap:wrap}
+.btn-open-maps,.btn-call{display:inline-flex;align-items:center;gap:8px;text-decoration:none;font-weight:700;border-radius:8px;padding:10px 12px}
+.btn-open-maps{background:var(--brand);color:#fff}
+.btn-open-maps:hover{filter:brightness(1.05)}
+.btn-call{background:#0c7c3f;color:#fff}
+.btn-call:hover{filter:brightness(1.05)}
+
+/* Dark mode adjustments for map card */
+html.theme-dark .map-card, body.theme-dark .map-card { background:#151a1d; box-shadow:0 14px 40px rgba(0,0,0,0.5); }
+html.theme-dark .map-meta, body.theme-dark .map-meta { border-top:1px solid rgba(255,255,255,0.06); }
 
 /* Hero carousel */
 .hero-section{background:linear-gradient(180deg,#f5f9ff,transparent);padding:18px 0}
@@ -805,6 +867,37 @@ html.theme-dark .sku-btn.active, body.theme-dark .sku-btn.active {
   background: var(--brand);
   color: #fff;
 }
+/* Force lower nav to 3x2 grid on narrow screens, overriding any later base rules */
+@media (max-width: 768px) {
+  .main-nav .nav-cats {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px 8px !important;
+    justify-content: center !important;
+    padding: 8px 0 !important;
+  }
+  /* Add side padding so rightmost items don't touch or clip at the viewport edge */
+  .main-nav .nav-inner { padding-left: 12px !important; padding-right: 12px !important; box-sizing: border-box; }
+  .main-nav .nav-menu { max-width: 100% !important; box-sizing: border-box; }
+  .main-nav .nav-cats li { margin: 0 !important; list-style: none; }
+  .main-nav .nav-cats a,
+  .main-nav .nav-cats button:not(.mega-close),
+  .main-nav .nav-cats .cat-btn {
+    display: block !important;
+    width: 100% !important;
+    text-align: center !important;
+    padding: 10px 12px !important;
+    border-radius: 8px !important;
+  }
+  /* Ensure the close button is not widened by any generic rules */
+  .main-nav .mega .mega-close { width: 28px !important; height: 28px !important; display: inline-flex !important; }
+  /* Prevent horizontal overflow (white bar on the right) */
+  html, body { overflow-x: hidden; }
+  .site-header, .main-nav, .header-inner, .nav-inner { overflow-x: hidden; }
+}
+
+/* Ensure the mega menu isn't clipped by ancestor overflow */
+.site-header, .main-nav, .header-inner, .nav-inner { overflow: visible; }
 /* Preserve depressed look on hover immediately after activation in dark mode */
 html.theme-dark .sku-btn.active:hover, body.theme-dark .sku-btn.active:hover {
   transform: translateY(0) !important;
@@ -1125,6 +1218,24 @@ html.theme-dark .form-card a.proceed-btn.btn-catalog { background: var(--brand);
   }
   .form-grid.label-left .form-row {
     display: contents; /* let nested layout control label+input */
+  }
+  /* Ensure close button sits in the visible corner on small screens */
+  .mega .mega-close {
+    top: 6px !important; right: 6px !important;
+    width: 28px !important; height: 28px !important;
+    display: inline-flex !important; align-items: center !important; justify-content: center !important;
+    padding: 0 !important; margin: 0 !important; box-sizing: content-box !important;
+  }
+  /* Reanchor the mega to the nav container instead of the grid cell, and center it */
+  .nav-cats .products-item { position: static !important; }
+  .main-nav .nav-inner { position: relative; }
+  .main-nav .mega {
+    position: absolute !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    top: calc(100% + 6px) !important;
+    width: calc(100vw - 24px) !important;
+    max-width: none !important;
   }
 }
 

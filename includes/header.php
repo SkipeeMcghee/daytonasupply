@@ -165,6 +165,7 @@ if ($loggedIn) {
                         ?>
                         <li class="has-mega products-item"><a class="cat-btn" href="products.php">Products</a>
                             <div class="mega" role="menu">
+                                <button type="button" class="mega-close" aria-label="Close products menu">×</button>
                                 <?php foreach ($skuGroups as $groupLabel => $labels): ?>
                                     <div class="mega-col">
                                         <h4><?php echo htmlspecialchars($groupLabel); ?></h4>
@@ -181,6 +182,7 @@ if ($loggedIn) {
                         <li><a href="deals.php">Deals</a></li>
                         <li><a href="about.php">About Us</a></li>
                         <li><a href="contact.php">Contact Us</a></li>
+                        <li><a href="directions.php">Directions</a></li>
                         <li><a href="shipping.php">Shipping</a></li>
                         <!-- Removed All Products and Partner as requested -->
                     </ul>
