@@ -576,7 +576,7 @@ html.theme-dark .carousel-dots button.active { background: #e8f6ff; }
 /* Make category tiles square for visual consistency */
 .category-card { aspect-ratio: 1 / 1; display:flex; flex-direction:column; }
 .category-card img{width:100%;height:100%;object-fit:cover;display:block}
-.cat-body{padding:12px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.cat-body{padding:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 /* Position the cat-body over the image at the bottom with a translucent background for readability */
 .category-card { position: relative; }
 /* Position a solid, high-contrast label band over the bottom of the tile */
@@ -593,7 +593,7 @@ html.theme-dark .carousel-dots button.active { background: #e8f6ff; }
   box-sizing: border-box;
 }
 /* Ensure headings and buttons contrast on dark overlay */
-.category-card .cat-body h3{color:#fff;margin:0;font-size:1rem;text-shadow:0 1px 2px rgba(0,0,0,0.6)}
+.category-card .cat-body h3{color:#fff;margin:0;font-size:1rem;text-shadow:0 1px 2px rgba(0,0,0,0.6);flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
 .category-card .cat-body .shop-btn{background:#ffffff;color:var(--text);border:0;padding:8px 10px;border-radius:8px;box-shadow:0 4px 10px rgba(0,0,0,0.12);white-space:normal;line-height:1.05;display:inline-block;max-width:48%;text-align:center}
 
 /* Slightly darken images to help text pop when overlay still collides with bright areas */
@@ -612,6 +612,12 @@ html.theme-dark .carousel-dots button.active { background: #e8f6ff; }
 
 @media (prefers-reduced-motion: reduce){ .dark-toggle-switch, .dark-toggle-switch::after { transition:none !important } }
 .category-card:focus .shop-btn,.category-card:hover .shop-btn{background:var(--brand);color:#fff;transform:none}
+
+/* On very narrow viewports, stack label and button to keep within image bounds */
+@media (max-width: 520px){
+  .category-card .cat-body{flex-direction:column;align-items:flex-start}
+  .category-card .cat-body .shop-btn{max-width:100%;width:100%}
+}
 
 /* Catalogue table gridlines and polished table styles */
 .catalogue-table{width:100%;border-collapse:separate;border-spacing:0;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 6px 18px rgba(11,34,56,0.06)}

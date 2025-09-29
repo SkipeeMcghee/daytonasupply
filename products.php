@@ -27,41 +27,44 @@ $placeholder = 'assets/images/DaytonaSupplyDSlogo.png';
     </section>
 
     <section class="categories" aria-label="Shop by category">
-        <div class="grid categories-grid" id="allCategories">
-            <?php foreach ($skuFilters as $label => $codes): ?>
-                <?php
-                    // Use explicit map for the six homepage categories; otherwise
-                    // try to load an image named after the category with no spaces
-                    // from assets/images. Fall back to DS logo if none found.
-                    if (isset($imgMap[$label])) {
-                        $img = $imgMap[$label];
-                    } else {
-                        $baseDir = __DIR__ . '/assets/images/';
-                        $webBase = 'assets/images/';
-                        $candidates = [];
-                        $noSpaces = str_replace(' ', '', $label);
-                        $candidates[] = $noSpaces . '.png';
-                        // Remove common punctuation like & and non-alphanumerics
-                        $alnum = preg_replace('/[^A-Za-z0-9]/', '', $label);
-                        if ($alnum !== $noSpaces) $candidates[] = $alnum . '.png';
-                        // Lowercase variants for case-sensitive filesystems
-                        $candidates[] = strtolower($noSpaces) . '.png';
-                        $candidates[] = strtolower($alnum) . '.png';
-                        $img = $placeholder;
-                        foreach ($candidates as $file) {
-                            if (is_readable($baseDir . $file)) { $img = $webBase . $file; break; }
-                        }
-                    }
-                    $url = 'catalogue.php?sku=' . urlencode($label);
-                ?>
-                <?php $hasSub = (strtoupper($label) === 'CORRUGATED BOXES'); ?>
-                <a class="category-card" href="<?php echo htmlspecialchars($url); ?>"<?php if ($hasSub): ?> data-has-subcats="1" data-subcats-target="subcats-corrugated"<?php endif; ?>>
-                    <img src="<?php echo htmlspecialchars($img); ?>" alt="<?php echo htmlspecialchars($label); ?>" loading="lazy">
-                    <div class="cat-body">
-                        <h3><?php echo htmlspecialchars($label); ?></h3>
-                        <button class="shop-btn">Shop<br>Category</button>
+        <div id="allCategories">
+            <?php foreach ($skuGroups as $groupLabel => $labels): ?>
+                <div class="group-block">
+                    <h2 class="group-title"><?php echo htmlspecialchars($groupLabel); ?></h2>
+                    <div class="grid categories-grid">
+                        <?php foreach ($labels as $label): if (!isset($skuFilters[$label])) continue; ?>
+                            <?php
+                                // Resolve image for this category
+                                if (isset($imgMap[$label])) {
+                                    $img = $imgMap[$label];
+                                } else {
+                                    $baseDir = __DIR__ . '/assets/images/';
+                                    $webBase = 'assets/images/';
+                                    $candidates = [];
+                                    $noSpaces = str_replace(' ', '', $label);
+                                    $candidates[] = $noSpaces . '.png';
+                                    $alnum = preg_replace('/[^A-Za-z0-9]/', '', $label);
+                                    if ($alnum !== $noSpaces) $candidates[] = $alnum . '.png';
+                                    $candidates[] = strtolower($noSpaces) . '.png';
+                                    $candidates[] = strtolower($alnum) . '.png';
+                                    $img = $placeholder;
+                                    foreach ($candidates as $file) {
+                                        if (is_readable($baseDir . $file)) { $img = $webBase . $file; break; }
+                                    }
+                                }
+                                $url = 'catalogue.php?sku=' . urlencode($label);
+                                $hasSub = (strtoupper($label) === 'CORRUGATED BOXES');
+                            ?>
+                            <a class="category-card" href="<?php echo htmlspecialchars($url); ?>"<?php if ($hasSub): ?> data-has-subcats="1" data-subcats-target="subcats-corrugated"<?php endif; ?>>
+                                <img src="<?php echo htmlspecialchars($img); ?>" alt="<?php echo htmlspecialchars($label); ?>" loading="lazy">
+                                <div class="cat-body">
+                                    <h3><?php echo htmlspecialchars($label); ?></h3>
+                                    <button class="shop-btn">Shop<br>Category</button>
+                                </div>
+                            </a>
+                        <?php endforeach; ?>
                     </div>
-                </a>
+                </div>
             <?php endforeach; ?>
         </div>
         
@@ -137,11 +140,17 @@ $placeholder = 'assets/images/DaytonaSupplyDSlogo.png';
     grid-template-columns: repeat(3, 1fr);
     gap: 20px; /* equal spacing between columns and rows */
 }
+/* Group blocks for Packaging / Janitorial / Safety */
+.group-block { margin-bottom: 28px; }
+.group-title { margin: 10px 0 12px; font-size: 1.25rem; }
 @media (max-width: 900px) {
     .categories-grid { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 520px) {
-    .categories-grid { grid-template-columns: 1fr; }
+    /* Keep a minimum of 2 buttons per row even on narrow displays */
+    .categories-grid { grid-template-columns: repeat(2, 1fr); }
+    /* Hide Shop buttons on very narrow displays for a cleaner look */
+    .categories .category-card .cat-body .shop-btn { display: none; }
 }
 .subcategory-panel[hidden] { display: none !important; }
 .subcats-head { display:flex; align-items:center; gap:12px; margin: 4px 0 12px; }
