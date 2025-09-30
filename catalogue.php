@@ -671,8 +671,8 @@ body.theme-dark .catalogue-table tr.sale-row td { background: rgba(16,185,129,0.
                 <a href="<?= htmlspecialchars($infoUrl) ?>" style="display:flex;align-items:flex-start;gap:10px;color:inherit;text-decoration:none;">
                     <img src="<?= htmlspecialchars($thumb) ?>" alt="" style="width:54px;height:54px;object-fit:contain;border-radius:6px;border:1px solid rgba(11,34,56,0.06);background:#fff;flex:0 0 auto;">
                     <span>
-                        <strong><?= htmlspecialchars($p['name']) ?></strong><br>
-                        <span class="cat-desc-clip"><?= htmlspecialchars($p['description']) ?></span>
+                        <strong class="cat-desc-clip" style="font-weight:800;"><?= htmlspecialchars($p['description']) ?></strong><br>
+                        <span class="cat-name" style="font-weight:400;"><?= htmlspecialchars($p['name']) ?></span>
                         <?php if ($onSale): ?><span class="on-sale-badge">On Sale!</span><?php endif; ?>
                     </span>
                 </a>
