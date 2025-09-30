@@ -318,6 +318,17 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 		// Hide/show mega on focus/hover — keeps hover behaviour for pointer devices
 		if (mega) {
+			// On initial page load, force the mega closed and briefly suppress hover to avoid
+			// the menu covering the page when the pointer happens to start over the nav.
+			try {
+				mega.style.display = 'none';
+				prodBtn.setAttribute('aria-expanded','false');
+				if (prodLi) {
+					prodLi.classList.add('suppress-hover');
+					setTimeout(function(){ prodLi.classList.remove('suppress-hover'); }, 800);
+				}
+			} catch (err) {}
+
 			prodLi.addEventListener('focusin', function () { showMega(); });
 			prodLi.addEventListener('focusout', function () { scheduleHide(120); });
 			prodLi.addEventListener('mouseenter', function () { showMega(); });

@@ -40,8 +40,23 @@ function resolveCategoryForProduct(array $p, array $skuFilters): ?string {
 }
 
 function resolveImageForProduct(array $p, array $skuFilters, array $imgMap, string $placeholder): string {
-  // 1) Try a product-specific image by name variations
+  // 1) Prefer uploaded per-product image from manager portal (assets/uploads/products/{slug}.{ext})
   $name = (string)($p['name'] ?? '');
+  if ($name !== '') {
+    $slug = strtolower(preg_replace('/[^a-z0-9]+/i', '-', $name));
+    $slug = trim(preg_replace('/-+/', '-', $slug), '-');
+    if ($slug === '') { $slug = 'product'; }
+    $uploadDir = __DIR__ . '/assets/uploads/products/';
+    $webUploadBase = 'assets/uploads/products/';
+    $exts = ['jpg','jpeg','png','webp','gif'];
+    foreach ($exts as $ext) {
+      $candidate = $uploadDir . $slug . '.' . $ext;
+      if (is_file($candidate) && is_readable($candidate)) {
+        return $webUploadBase . $slug . '.' . $ext;
+      }
+    }
+  }
+  // 2) Next, try a product-specific image by conventional name variations in assets/images
   $baseDir = __DIR__ . '/assets/images/';
   $webBase = 'assets/images/';
   if ($name !== '') {
@@ -56,7 +71,7 @@ function resolveImageForProduct(array $p, array $skuFilters, array $imgMap, stri
       if ($f && is_readable($baseDir . $f)) return $webBase . $f;
     }
   }
-  // 2) Fallback to parent category image based on SKU prefix mapping
+  // 3) Fallback to parent category image based on SKU prefix mapping
   $cat = resolveCategoryForProduct($p, $skuFilters);
   if ($cat) {
     if (isset($imgMap[$cat])) return $imgMap[$cat];
@@ -71,7 +86,7 @@ function resolveImageForProduct(array $p, array $skuFilters, array $imgMap, stri
       if ($f && is_readable($baseDir . $f)) return $webBase . $f;
     }
   }
-  // 3) Final fallback
+  // 4) Final fallback
   return $placeholder;
 }
 

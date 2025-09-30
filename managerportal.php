@@ -719,7 +719,7 @@ require_once __DIR__ . '/includes/header.php';
         <input type="hidden" name="save_products" value="1">
         <input type="hidden" name="products_json" id="products_json" value="">
         <table class="admin-table">
-            <tr><th>ID</th><th>Name</th><th>Description</th><th>Price</th><th>Deal</th><th>Actions</th></tr>
+            <tr><th>ID</th><th>Name</th><th>Description</th><th>Price</th><th>Deal</th><th>Image</th><th>Actions</th></tr>
             <?php foreach ($products as $prod): ?>
                 <tr>
                     <!-- Show the real product ID for clarity -->
@@ -732,11 +732,39 @@ require_once __DIR__ . '/includes/header.php';
                         <?php $isDeal = !empty($prod['deal']); ?>
                         <a class="mgr-btn" href="?toggle_deal=<?php echo (int)$prod['id']; ?>" style="background: <?php echo $isDeal ? '#dc3545' : '#198754'; ?>; color:#fff;" onclick="return confirm('<?php echo $isDeal ? 'Unset this deal?' : 'Mark this item as a Deal?'; ?>');"><?php echo $isDeal ? 'Unset' : 'Set'; ?> Deal</a>
                     </td>
+                    <td>
+                        <?php
+                            // Resolve current image URL by trying extensions
+                            $name = (string)($prod['name'] ?? '');
+                            $slug = strtolower(preg_replace('/[^a-z0-9]+/i', '-', $name));
+                            $slug = trim(preg_replace('/-+/', '-', $slug), '-');
+                            if ($slug === '') $slug = 'product';
+                            $base = '/assets/uploads/products/' . $slug;
+                            $exts = ['jpg','jpeg','png','webp','gif'];
+                            $imgUrl = '';
+                            foreach ($exts as $e) {
+                                $path = __DIR__ . '/assets/uploads/products/' . $slug . '.' . $e;
+                                if (is_file($path)) { $imgUrl = $base . '.' . $e; break; }
+                            }
+                            $placeholder = '/assets/DaytonaSupplyDSlogo.png';
+                            if (!is_file(__DIR__ . '/assets/DaytonaSupplyDSlogo.png')) {
+                                // fallback to existing logo path in assets/images
+                                $placeholder = '/assets/images/DaytonaSupplyDSlogo.png';
+                            }
+                        ?>
+                        <div class="manager-dropzone" data-product-id="<?= (int)$prod['id'] ?>" data-product-name="<?= htmlspecialchars($name) ?>">
+                            <div class="dz-preview">
+                                <img src="<?= htmlspecialchars($imgUrl ?: $placeholder) ?>" alt="Preview" />
+                            </div>
+                            <div class="dz-instructions">Drop image here or click to upload</div>
+                            <input type="file" accept="image/*" class="dz-file" style="display:none;" />
+                        </div>
+                    </td>
                     <td><a class="mgr-btn mgr-product-delete" href="?delete_product=<?php echo (int)$prod['id']; ?>" onclick="return confirm('Delete this product?');">Delete</a></td>
                 </tr>
             <?php endforeach; ?>
             <?php if (empty($products)): ?>
-                <tr><td colspan="6">No products found.</td></tr>
+                <tr><td colspan="7">No products found.</td></tr>
             <?php endif; ?>
         </table>
     <p style="display:flex;gap:8px;align-items:center;">
@@ -775,6 +803,39 @@ require_once __DIR__ . '/includes/header.php';
                 // If serialization fails, allow normal submission of individual inputs
                 console.error('products_json serialization failed', e);
             }
+        });
+    })();
+    // Bind manager dropzones
+    (function(){
+        function uploadFile(dz, file, name, id){
+            if (!file) return;
+            var fd = new FormData();
+            fd.append('image', file);
+            if (name) fd.append('product_name', name);
+            if (id) fd.append('product_id', String(id));
+            dz.classList.add('dz-uploading');
+            fetch('/ajax/upload_product_image.php', { method: 'POST', body: fd, credentials: 'same-origin' })
+                .then(function(r){ return r.json().catch(function(){ return {}; }); })
+                .then(function(json){
+                    dz.classList.remove('dz-uploading');
+                    if (!json || !json.success) { alert('Upload failed' + (json && json.error ? ': ' + json.error : '')); return; }
+                    var img = dz.querySelector('.dz-preview img');
+                    if (img) { img.src = json.url; }
+                })
+                .catch(function(){ dz.classList.remove('dz-uploading'); alert('Upload failed'); });
+        }
+        document.querySelectorAll('.manager-dropzone').forEach(function(dz){
+            var input = dz.querySelector('input.dz-file');
+            var name = dz.getAttribute('data-product-name') || '';
+            var id = parseInt(dz.getAttribute('data-product-id') || '0', 10) || 0;
+            dz.addEventListener('click', function(e){
+                if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON')) return;
+                if (input) input.click();
+            });
+            if (input) input.addEventListener('change', function(){ if (input.files && input.files[0]) uploadFile(dz, input.files[0], name, id); });
+            dz.addEventListener('dragover', function(e){ e.preventDefault(); dz.classList.add('dz-over'); });
+            dz.addEventListener('dragleave', function(e){ dz.classList.remove('dz-over'); });
+            dz.addEventListener('drop', function(e){ e.preventDefault(); dz.classList.remove('dz-over'); var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (f) uploadFile(dz, f, name, id); });
         });
     })();
     </script>

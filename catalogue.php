@@ -421,96 +421,78 @@ if ($subParam === 'cube') {
 include __DIR__ . '/includes/header.php';
 ?>
 <style>
-/* Hide the Name column on small screens */
-@media (max-width: 600px) {
-    table.catalogue-table th:nth-child(1),
-    table.catalogue-table td:nth-child(1) {
-        display: none;
-    }
-}
-/* Default width for Price column */
-table.catalogue-table th:nth-child(3),
-table.catalogue-table td:nth-child(3) {
-    width: 140px; /* baseline width */
+/* Item/Price/Actions layout: make Price compact */
+table.catalogue-table th:nth-child(2),
+table.catalogue-table td:nth-child(2) {
+    width: 140px;
     white-space: nowrap;
+    text-align: right;
 }
-/* On small screens, make the Price column half as wide */
+/* Description clip + colors */
+.cat-desc-clip { color: rgba(11,34,56,0.8); display:inline-block; max-width:68ch; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+html.theme-dark .cat-desc-clip, body.theme-dark .cat-desc-clip { color: #ffffff; opacity: 0.92; }
+
+/* Override global mobile table scroller for catalogue: keep it fitting, not scrolling */
+@media (max-width: 768px) {
+    table.catalogue-table { display: table !important; width: 100% !important; overflow: visible !important; table-layout: fixed; }
+    table.catalogue-table th, table.catalogue-table td { white-space: normal !important; min-width: 0 !important; padding: 8px 6px; font-size: 13px; }
+}
+
+/* Compress layout at ≤640px: keep description (smaller), shrink thumbnail, narrow Item col, use line breaks */
+@media (max-width: 640px) {
+    /* Rebalance widths: make Actions wider for buttons; compress Price; keep Item narrower */
+    table.catalogue-table th:nth-child(1), table.catalogue-table td:nth-child(1) { width: 42%; }
+    table.catalogue-table th:nth-child(2), table.catalogue-table td:nth-child(2) { width: 14%; text-align: right; }
+    table.catalogue-table th:nth-child(3), table.catalogue-table td:nth-child(3) { width: 44%; }
+    /* Visually tighten header so it feels narrower */
+    table.catalogue-table tr:first-child th { padding: 6px 4px; font-size: 12px; }
+    table.catalogue-table tr:first-child th:nth-child(3) { font-size: 11.5px; }
+    /* Thumbnail smaller */
+    table.catalogue-table td:first-child img { width: 34px !important; height: 34px !important; }
+    /* Stack name and description with small, tight typography */
+    table.catalogue-table td:first-child strong { display:block; font-size: 12.5px; line-height: 1.15; max-width:100%; word-break: break-word; }
+    table.catalogue-table .cat-desc-clip { display:block !important; white-space: normal !important; font-size: 11.5px; line-height: 1.15; margin-top: 2px; max-width: 100%; overflow: hidden; }
+    /* Actions stacked to fit */
+    table.catalogue-table td:nth-child(3) { display: flex; flex-direction: column; align-items: stretch; gap: 4px; }
+    table.catalogue-table td:nth-child(3) form.cart-add { display: flex !important; flex-direction: column; gap: 4px; width: 100%; }
+    table.catalogue-table td:nth-child(3) form.cart-add input[type="number"] { width: 2.6em; padding: 2px 4px; }
+    table.catalogue-table td:nth-child(3) .fav-toggle { margin-left: 0 !important; }
+}
+
+/* Small screens: stack Actions cell controls vertically */
 @media (max-width: 600px) {
-    table.catalogue-table th:nth-child(3),
+    table.catalogue-table th:nth-child(2),
+    table.catalogue-table td:nth-child(2) { width: 70px; }
     table.catalogue-table td:nth-child(3) {
-        width: 70px; /* half of baseline */
-    }
-}
-/* On small screens, stack quantity input, Add button, and favorite button vertically */
-@media (max-width: 600px) {
-    table.catalogue-table td:nth-child(4) {
         display: flex;
         flex-direction: column;
         align-items: stretch;
         gap: 6px;
     }
-    table.catalogue-table td:nth-child(4) form.cart-add {
-        display: flex !important; /* override inline-block */
-        flex-direction: column;
-        gap: 6px;
-        width: 100%;
-    }
-    table.catalogue-table td:nth-child(4) form.cart-add input[type="number"],
-    table.catalogue-table td:nth-child(4) form.cart-add select.qty-preset {
-        display: block;
-        width: 100% !important;
-        box-sizing: border-box;
-        margin-bottom: 6px;
-    }
-    table.catalogue-table td:nth-child(4) form.cart-add button[type="submit"] {
-        display: block;
-        width: 100% !important;
-        box-sizing: border-box;
-    }
-    table.catalogue-table td:nth-child(4) .fav-toggle {
-        display: block;
-        margin-left: 0 !important; /* remove inline margin-left */
-        width: 100%;
-        text-align: left;
-    }
+    table.catalogue-table td:nth-child(3) form.cart-add { display:flex !important; flex-direction:column; gap:6px; width:100%; }
+    table.catalogue-table td:nth-child(3) form.cart-add input[type="number"],
+    table.catalogue-table td:nth-child(3) form.cart-add select.qty-preset { display:block; width:100% !important; box-sizing:border-box; margin-bottom:6px; }
+    table.catalogue-table td:nth-child(3) form.cart-add button[type="submit"] { display:block; width:100% !important; box-sizing:border-box; }
+    table.catalogue-table td:nth-child(3) .fav-toggle { display:block; margin-left:0 !important; width:100%; text-align:left; }
 }
 
-/* Ultra-small screens: tighten layout further to keep buttons in frame */
+/* Ultra-small screens: aggressively compress to fit, keep description visible but tiny */
 @media (max-width: 420px) {
-    table.catalogue-table {
-        table-layout: fixed;
-        width: 100%;
-    }
-    table.catalogue-table th,
-    table.catalogue-table td {
-        white-space: normal;
-        word-break: break-word;
-        overflow-wrap: anywhere;
-        padding: 6px 4px;
-    }
-    /* Price even narrower on ultra-small screens */
-    table.catalogue-table th:nth-child(3),
-    table.catalogue-table td:nth-child(3) {
-        width: 60px;
-    }
-    /* Allow Add column to take remaining width */
-    table.catalogue-table th:nth-child(4),
-    table.catalogue-table td:nth-child(4) {
-        width: auto;
-    }
-    table.catalogue-table td:nth-child(4) form.cart-add {
-        display: flex !important;
-        flex-direction: column;
-        gap: 6px;
-        width: 100%;
-    }
-    table.catalogue-table td:nth-child(4) form.cart-add input[type="number"],
-    table.catalogue-table td:nth-child(4) form.cart-add select.qty-preset,
-    table.catalogue-table td:nth-child(4) form.cart-add button[type="submit"],
-    table.catalogue-table td:nth-child(4) .fav-toggle {
-        display: block;
-        width: 100% !important;
-    }
+    table.catalogue-table { table-layout: fixed; width: 100%; }
+    table.catalogue-table th, table.catalogue-table td { white-space: normal; word-break: break-word; overflow-wrap: anywhere; padding: 5px 4px; font-size: 11px; }
+    /* Ultra-small: give Actions the most space, compress Price */
+    table.catalogue-table th:nth-child(1), table.catalogue-table td:nth-child(1) { width: 40%; }
+    table.catalogue-table th:nth-child(2), table.catalogue-table td:nth-child(2) { width: 14%; text-align: right; }
+    table.catalogue-table th:nth-child(3), table.catalogue-table td:nth-child(3) { width: 46%; }
+    /* Visually tighter header */
+    table.catalogue-table tr:first-child th { padding: 6px 3px; font-size: 11.5px; }
+    table.catalogue-table tr:first-child th:nth-child(3) { font-size: 11px; }
+    table.catalogue-table td:first-child img { width: 28px !important; height: 28px !important; }
+    table.catalogue-table td:first-child strong { font-size: 11.5px; line-height: 1.12; }
+    table.catalogue-table .cat-desc-clip { font-size: 10.5px; line-height: 1.12; }
+    table.catalogue-table td:nth-child(3) form.cart-add input[type="number"] { width: 2.4em !important; padding: 2px 3px; }
+    table.catalogue-table td:nth-child(3) form.cart-add select.qty-preset { min-width: 0; width: 100% !important; }
+    table.catalogue-table td:nth-child(3) form.cart-add button[type="submit"] { padding: 4px 6px; font-size: 11.5px; }
 }
 </style>
 <style>
@@ -659,18 +641,41 @@ body.theme-dark .catalogue-table tr.sale-row td { background: rgba(16,185,129,0.
 <?php else: ?>
 <table class="catalogue-table">
     <tr>
-        <th>Name</th>
-        <th>Description</th>
+        <th>Item</th>
         <th>Price</th>
         <th>Actions</th>
     </tr>
     <?php foreach ($products as $p): ?>
         <?php $onSale = !empty($p['deal']); ?>
         <tr id="product-<?= (int)$p['id'] ?>"<?= $onSale ? ' class="sale-row"' : '' ?>>
-            <td><?= htmlspecialchars($p['name']) ?></td>
+            <?php
+                $name = (string)($p['name'] ?? '');
+                $slug = strtolower(preg_replace('/[^a-z0-9]+/i', '-', $name));
+                $slug = trim(preg_replace('/-+/', '-', $slug), '-');
+                if ($slug === '') $slug = 'product';
+                $base = '/assets/uploads/products/' . $slug;
+                $exts = ['jpg','jpeg','png','webp','gif'];
+                $imgUrl = '';
+                foreach ($exts as $e) {
+                    $path = __DIR__ . '/assets/uploads/products/' . $slug . '.' . $e;
+                    if (is_file($path)) { $imgUrl = $base . '.' . $e; break; }
+                }
+                $placeholder = '/assets/DaytonaSupplyDSlogo.png';
+                if (!is_file(__DIR__ . '/assets/DaytonaSupplyDSlogo.png')) {
+                    $placeholder = '/assets/images/DaytonaSupplyDSlogo.png';
+                }
+                $thumb = $imgUrl ?: $placeholder;
+                $infoUrl = 'productinfo.php?id=' . (int)$p['id'];
+            ?>
             <td>
-                <?= htmlspecialchars($p['description']) ?>
-                <?php if ($onSale): ?><span class="on-sale-badge">On Sale!</span><?php endif; ?>
+                <a href="<?= htmlspecialchars($infoUrl) ?>" style="display:flex;align-items:flex-start;gap:10px;color:inherit;text-decoration:none;">
+                    <img src="<?= htmlspecialchars($thumb) ?>" alt="" style="width:54px;height:54px;object-fit:contain;border-radius:6px;border:1px solid rgba(11,34,56,0.06);background:#fff;flex:0 0 auto;">
+                    <span>
+                        <strong><?= htmlspecialchars($p['name']) ?></strong><br>
+                        <span class="cat-desc-clip"><?= htmlspecialchars($p['description']) ?></span>
+                        <?php if ($onSale): ?><span class="on-sale-badge">On Sale!</span><?php endif; ?>
+                    </span>
+                </a>
             </td>
             <td>$<?= number_format($p['price'], 2) ?></td>
             <td>
