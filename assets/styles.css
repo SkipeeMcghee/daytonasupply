@@ -7,18 +7,34 @@
   --card:#ffffff;
   --text:#0b2238;
   --radius:10px;
-  --container:1200px;
+  /* Use dynamic viewport units on mobile to avoid extra blank space below footer */
+  min-height: 100vh;   /* fallback */
+  min-height: 100svh;  /* small viewport height (accounts for browser UI) */
 }
 /* Dark mode variables - toggled by adding `.theme-dark` to <html> or <body> */
 :root.theme-dark, body.theme-dark {
+.site-header{flex: 0 0 auto}
+main{flex: 1 0 auto; display:block}
   --bg: #121212; /* user requested */
+
+/* Prefer dvh when available (most correct dynamic viewport height) */
+@supports (height: 100dvh) {
+  body { min-height: 100dvh; }
+}
+
+/* iOS Safari fallback: fill available height to prevent extra space below footer */
+@supports (-webkit-touch-callout: none) {
+  html { height: -webkit-fill-available; }
+  body { min-height: -webkit-fill-available; }
+}
   --card: #0f1416; /* slightly offset from bg for cards */
   --text: #e8f6ff;
   --muted: rgba(255,255,255,0.68);
   --brand: #0d2b52; /* much darker blue */
 }
 *{box-sizing:border-box}
-html,body{height:100%}
+/* Avoid forcing a fixed viewport height so sticky footer can sit flush on mobile */
+html,body{min-height:100%}
 body{
   margin:0;
   font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,"Noto Sans",sans-serif;
@@ -26,7 +42,14 @@ body{
   background:var(--bg);
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
+  /* Sticky footer layout: body is a column flex container */
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
+.site-header{flex: 0 0 auto}
+main{flex: 1 0 auto; display:block}
+.site-footer{flex: 0 0 auto}
 .container{max-width:var(--container);margin:0 auto;padding:0 16px}
 .sr-only{position:absolute!important;height:1px;width:1px;overflow:hidden;clip:rect(1px,1px,1px,1px);white-space:nowrap;border:0;padding:0;margin:-1px}
 
@@ -185,16 +208,31 @@ body.theme-dark .catalogue-table select.qty-preset {
 html.theme-dark .f-social .social-icon, body.theme-dark .f-social .social-icon { filter: drop-shadow(0 6px 18px rgba(0,0,0,0.6)); }
 .nav-cart #cart-count{font-weight:800}
 
+/* Ensure header spans full width and uses inline layout on mid-width screens (769–974px) */
+@media (min-width: 769px) and (max-width: 974px) {
+  /* Let header and nav containers run full-bleed within 16px padding */
+  .site-header .container, .main-nav .container { max-width: 100% !important; padding-left: 16px; padding-right: 16px; }
+  /* Keep header in a single row when possible; let search flex */
+  .header-inner { flex-wrap: nowrap; }
+  .search-wrap { width: auto !important; flex: 1 1 auto; }
+  .header-actions { width: auto; }
+  /* Keep desktop-style inline nav */
+  .main-nav .nav-toggle { display: none !important; }
+  .main-nav .nav-menu { display: block; width: auto; }
+  .nav-cats { display: flex; padding: 8px 0; }
+  .nav-cats a, .nav-cats button:not(.mega-close) { display: inline-block; width: auto; margin-bottom: 0; background: transparent; color: #fff; }
+}
+
 /* Small screens: remove dividers to keep layout compact */
 @media (max-width: 720px) {
   .header-actions .action + .action {
     border-left: none;
     margin-left: .35rem;
     padding-left: .35rem;
+  }
   /* Make the nav menu span the container width and reset margins */
   .main-nav .nav-menu { width: 100% !important; margin-left: 0 !important; margin-right: 0 !important; }
   .main-nav .nav-cats { margin-left: 0 !important; margin-right: 0 !important; }
-  }
   .search-wrap .search-btn { padding:6px 8px; }
 }
 
@@ -259,6 +297,8 @@ html.theme-dark .f-social .social-icon, body.theme-dark .f-social .social-icon {
   .main-nav .nav-menu { display:block; width:100%; }
   .nav-cats { display:block; padding:8px 0; }
   .nav-cats a, .nav-cats button:not(.mega-close) { display:block; width:100%; padding:10px 12px; border-radius:8px; margin-bottom:6px; background:var(--card); color:var(--text); }
+  /* Products label: prevent extra left spacing from other mobile rules */
+  .nav-cats li.products-item > .cat-btn { padding-left: 0 !important; margin-left: 0 !important; }
 }
 /* On screens ≤768px: render lower nav as two rows of three */
 @media (max-width: 768px) {
@@ -309,6 +349,9 @@ body.theme-dark .site-header .header-actions .nav-cart {
 html.theme-dark .site-header, body.theme-dark .site-header {
   border-bottom: 1px solid rgba(0,0,0,0.36);
 }
+/* Dark mode: ensure body and main always paint the page bg to the bottom */
+html.theme-dark body, body.theme-dark { background: var(--bg); }
+html.theme-dark main, body.theme-dark main { background: transparent; }
 /* High-specificity children override to counter earlier !important rules */
 html.theme-dark .site-header .header-actions .nav-cart,
 html.theme-dark .site-header .header-actions .nav-cart *,
@@ -334,12 +377,81 @@ body.theme-dark .site-header .header-actions .nav-cart:active {
 .main-nav, .nav-inner { position: relative; z-index: 2500; }
 .nav-toggle{background:transparent;border:0;color:#fff;padding:8px 12px;font-weight:700}
 .nav-menu{display:block}
-.nav-cats{list-style:none;margin:0;padding:8px 0;display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.nav-cats{list-style:none;margin:0;padding:8px 0;display:flex;gap:10px;flex-wrap:wrap;justify-content:center;align-items:center}
 /* Standardize lower nav links so all behave like buttons */
-.nav-cats a,.nav-cats button:not(.mega-close){color:#fff;background:transparent;border:0;padding:8px 10px;border-radius:6px;font-weight:700;line-height:1;text-decoration:none}
+.nav-cats a,.nav-cats button:not(.mega-close){color:#fff;background:transparent;border:0;padding:8px 10px;border-radius:6px;font-weight:700;line-height:1;text-decoration:none;display:inline-flex;align-items:center;height:32px}
 .nav-cats a:hover, .nav-cats button:hover{background:rgba(255,255,255,0.06);text-decoration:none}
-.nav-cats .cat-btn{background:transparent;color:#fff;border:0;padding:8px 10px;border-radius:6px;font-weight:700;cursor:pointer;line-height:1}
+.nav-cats .cat-btn{background:transparent;color:#fff;border:0;padding:8px 10px;border-radius:6px;font-weight:700;cursor:pointer;line-height:1;display:inline-flex;align-items:center;height:32px}
 .nav-cats .cat-btn:hover{background:rgba(255,255,255,0.06)}
+.nav-cats li.products-item{ display:inline-flex; align-items:center; gap: 0; position: relative; }
+.nav-cats li.products-item > .cat-btn { position: relative; z-index: 1; }
+.nav-cats .products-toggle{
+  background: transparent; border: 0; cursor: pointer;
+  width: 16px; height: 16px; line-height: 1; padding: 0; border-radius: 4px;
+  display: inline-flex; align-items: center; justify-content: center; vertical-align: middle;
+  margin-right: 0; overflow: visible; flex: 0 0 16px;
+  position: relative; z-index: 5; /* ensure chevron paints above adjacent text */
+  /* Remove tap/click highlight on mobile */
+  -webkit-tap-highlight-color: transparent;
+}
+/* Pull the Products label flush to the chevron */
+.nav-cats li.products-item > .products-toggle + .cat-btn { padding-left: 0; }
+.nav-cats .products-toggle::before{
+  content: '';
+  display: block;
+  width: 12px; height: 12px;
+  /* Crisp SVG chevron for all DPIs; white stroke */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 20 20' fill='none'><path d='M5 7l5 5 5-5' stroke='%23ffffff' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  transform: rotate(0deg);
+  transition: transform .18s ease;
+}
+/* Rotate 180° when expanded so the chevron points up */
+.nav-cats .products-toggle[aria-expanded="true"]::before{ transform: rotate(180deg); }
+
+/* On very wide screens, scale the chevron so it doesn't appear as a thin line */
+@media (min-width: 1441px) {
+  .nav-cats .products-toggle { width: 22px; height: 22px; flex: 0 0 22px; }
+  /* Use a solid glyph on ultra-wide to avoid any SVG rendering quirks */
+  .nav-cats .products-toggle::before {
+    background-image: none !important;
+    width: auto; height: auto;
+    content: '▾';
+    color: #fff; font-size: 16px; line-height: 1; font-weight: 800;
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,0.6));
+  }
+  .nav-cats .products-toggle[aria-expanded="true"]::before {
+    content: '▴';
+  }
+}
+
+/* Fallback: if the SVG failed to render above 1440px due to a browser quirk, draw a solid white triangle */
+@media (min-width: 1441px) {
+  .nav-cats .products-toggle.use-mask::before {
+    background-image: none !important;
+    width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-top: 9px solid #fff;
+    transform: none !important;
+  }
+  .nav-cats .products-toggle.use-mask[aria-expanded="true"]::before {
+    border-top-color: transparent; border-bottom: 9px solid #fff; border-left: 7px solid transparent; border-right: 7px solid transparent;
+  }
+}
+
+
+/* Tiny spacing on desktop to avoid visual collision with the P in Products */
+@media (min-width: 769px) {
+  .nav-cats li.products-item > .products-toggle { margin-right: 2px; }
+}
+.nav-cats .products-toggle:focus{ outline: none; }
+.nav-cats .products-toggle:focus-visible{ outline:3px solid rgba(255,255,255,0.4); outline-offset:2px }
+/* Ensure no hover/active background highlight is applied specifically to the chevron */
+.nav-cats .products-toggle:hover,
+.nav-cats .products-toggle:active {
+  background: transparent !important;
+  box-shadow: none !important;
+}
 .nav-cats .has-mega, .nav-cats .products-item{position:relative; z-index: 2600}
 .mega{position:absolute;left:0;top:100%;background:#fff;color:var(--text);padding:18px;display:none;box-shadow:0 10px 30px rgba(11,34,56,0.12);border-radius:8px;width:min(880px,95vw);z-index:3000}
 .mega .mega-close{
@@ -374,6 +486,44 @@ body.page-products .products-item .mega { display: none !important; }
 body.page-products .products-item:hover .mega,
 body.page-products .products-item:focus-within .mega { display: none !important; }
 
+/* On the products page, hide the small chevron toggle and restore label padding */
+body.page-products .nav-cats li.products-item .products-toggle { display: none !important; }
+body.page-products .nav-cats li.products-item > .cat-btn { padding-left: 10px !important; }
+
+/* While any overlay menu is open, prevent background scroll */
+body.lock-scroll { overflow: hidden; }
+/* Keep header/nav visible and prevent layout shifts when body is scroll-locked */
+body.lock-scroll .site-header, body.lock-scroll .main-nav { position: relative; }
+
+/* Mobile: make the products mega scrollable within viewport and contain overscroll */
+@media (max-width: 720px) {
+  /* Keep the Products toggle and label on one line */
+  .nav-cats li.products-item { display: flex; align-items: center; gap: 0; }
+  .nav-cats li.products-item > .products-toggle { margin-right: 0; width:12px; height:12px; flex: 0 0 12px; }
+  /* Shrink the icon so it tucks right up to the P */
+  .nav-cats .products-toggle::before { width: 10px; height: 10px; }
+  /* Remove left padding on the Products label so the arrow sits right next to the P */
+  .nav-cats li.products-item > .products-toggle + .cat-btn { padding-left: 0 !important; }
+  .nav-cats li.products-item > .cat-btn { flex: 1 1 auto; }
+  /* Mobile dropdown base styles; runtime JS sets fixed top to sit under the button */
+  .nav-cats .products-item { position: static !important; }
+  .nav-cats .products-item .mega {
+    position: fixed !important;
+    left: 50% !important; right: auto !important;
+    transform: translateX(-50%) !important;
+    width: calc(100vw - 24px) !important; /* default; JS may widen to ~200% */
+    max-width: none !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important;
+    border-radius: 8px !important;
+    padding-bottom: max(16px, env(safe-area-inset-bottom)) !important;
+    z-index: 4000 !important;
+  }
+  /* Ensure the inner columns wrap nicely on narrow screens */
+  .mega-col { float: none; width: 100%; padding: 4px 0; }
+}
+
 /* Center lower nav across the full width on desktop */
 .main-nav .nav-toggle { display: none; }
 .main-nav .nav-menu { flex: 1 1 auto; }
@@ -391,6 +541,17 @@ body.page-products .products-item:focus-within .mega { display: none !important;
 .mega li{margin-bottom:8px}
 .mega a{color:var(--text);text-decoration:none}
 .mega a:hover{color:var(--brand);text-decoration:none}
+
+/* Light-mode header accents: keep subtle borders to controls (exclude nav categories) */
+/* Account menu toggle subtle border in light mode */
+html:not(.theme-dark) .site-header .account-toggle {
+  border: 1px solid rgba(255,255,255,0.28);
+}
+/* Search button in header: slightly more defined border in light mode */
+html:not(.theme-dark) .site-header .search-btn {
+  border-color: rgba(255,255,255,0.24) !important;
+  box-shadow: inset 0 1px 0 rgba(11,34,56,0.06);
+}
 
 /* Make All Products behave like the categories hover (show a simple dropdown) */
 .nav-cats .all-products{position:relative}
@@ -857,6 +1018,30 @@ body.theme-dark .catalogue-table tr.flash-added td { animation: rowFlashFadeDark
   .fav-toggle { margin-left: 4px !important; margin-right: 0 !important; }
 }
 
+/* Catalogue (new 3-col layout) – override legacy small-screen widths so colgroup controls layout */
+@media (max-width: 420px) {
+  body.page-catalogue .catalogue-table, 
+  body.page-catalogue .catalogue-table th,
+  body.page-catalogue .catalogue-table td { box-sizing: border-box; }
+  /* Neutralize any nth-child width rules so col widths apply */
+  body.page-catalogue .catalogue-table th,
+  body.page-catalogue .catalogue-table td { width: auto !important; }
+  /* Apply definitive column widths via colgroup */
+  body.page-catalogue .catalogue-table col.col-item { width: 40% !important; }
+  body.page-catalogue .catalogue-table col.col-price { width: 14% !important; }
+  body.page-catalogue .catalogue-table col.col-actions { width: 46% !important; }
+}
+@media (max-width: 340px) {
+  body.page-catalogue .catalogue-table, 
+  body.page-catalogue .catalogue-table th,
+  body.page-catalogue .catalogue-table td { box-sizing: border-box; }
+  body.page-catalogue .catalogue-table th,
+  body.page-catalogue .catalogue-table td { width: auto !important; }
+  body.page-catalogue .catalogue-table col.col-item { width: 40% !important; }
+  body.page-catalogue .catalogue-table col.col-price { width: 14% !important; }
+  body.page-catalogue .catalogue-table col.col-actions { width: 46% !important; }
+}
+
 /* Modern SKU/Category buttons used on the catalogue page */
 .sku-btn{display:inline-block;padding:8px 12px;border-radius:10px;border:0;background:#fff;color:var(--text);font-weight:700;box-shadow:0 6px 0 rgba(11,34,56,0.06);transition:transform 120ms ease, box-shadow 120ms ease, background 120ms ease;text-decoration:none}
 .sku-btn:hover{transform:translateY(-3px);box-shadow:0 10px 0 rgba(11,34,56,0.08);background:#f6f8fb}
@@ -933,8 +1118,12 @@ html.theme-dark .sku-btn.active:hover, body.theme-dark .sku-btn.active:hover {
 /* Keep the button visually separate from the label */
 .back-to-top:focus{outline:3px solid rgba(255,255,255,0.18);outline-offset:3px}
 
+/* Avoid extra whitespace pushing the footer down: trim trailing margin inside main */
+main > :last-child { margin-bottom: 0 !important; }
+
 /* Footer */
-.site-footer{background:#0b2238;color:#fff;padding:28px 0}
+.site-footer{background:#0b2238;color:#fff;padding:28px 0;margin-top:auto}
+.site-footer .container{max-width:var(--container);margin:0 auto;padding:0 16px}
 .footer-grid{display:grid;grid-template-columns:1fr;gap:18px;align-items:start}
 .f-links ul,.f-social ul{list-style:none;padding:0;margin:0}
 .f-links a{color:#dcebf9;text-decoration:none}
@@ -961,10 +1150,6 @@ html.theme-dark .sku-btn.active:hover, body.theme-dark .sku-btn.active:hover {
 
 /* Accessibility focus styles */
 /* Avoid bright yellow outlines on mouse click. Use :focus-visible for keyboard users. */
-button:focus, a:focus, input:focus{outline: none}
-/* Use brand-colored ring for focus-visible to remain visible but not jarring */
-button:focus-visible, a:focus-visible, input:focus-visible{outline:3px solid rgba(255,255,255,0.18);outline-offset:3px}
-/* For inputs inside white containers (like the catalogue table or card), use brand blue focus */
 .search-form input:focus-visible, input[type=text]:focus-visible, input[type=search]:focus-visible{outline:3px solid rgba(0,64,128,0.18);outline-offset:3px}
 
 /* Reduced motion */

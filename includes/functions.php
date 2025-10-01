@@ -190,36 +190,6 @@ function getAllProducts(): array
 }
 
 /**
- * Retrieve all products directly from the database, bypassing any cache.
- * Useful for admin/manager views where immediate consistency is required.
- *
- * @return array An array of associative arrays describing products.
- */
-function getAllProductsFresh(): array
-{
-    $db = getDb();
-    $stmt = $db->query('SELECT * FROM products ORDER BY name ASC');
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
-}
-
-/**
- * Invalidate the products cache used by getAllProducts(). This clears the APCu
- * entry when available and deletes the on-disk cache file. Safe to call even if
- * the cache does not exist.
- */
-function invalidateProductsCache(): void
-{
-    $cacheKey = 'daytona_all_products_v1';
-    if (function_exists('apcu_delete')) {
-        @apcu_delete($cacheKey);
-    }
-    $cacheFile = __DIR__ . '/../data/cache_products.json';
-    if (is_file($cacheFile)) {
-        @unlink($cacheFile);
-    }
-}
-
-/**
  * Return list of columns for a table. Supports MySQL (SHOW COLUMNS) and SQLite (PRAGMA).
  * @param string $table
  * @return string[]
@@ -301,28 +271,7 @@ function getProductById(int $id): ?array
     $stmt = $db->prepare('SELECT * FROM products WHERE id = :id');
     $stmt->execute([':id' => $id]);
     $prod = $stmt->fetch(PDO::FETCH_ASSOC);
-    if ($prod) return $prod;
-    // DB lookup missed — attempt a best-effort fallback to the on-disk
-    // product cache so the site can still display product details when
-    // the database is temporarily unavailable or the row is missing.
-    try {
-        $cacheFile = __DIR__ . '/../data/cache_products.json';
-        if (is_readable($cacheFile)) {
-            $json = @file_get_contents($cacheFile);
-            $arr = $json ? json_decode($json, true) : null;
-            if (is_array($arr)) {
-                foreach ($arr as $p) {
-                    if (isset($p['id']) && (int)$p['id'] === $id) {
-                        error_log('getProductById: falling back to cache_products.json for id=' . $id);
-                        return $p;
-                    }
-                }
-            }
-        }
-    } catch (Exception $e) {
-        // ignore and return null below
-    }
-    return null;
+    return $prod ?: null;
 }
 
 /**
@@ -363,58 +312,6 @@ function getProductPrice(array $prod): float
         }
     }
     return 0.0;
-}
-
-/**
- * Get the list of favorite SKUs for a customer from the favorites table.
- * The favorites table is expected to have columns (id, sku) where id = customer id.
- * Returns an array of SKU strings (product name values).
- */
-function getFavoriteSkusByCustomerId(int $customerId): array
-{
-    $db = getDb();
-    try {
-        // Ensure the table exists; if not, this will throw and we return empty
-        $stmt = $db->prepare('SELECT sku FROM favorites WHERE id = :id');
-        $stmt->execute([':id' => $customerId]);
-        $rows = $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
-        return array_values(array_filter(array_map('strval', (array)$rows)));
-    } catch (Exception $e) {
-        error_log('getFavoriteSkusByCustomerId error: ' . $e->getMessage());
-        return [];
-    }
-}
-
-/**
- * Toggle a favorite for a given customer and product id.
- * Uses the product name as the SKU value in favorites.sku per requirements.
- * Returns true if now favorited, false if removed or on failure.
- */
-function toggleFavoriteForCustomerProduct(int $customerId, int $productId): bool
-{
-    $db = getDb();
-    try {
-        $prod = getProductById($productId);
-        if (!$prod) return false;
-        $sku = getProductDisplayName($prod);
-        if ($sku === '') return false;
-        // Check if exists
-        $check = $db->prepare('SELECT 1 FROM favorites WHERE id = :id AND sku = :sku LIMIT 1');
-        $check->execute([':id' => $customerId, ':sku' => $sku]);
-        $exists = (bool)$check->fetchColumn();
-        if ($exists) {
-            $del = $db->prepare('DELETE FROM favorites WHERE id = :id AND sku = :sku');
-            $del->execute([':id' => $customerId, ':sku' => $sku]);
-            return false; // now unfavorited
-        } else {
-            $ins = $db->prepare('INSERT INTO favorites (id, sku) VALUES (:id, :sku)');
-            $ins->execute([':id' => $customerId, ':sku' => $sku]);
-            return true; // now favorited
-        }
-    } catch (Exception $e) {
-        error_log('toggleFavoriteForCustomerProduct error: ' . $e->getMessage());
-        return false;
-    }
 }
 
 /**
@@ -1033,8 +930,6 @@ function getCustomerById(int $id): ?array
 function saveProduct(array $data, ?int $id = null): void
 {
     $db = getDb();
-    $driver = 'unknown';
-    try { $driver = $db->getAttribute(PDO::ATTR_DRIVER_NAME); } catch (Exception $_) {}
     if ($id === null) {
         $stmt = $db->prepare('INSERT INTO products(name, description, price) VALUES(:name, :description, :price)');
         $stmt->execute([
@@ -1042,8 +937,6 @@ function saveProduct(array $data, ?int $id = null): void
             ':description' => $data['description'] ?? '',
             ':price' => (float)$data['price']
         ]);
-        $newId = (int)$db->lastInsertId();
-        error_log('saveProduct: insert id=' . $newId . ' via driver=' . $driver);
     } else {
         $stmt = $db->prepare('UPDATE products SET name=:name, description=:description, price=:price WHERE id=:id');
         $stmt->execute([
@@ -1052,11 +945,7 @@ function saveProduct(array $data, ?int $id = null): void
             ':description' => $data['description'] ?? '',
             ':price' => (float)$data['price']
         ]);
-        $rc = (int)$stmt->rowCount();
-        error_log('saveProduct: update id=' . $id . ' affected=' . $rc . ' via driver=' . $driver);
     }
-    // Ensure subsequent reads reflect the new data immediately
-    invalidateProductsCache();
 }
 
 /**
@@ -1069,8 +958,6 @@ function deleteProduct(int $id): void
     $db = getDb();
     $stmt = $db->prepare('DELETE FROM products WHERE id = :id');
     $stmt->execute([':id' => $id]);
-    // Invalidate product caches so UIs reflect the deletion
-    invalidateProductsCache();
 }
 
 /**

@@ -90,15 +90,6 @@ $message = 'Cart updated.';
     }
 }
 
-// Handle clear cart action (empties the entire cart)
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['clear_cart'])) {
-    // Empty the session cart entirely
-    if (isset($_SESSION['cart'])) {
-        $_SESSION['cart'] = [];
-    }
-    $message = 'Cart cleared.';
-}
-
 // After handling POST updates, ensure any on-disk or cookie snapshots reflect
 // the authoritative session state. This prevents stale snapshots from being
 // reloaded on subsequent requests and restores deleted items.
@@ -274,9 +265,9 @@ if (!empty($_SESSION['cart'])) {
     }
 }
 ?>
-<div class="container">
-  <div class="form-card">
+<section class="page-hero">
     <h2>Your Cart</h2>
+</section>
 <?php if ($message): ?>
     <div class="message"><?php echo htmlspecialchars($message); ?></div>
 <?php endif; ?>
@@ -290,8 +281,8 @@ if (!empty($_SESSION['cart'])) {
                 <th>SKU</th>
                 <th>Description</th>
                 <th>Quantity</th>
-                <th class="numeric">Rate</th>
-                <th class="numeric">Price</th>
+                <th>Rate</th>
+                <th>Price</th>
                 <th></th>
             </tr>
             <?php foreach ($cartItems as $item): ?>
@@ -314,23 +305,19 @@ if (!empty($_SESSION['cart'])) {
                     <td><?php echo $sku; ?></td>
                     <td><?php echo $description; ?></td>
                     <td><input type="number" name="qty_<?php echo $item['id']; ?>" value="<?php echo $item['quantity']; ?>" min="0" style="width:60px"></td>
-                    <td class="numeric">$<?php echo number_format($item['price'], 2); ?></td>
-                    <td class="numeric">$<?php echo number_format($item['subtotal'], 2); ?></td>
+                    <td>$<?php echo number_format($item['price'], 2); ?></td>
+                    <td>$<?php echo number_format($item['subtotal'], 2); ?></td>
                         <td style="text-align:center;">
                             <button type="button" class="cart-remove-btn" title="Remove item" data-item-id="<?php echo $item['id']; ?>">×</button>
                         </td>
                 </tr>
             <?php endforeach; ?>
-            <tr class="cart-total-row">
-                <td class="cart-total-label" colspan="4"><strong>Total:</strong></td>
-                <td class="cart-total-amount numeric"><strong>$<?php echo number_format($total, 2); ?></strong></td>
-                <td class="cart-total-spacer"></td>
+            <tr>
+                <td colspan="4" style="text-align:right"><strong>Total:</strong></td>
+                <td><strong>$<?php echo number_format($total, 2); ?></strong></td>
             </tr>
         </table>
-    <p style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-        <button type="submit" class="proceed-btn muted-btn">Update Cart</button>
-        <button type="submit" name="clear_cart" value="1" class="proceed-btn btn-danger">Clear Cart</button>
-    </p>
+    <p><button type="submit" class="proceed-btn muted-btn">Update Cart</button></p>
     </form>
     <script>
     // Replace remove buttons behaviour: set the qty input to 0 and submit the form
@@ -348,38 +335,8 @@ if (!empty($_SESSION['cart'])) {
                 }
             });
         });
-        
-        // Ensure totals row spans the correct number of columns at <=600px
-        function adjustCartTotalsColspan(){
-            var mobile = window.matchMedia && window.matchMedia('(max-width: 735px)').matches;
-            document.querySelectorAll('.cart-table .cart-total-row').forEach(function(row){
-                var firstCell = row.querySelector('td');
-                if (firstCell) {
-                    // Desktop: 6 columns (SKU, Desc, Qty, Rate, Price, Remove) -> span 4 before Price
-                    // Mobile (<=735px): SKU hidden -> 5 columns -> span 3 before Price
-                    firstCell.colSpan = mobile ? 3 : 4;
-                }
-            });
-        }
-        adjustCartTotalsColspan();
-        window.addEventListener('resize', adjustCartTotalsColspan);
-
-        // Confirm before clearing the entire cart
-        var clearBtn = document.querySelector('button[name="clear_cart"]');
-        if (clearBtn) {
-            clearBtn.addEventListener('click', function (e) {
-                var ok = confirm('Are you sure you want to remove all items from your cart?');
-                if (!ok) { e.preventDefault(); }
-            });
-        }
     });
     </script>
-    <?php if (isset($_SESSION['customer'])): ?>
-        <p><a href="checkout.php" class="proceed-btn btn-checkout">Proceed to Checkout</a></p>
-    <?php else: ?>
-        <p><a href="login.php?next=checkout.php" class="proceed-btn btn-checkout">Proceed to Checkout</a></p>
-    <?php endif; ?>
+    <p><a href="checkout.php" class="proceed-btn btn-checkout">Proceed to Checkout</a></p>
 <?php endif; ?>
-  </div>
-</div>
 <?php include __DIR__ . '/includes/footer.php'; ?>

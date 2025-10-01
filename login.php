@@ -1,19 +1,12 @@
 <?php
-// Login page for customers. Handles authentication and (on success) now redirects to the homepage (index.php)
+// Login page for customers. Handles authentication and redirects to account page.
 session_start();
 require __DIR__ . '/includes/db.php';
 require __DIR__ . '/includes/functions.php';
 
-// If customer already logged in, send them straight to their intended page or the homepage.
-// If already authenticated, redirect to 'next' if provided and safe, otherwise index.php
+// If customer already logged in, send them straight to their account
 if (isset($_SESSION['customer'])) {
-    $next = normalizeScalar($_GET['next'] ?? '', 512, '');
-    if ($next && strpos($next, '/') !== 0 && strpos($next, 'http') === false) {
-        // ensure next is a relative path without host to avoid open redirects
-        header('Location: ' . $next);
-        exit;
-    }
-    header('Location: index.php');
+    header('Location: account.php');
     exit;
 }
 
@@ -25,19 +18,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = normalizeScalar($_POST['email'] ?? '', 254, '');
     $password = (string)($_POST['password'] ?? '');
     $customer = authenticateCustomer($email, $password);
-        if ($customer) {
+    if ($customer) {
         // Check if the account has been verified
         if (!empty($customer['is_verified']) && (int)$customer['is_verified'] === 1) {
-            // Store customer data in session and redirect to homepage (unless a safe next target is supplied)
+            // Store customer data in session and redirect to account page
             $_SESSION['customer'] = $customer;
-                // Redirect to a safe 'next' parameter if provided
-                $next = normalizeScalar($_GET['next'] ?? $_POST['next'] ?? '', 512, '');
-                if ($next && strpos($next, '/') !== 0 && strpos($next, 'http') === false) {
-                    header('Location: ' . $next);
-                    exit;
-                }
-                header('Location: index.php');
-                exit;
+            header('Location: account.php');
+            exit;
         } else {
             $error = 'Please verify your email address before logging in.';
         }
@@ -69,10 +56,6 @@ include __DIR__ . '/includes/header.php';
         <?php endif; ?>
 
         <form method="post" class="vertical-form" action="login.php">
-            <?php $nextParam = isset($_GET['next']) ? normalizeScalar($_GET['next'], 512, '') : ''; ?>
-            <?php if ($nextParam): ?>
-                <input type="hidden" name="next" value="<?= htmlspecialchars($nextParam) ?>">
-            <?php endif; ?>
             <div class="form-row">
                 <label for="login_email">Email</label>
                 <div class="field"><input id="login_email" type="email" name="email" required autocomplete="email"></div>

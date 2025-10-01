@@ -46,12 +46,8 @@ if (!empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off') {
 // Determine the number of items in the cart (stored in session)
 $cartCount = 0;
 if (!empty($_SESSION['cart']) && is_array($_SESSION['cart'])) {
-    foreach ($_SESSION['cart'] as $entry) {
-        if (is_array($entry) && isset($entry['quantity'])) {
-            $cartCount += (int)$entry['quantity'];
-        } else {
-            $cartCount += (int)$entry;
-        }
+    foreach ($_SESSION['cart'] as $qty) {
+        $cartCount += (int)$qty;
     }
 }
 // Format the displayed cart count: "empty" for 0, 1..999 for counts, and "999+" for 1000 or more
@@ -98,18 +94,7 @@ if ($loggedIn) {
     <?php $cssPath = __DIR__ . '/../assets/styles.css'; ?>
     <link rel="stylesheet" href="assets/styles.css?v=<?php echo file_exists($cssPath) ? filemtime($cssPath) : time(); ?>">
 </head>
-<?php 
-    $authClass = $loggedIn ? 'is-authenticated' : 'guest';
-    // Add a page identifier class like page-products, page-catalogue, etc.
-    $script = basename($_SERVER['SCRIPT_NAME'] ?? '');
-    $pageId = $script ? 'page-' . strtolower(preg_replace('/\.[^.]+$/', '', $script)) : '';
-?>
-<body class="<?php echo trim($serverThemeClass . ' ' . $authClass . ' ' . $pageId); ?>">
-    <?php if (!empty($_SESSION['admin']) && !empty($GLOBALS['DB_FALLBACK_REASON'])): ?>
-    <div style="background:#dc3545;color:#fff;padding:8px 12px;font-weight:600;">
-        Database fallback active: using SQLite because MySQL connection failed. Edits won’t affect MySQL until the connection succeeds.
-    </div>
-    <?php endif; ?>
+<body class="<?php echo $serverThemeClass; ?>">
     <header class="site-header" role="banner">
         <div class="header-inner container">
             <div class="brand" style="margin-right:auto; margin-left:0;">
@@ -128,29 +113,21 @@ if ($loggedIn) {
                 <div class="header-actions">
                     <a class="action link-phone" href="tel:3867887009">Call: (386) 788-7009</a>
                     <?php if ($loggedIn): ?>
-                        <div class="has-account action edge-right" tabindex="0" aria-haspopup="true" aria-expanded="false">
-                            <button type="button" class="account-toggle" aria-label="Toggle account menu" aria-controls="account-menu" aria-expanded="false">
-                                <span class="acct-toggle-bar"></span>
-                                <span class="acct-toggle-bar"></span>
-                            </button>
+                        <div class="has-account action" tabindex="0" aria-haspopup="true" aria-expanded="false">
                             <a class="account-link" href="account.php">My Account</a>
-                            <div class="account-menu" id="account-menu" role="menu" aria-label="Account menu">
-                                <a role="menuitem" href="account.php#account-details">Account Details</a>
-                                <a role="menuitem" href="account.php#change-password">Change Your Password</a>
-                                <a role="menuitem" href="account.php#your-orders">Orders</a>
-                                <div class="menu-separator" aria-hidden="true"></div>
-                                <div class="account-menu-item darkmode-row" role="menuitem" aria-label="Dark mode toggle">
-                                    <span class="label">Dark Mode</span>
-                                    <label class="dark-toggle control">
+                            <div class="account-menu" role="menu" aria-label="Account menu">
+                                <label class="dark-toggle" role="menuitem" style="display:flex;align-items:center;gap:.6rem;padding:8px 10px;">
+                                    <span>Dark mode</span>
+                                    <label class="dark-toggle" style="margin-left:.6rem;">
                                         <input type="checkbox" id="darkmode_toggle" name="darkmode_toggle" <?php echo ($serverThemeClass === 'theme-dark') ? 'checked' : ''; ?> />
                                         <span class="dark-toggle-switch" aria-hidden="true"></span>
                                     </label>
-                                </div>
+                                </label>
                                 <a role="menuitem" href="logout.php">Log out</a>
                             </div>
                         </div>
                     <?php else: ?>
-                        <a class="action login-register" href="login.php">Login / Register</a>
+                        <a class="action" href="login.php">Login / Register</a>
                     <?php endif; ?>
                     <!-- Nav cart button (upper-right) -->
                     <a class="nav-cart action" href="cart.php" id="cart-link" aria-label="View cart">Cart (<span id="cart-count"><?php echo htmlspecialchars($displayCart); ?></span>)</a>
@@ -168,15 +145,14 @@ if ($loggedIn) {
                         $skuFilters = is_array($skuData) && isset($skuData['filters']) ? $skuData['filters'] : [];
                         $skuGroups = is_array($skuData) && isset($skuData['groups']) ? $skuData['groups'] : [];
                         ?>
-                        <li class="has-mega products-item"><a class="cat-btn" href="products.php">Products</a>
+                        <li class="has-mega products-item"><a class="cat-btn" href="catalogue.php">Products</a>
                             <div class="mega" role="menu">
-                                <button type="button" class="mega-close" aria-label="Close products menu">×</button>
                                 <?php foreach ($skuGroups as $groupLabel => $labels): ?>
                                     <div class="mega-col">
                                         <h4><?php echo htmlspecialchars($groupLabel); ?></h4>
                                         <ul>
                                             <?php foreach ($labels as $label): if (!isset($skuFilters[$label])) continue; ?>
-                                                <?php $slug = strtolower(preg_replace('/[^a-z0-9]+/i', '-', $label)); $url = 'products.php?cat=' . urlencode($slug); ?>
+                                                <?php $url = 'catalogue.php?sku=' . urlencode($label); ?>
                                                 <li><a href="<?php echo htmlspecialchars($url); ?>"><?php echo htmlspecialchars($label); ?></a></li>
                                             <?php endforeach; ?>
                                         </ul>
@@ -184,10 +160,8 @@ if ($loggedIn) {
                                 <?php endforeach; ?>
                             </div>
                         </li>
-                        <li><a href="deals.php">Deals</a></li>
                         <li><a href="about.php">About Us</a></li>
                         <li><a href="contact.php">Contact Us</a></li>
-                        <li><a href="directions.php">Directions</a></li>
                         <li><a href="shipping.php">Shipping</a></li>
                         <!-- Removed All Products and Partner as requested -->
                     </ul>

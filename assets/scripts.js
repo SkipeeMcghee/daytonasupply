@@ -5,10 +5,6 @@ document.addEventListener('DOMContentLoaded', function () {
 		var form = e.target;
 		if (form.classList && form.classList.contains('cart-add')) {
 			e.preventDefault();
-			if (form._adding) return; // debounce double submits
-			form._adding = true;
-			var submitBtn = form.querySelector('button[type="submit"]');
-			if (submitBtn) submitBtn.disabled = true;
 			var data = new FormData(form);
 			var xhr = new XMLHttpRequest();
 			xhr.open('POST', form.action || window.location.href);
@@ -26,54 +22,28 @@ document.addEventListener('DOMContentLoaded', function () {
 						}
 						var row = document.getElementById('product-' + res.productId);
 						if (row) {
-							// Flash green highlight on the row
-							row.classList.remove('flash-added');
-							void row.offsetWidth; // restart animation
-							row.classList.add('flash-added');
-							setTimeout(function(){ if (row) row.classList.remove('flash-added'); }, 1600);
-
-							// Added notification: banner on small screens, popup near button on larger
-							var isSmall = window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
-							if (isSmall) {
-								var banner = document.getElementById('added-banner');
-								if (!banner) {
-									banner = document.createElement('div');
-									banner.id = 'added-banner';
-									banner.className = 'added-banner';
-									banner.setAttribute('role', 'status');
-									document.body.appendChild(banner);
-								}
-								banner.textContent = 'Added to cart';
-								banner.classList.add('show');
-								setTimeout(function(){ banner && banner.classList.remove('show'); }, 1600);
-							} else {
-								var msg = document.createElement('div');
-								msg.className = 'added-msg';
-								msg.textContent = 'Added';
-								msg.style.position = 'absolute';
-								msg.style.background = '#198754';
-								msg.style.color = '#fff';
-								msg.style.padding = '6px 10px';
-								msg.style.borderRadius = '6px';
-								msg.style.zIndex = 9999;
-								var btn = row.querySelector('button[type="submit"]');
-								if (btn) {
-									var rect = btn.getBoundingClientRect();
-									msg.style.top = (window.scrollY + rect.top - 10) + 'px';
-									msg.style.left = (window.scrollX + rect.left + rect.width + 8) + 'px';
-									document.body.appendChild(msg);
-									setTimeout(function () { msg.parentNode && msg.parentNode.removeChild(msg); }, 1400);
-								}
+							var msg = document.createElement('div');
+							msg.className = 'added-msg';
+							msg.textContent = 'Added';
+							msg.style.position = 'absolute';
+							msg.style.background = '#198754';
+							msg.style.color = '#fff';
+							msg.style.padding = '6px 10px';
+							msg.style.borderRadius = '6px';
+							msg.style.zIndex = 9999;
+							var btn = row.querySelector('button[type="submit"]');
+							if (btn) {
+								var rect = btn.getBoundingClientRect();
+								msg.style.top = (window.scrollY + rect.top - 10) + 'px';
+								msg.style.left = (window.scrollX + rect.left + rect.width + 8) + 'px';
+								document.body.appendChild(msg);
+								setTimeout(function () { msg.parentNode && msg.parentNode.removeChild(msg); }, 1400);
 							}
 						}
 					} else {
 						alert('Unable to add item to cart');
 					}
 				} catch (err) { console.error('Add-to-cart error', err); }
-				finally {
-					form._adding = false;
-					if (submitBtn) submitBtn.disabled = false;
-				}
 			};
 			xhr.send(data);
 		}
@@ -168,22 +138,8 @@ document.addEventListener('DOMContentLoaded', function () {
 					try {
 						var json = JSON.parse(xhr.responseText || '{}');
 						if (json && json.success) {
-							if (json.requiresLogin) {
-								// Redirect to login preserving return URL
-								var next = window.location.pathname + window.location.search + window.location.hash;
-								window.location.href = 'login.php?next=' + encodeURIComponent(next);
-								return;
-							}
 							if (json.favorited) btn.classList.add('fav-on'); else btn.classList.remove('fav-on');
 							btn.setAttribute('aria-pressed', json.favorited ? 'true' : 'false');
-							btn.title = json.favorited ? 'Remove from favorites' : 'Add to favorites';
-							// If currently viewing favorites list, remove the row on unfavorite
-							var q = window.location.search || '';
-							var inFavView = /(?:^|[?&])show=favorites(?:&|$)/.test(q) || /(?:^|[?&])favorites=1(?:&|$)/.test(q) || /(?:^|[?&])fav=1(?:&|$)/.test(q);
-							if (!json.favorited && inFavView) {
-								var row = btn.closest && btn.closest('tr');
-								if (row && row.parentNode) row.parentNode.removeChild(row);
-							}
 						} else {
 							// fallback to a page reload if AJAX failed
 							window.location.reload();
@@ -200,52 +156,13 @@ document.addEventListener('DOMContentLoaded', function () {
 	(function accountMenuTolerant() {
 		var acct = document.querySelector('.has-account');
 		if (!acct) return;
-		var toggleBtn = acct.querySelector('.account-toggle');
 		var timer = null;
-		function setState(open) {
-			clearTimeout(timer);
-			if (open) {
-				acct.classList.add('open');
-				acct.setAttribute('aria-expanded','true');
-				if (toggleBtn) toggleBtn.setAttribute('aria-expanded','true');
-			} else {
-				acct.classList.remove('open');
-				acct.setAttribute('aria-expanded','false');
-				if (toggleBtn) toggleBtn.setAttribute('aria-expanded','false');
-			}
-		}
-		function delayedClose() { clearTimeout(timer); timer = setTimeout(function(){ setState(false); }, 160); }
-		acct.addEventListener('mouseenter', function(){
-			if (acct.classList.contains('suppress-hover')) return; // skip hover-open during suppression
-			setState(true);
-		});
-		acct.addEventListener('mouseleave', function(){
-			if (!(toggleBtn && document.activeElement === toggleBtn)) delayedClose();
-			acct.classList.remove('suppress-hover'); // re-enable hover once pointer leaves
-		});
-		if (toggleBtn) {
-			toggleBtn.addEventListener('click', function(e){
-				e.stopPropagation();
-				var isOpen = acct.classList.contains('open');
-				if (isOpen) {
-					setState(false);
-					acct.classList.add('suppress-hover'); // prevent immediate hover re-open
-					toggleBtn.blur();
-				} else {
-					setState(true);
-				}
-			});
-			toggleBtn.addEventListener('keydown', function(e){ if (e.key === ' ') { e.preventDefault(); toggleBtn.click(); } });
-		}
-		document.addEventListener('click', function(e){ if (!acct.contains(e.target)) setState(false); });
-		// Delegated fallback in case direct listener didn't bind (e.g., dynamic injection)
-		document.body.addEventListener('click', function(e){
-			var t = e.target.closest && e.target.closest('.account-toggle');
-			if (!t) return;
-			if (!acct.contains(t)) return;
-			var isOpen = acct.classList.contains('open');
-			setState(!isOpen);
-		});
+		function open() { clearTimeout(timer); acct.classList.add('open'); acct.setAttribute('aria-expanded','true'); }
+		function close() { clearTimeout(timer); timer = setTimeout(function () { acct.classList.remove('open'); acct.setAttribute('aria-expanded','false'); }, 180); }
+		acct.addEventListener('mouseenter', open);
+		acct.addEventListener('mouseleave', close);
+		acct.addEventListener('focusin', open);
+		acct.addEventListener('focusout', function (e) { setTimeout(function () { if (!acct.contains(document.activeElement)) close(); }, 10); });
 	})();
 
 	// --- Messaging slider (rotating short messages) ---
@@ -275,54 +192,14 @@ document.addEventListener('DOMContentLoaded', function () {
 		if (!prodBtn) return;
 		var prodLi = prodBtn.closest && prodBtn.closest('.products-item');
 		var mega = prodLi ? prodLi.querySelector('.mega') : null;
-		var closeBtn = mega ? mega.querySelector('.mega-close') : null;
-		var hideTimer = null;
-		var manuallyClosed = false; // when true, keep closed until pointer/focus fully leaves
-		var onProductsPage = (function(){
-			try {
-				var p = window.location.pathname || '';
-				return /(^|\/)products\.php$/.test(p);
-			} catch(e){ return false; }
-		})();
-
-		function showMega() {
-			if (onProductsPage) return; // disabled on products listing page
-			if (manuallyClosed) return; // don't reopen until user leaves and re-enters
-			if (!mega) return;
-			clearTimeout(hideTimer);
-			mega.style.display = 'block';
-			prodBtn.setAttribute('aria-expanded', 'true');
-		}
-		function hideMegaNow(force) {
-			if (!mega) return;
-			clearTimeout(hideTimer);
-			mega.style.display = 'none';
-			prodBtn.setAttribute('aria-expanded', 'false');
-			if (force) {
-				manuallyClosed = true;
-				if (prodLi) prodLi.classList.add('force-closed');
-			}
-		}
-		function scheduleHide(delay) {
-			if (!mega) return;
-			clearTimeout(hideTimer);
-			hideTimer = setTimeout(function () {
-				// Only hide if neither the trigger nor the menu are hovered or focused
-				var hovering = (prodLi && prodLi.matches && prodLi.matches(':hover')) || (mega && mega.matches && mega.matches(':hover'));
-				var hasFocus = (prodLi && prodLi.contains && prodLi.contains(document.activeElement));
-				if (!hovering && !hasFocus) {
-					hideMegaNow(false);
-				}
-			}, delay || 160);
-		}
 		// If the control is NOT an anchor, intercept clicks to toggle the mega menu (useful on small screens)
 		var isAnchor = prodBtn.tagName && prodBtn.tagName.toLowerCase() === 'a';
 		if (!isAnchor) {
 			prodBtn.addEventListener('click', function (e) {
 				e.preventDefault();
 				var expanded = prodBtn.getAttribute('aria-expanded') === 'true';
-				if (expanded) { hideMegaNow(true); }
-				else { showMega(); }
+				prodBtn.setAttribute('aria-expanded', (!expanded).toString());
+				if (mega) mega.style.display = (!expanded) ? 'block' : 'none';
 			});
 		}
 		// If the control IS an anchor, ensure clicks do NOT toggle the mega menu — allow navigation
@@ -337,64 +214,17 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 		// Hide/show mega on focus/hover — keeps hover behaviour for pointer devices
 		if (mega) {
-			// On initial page load, force the mega closed and briefly suppress hover to avoid
-			// the menu covering the page when the pointer happens to start over the nav.
-			try {
-				mega.style.display = 'none';
-				prodBtn.setAttribute('aria-expanded','false');
-				if (prodLi) {
-					prodLi.classList.add('suppress-hover');
-					setTimeout(function(){ prodLi.classList.remove('suppress-hover'); }, 800);
-				}
-			} catch (err) {}
-
-			prodLi.addEventListener('focusin', function () { showMega(); });
-			prodLi.addEventListener('focusout', function () { scheduleHide(120); });
-			prodLi.addEventListener('mouseenter', function () { showMega(); });
-			prodLi.addEventListener('mouseleave', function (e) {
-				// If leaving into the mega itself, keep open; otherwise schedule a hide
-				var rt = e.relatedTarget;
-				if (rt && mega.contains(rt)) return;
-				scheduleHide(140);
-				// once the user fully leaves the area, allow re-opening again
-				manuallyClosed = false;
-				if (prodLi) prodLi.classList.remove('force-closed');
-			});
-			mega.addEventListener('mouseenter', function(){ clearTimeout(hideTimer); showMega(); });
-			mega.addEventListener('mouseleave', function(){ scheduleHide(140); });
-			// Escape key closes when focused inside the menu
-			mega.addEventListener('keydown', function(e){ if (e.key === 'Escape') { hideMegaNow(true); prodBtn.blur(); } });
-			if (closeBtn) {
-				closeBtn.addEventListener('click', function(e){
-					e.preventDefault(); e.stopPropagation();
-					// Close immediately and keep it closed until user leaves the area
-					hideMegaNow(true);
-					try { closeBtn.blur(); } catch(err) {}
-					prodLi.classList.add('suppress-hover');
-					setTimeout(function(){ prodLi.classList.remove('suppress-hover'); }, 600);
-				});
-			}
-		}
-
-		// If on the products page, keep the mega menu disabled entirely (no hover/focus open)
-		if (onProductsPage && mega) {
-			try {
-				mega.style.display = 'none';
-				prodBtn.setAttribute('aria-expanded','false');
-				manuallyClosed = true;
-				// Prevent accidental open via keyboard focus
-				prodLi.addEventListener('focusin', function(e){ if (mega) { e.stopPropagation(); hideMegaNow(true); } }, true);
-				prodLi.addEventListener('mouseenter', function(){ hideMegaNow(true); }, true);
-			} catch(e){}
+			prodLi.addEventListener('focusout', function (e) { setTimeout(function () { if (!prodLi.contains(document.activeElement)) { prodBtn.setAttribute('aria-expanded','false'); mega.style.display='none'; } }, 10); });
+			prodLi.addEventListener('mouseenter', function () { if (mega) mega.style.display = 'block'; });
+			prodLi.addEventListener('mouseleave', function () { if (mega) mega.style.display = 'none'; });
 		}
 	})();
 
 	// --- Back to top button ---
-	var backWrap = document.getElementById('backToTopWrap');
-	var backBtn = document.getElementById('backToTop');
-	if (backWrap && backBtn) {
-		window.addEventListener('scroll', function () { backWrap.style.display = (window.scrollY > 360) ? 'flex' : 'none'; });
-		backBtn.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+	var back = document.querySelector('.back-to-top');
+	if (back) {
+		window.addEventListener('scroll', function () { back.style.display = (window.scrollY > 360) ? 'block' : 'none'; });
+		back.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
 	}
 
 	// --- Order collapse/expand toggles on account page ---

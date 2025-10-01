@@ -73,8 +73,6 @@ function getDb(): PDO
             // historical order snapshots are recorded when creating orders.
             try {
                 ensureMySQLOrderSnapshotSchema($db);
-                ensureMySQLFavoritesSchema($db);
-                ensureMySQLDealsSchema($db);
             } catch (Exception $schemaEx) {
                 // Log but allow connection to proceed; createOrder will fail if
                 // schema is not suitable. We log to help diagnostics.
@@ -96,11 +94,6 @@ function getDb(): PDO
             // Record fallback reason so other code can detect temporary fallback
             $GLOBALS['DB_FALLBACK_REASON'] = $msg;
             error_log('getDb: falling back to SQLite due to MySQL error (see catalogue_errors.log)');
-            // Optionally prevent silent fallback in production by setting DB_STRICT=1
-            $strict = getenv('DB_STRICT');
-            if ($strict === '1' || $strict === 'true') {
-                throw $e;
-            }
             // Continue to the SQLite fallback below so the app remains usable.
         }
     }
@@ -123,9 +116,6 @@ function getDb(): PDO
         }
         initDatabase($db);
     }
-    // Best-effort ensure for SQLite-specific schema like new columns and favorites PK
-    try { ensureSQLiteDealsSchema($db); } catch (Exception $_) {}
-    try { ensureSQLiteFavoritesSchema($db); } catch (Exception $_) {}
     // Run migrations only when the DB was just created, or when explicitly
     // requested via RUN_MIGRATIONS=1. Avoiding migrations on every request
     // prevents repeated PRAGMA/ALTER operations that slow response times.
@@ -258,40 +248,6 @@ function migrateDatabase(PDO $db): void
         ip TEXT NOT NULL,
         attempted_at TEXT NOT NULL
     )');
-
-    // Ensure favorites table exists for SQLite: composite primary key (id, sku)
-    $db->exec('CREATE TABLE IF NOT EXISTS favorites (
-        id INTEGER NOT NULL,
-        sku TEXT NOT NULL,
-        PRIMARY KEY (id, sku)
-    )');
-
-    // Ensure products.deal column exists for SQLite
-    $hasDeal = false;
-    try {
-        $cols = $db->query('PRAGMA table_info(products)');
-        while ($row = $cols->fetch(PDO::FETCH_ASSOC)) {
-            if (strcasecmp($row['name'] ?? '', 'deal') === 0) { $hasDeal = true; break; }
-        }
-    } catch (Exception $_) { /* ignore */ }
-    if (!$hasDeal) {
-        try { $db->exec('ALTER TABLE products ADD COLUMN deal INTEGER DEFAULT 0'); } catch (Exception $e) { error_log('SQLite add products.deal failed: ' . $e->getMessage()); }
-    }
-}
-
-/** Ensure SQLite has products.deal column; safe to call repeatedly. */
-function ensureSQLiteDealsSchema(PDO $db): void
-{
-    $driver = $db->getAttribute(PDO::ATTR_DRIVER_NAME);
-    if (strcasecmp($driver, 'sqlite') !== 0) return;
-    $has = false;
-    try {
-        $stmt = $db->query('PRAGMA table_info(products)');
-        while ($r = $stmt->fetch(PDO::FETCH_ASSOC)) { if (strcasecmp($r['name'] ?? '', 'deal') === 0) { $has = true; break; } }
-    } catch (Exception $e) { error_log('ensureSQLiteDealsSchema error: ' . $e->getMessage()); }
-    if (!$has) {
-        try { $db->exec('ALTER TABLE products ADD COLUMN deal INTEGER DEFAULT 0'); } catch (Exception $e) { error_log('ensureSQLiteDealsSchema ALTER failed: ' . $e->getMessage()); }
-    }
 }
 
 /**
@@ -341,70 +297,6 @@ function ensureMySQLOrderSnapshotSchema(PDO $db): void
     }
 }
 
-/**
- * Ensure the MySQL schema contains the favorites table used to store per-customer favorites.
- * Table structure: favorites(id INT NOT NULL, sku VARCHAR(255) NOT NULL, PRIMARY KEY(id, sku))
- */
-function ensureMySQLFavoritesSchema(PDO $db): void
-{
-    $driver = $db->getAttribute(PDO::ATTR_DRIVER_NAME);
-    if (strcasecmp($driver, 'mysql') !== 0) return;
-    $db->exec("CREATE TABLE IF NOT EXISTS favorites (
-        id INT NOT NULL,
-        sku VARCHAR(255) NOT NULL,
-        PRIMARY KEY (id, sku),
-        CONSTRAINT fk_favorites_customer FOREIGN KEY (id) REFERENCES customers(id) ON DELETE CASCADE
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-    // Verify primary key is (id, sku); if not, fix it
-    try {
-        $cols = [];
-        $stmt = $db->query("SHOW KEYS FROM favorites WHERE Key_name='PRIMARY'");
-        while ($r = $stmt->fetch(PDO::FETCH_ASSOC)) { $cols[] = $r['Column_name']; }
-        $want = ['id','sku'];
-        $colsLower = array_map('strtolower', $cols);
-        if (count($cols) !== 2 || $colsLower[0] !== 'id' || $colsLower[1] !== 'sku') {
-            $db->beginTransaction();
-            // Drop and recreate composite primary key
-            $db->exec('ALTER TABLE favorites DROP PRIMARY KEY');
-            $db->exec('ALTER TABLE favorites ADD PRIMARY KEY (id, sku)');
-            $db->commit();
-        }
-        // Drop any stray unique index on sku that would prevent multiple favorites per user
-        $uniques = $db->query("SHOW INDEX FROM favorites WHERE Non_unique=0 AND Key_name<>'PRIMARY'");
-        while ($idx = $uniques->fetch(PDO::FETCH_ASSOC)) {
-            $key = $idx['Key_name'] ?? '';
-            if ($key) {
-                // Inspect columns for this index
-                $colsStmt = $db->prepare('SHOW INDEX FROM favorites WHERE Key_name = :k');
-                $colsStmt->execute([':k' => $key]);
-                $colNames = [];
-                while ($cr = $colsStmt->fetch(PDO::FETCH_ASSOC)) { $colNames[] = strtolower($cr['Column_name'] ?? ''); }
-                if (count($colNames) === 1 && $colNames[0] === 'sku') {
-                    try { $db->exec('DROP INDEX `' . str_replace('`','',$key) . '` ON favorites'); } catch (Exception $di) { error_log('ensureMySQLFavoritesSchema drop unique sku index failed: ' . $di->getMessage()); }
-                }
-            }
-        }
-    } catch (Exception $e) { error_log('ensureMySQLFavoritesSchema PK/unique check error: ' . $e->getMessage()); try { $db->rollBack(); } catch (Exception $_) {} }
-}
-
-/**
- * Ensure MySQL has a 'deal' column on products (TINYINT DEFAULT 0)
- */
-function ensureMySQLDealsSchema(PDO $db): void
-{
-    $driver = $db->getAttribute(PDO::ATTR_DRIVER_NAME);
-    if (strcasecmp($driver, 'mysql') !== 0) return;
-    $cols = [];
-    try {
-        $stmt = $db->query('SHOW COLUMNS FROM products');
-        while ($r = $stmt->fetch(PDO::FETCH_ASSOC)) { $cols[] = $r['Field']; }
-    } catch (Exception $e) { error_log('ensureMySQLDealsSchema SHOW COLUMNS error: ' . $e->getMessage()); return; }
-    if (!in_array('deal', $cols, true)) {
-        try { $db->exec('ALTER TABLE products ADD COLUMN deal TINYINT(1) DEFAULT 0'); }
-        catch (Exception $e) { error_log('ensureMySQLDealsSchema ALTER failed: ' . $e->getMessage()); }
-    }
-}
-
 
 /**
  * Create required tables and seed initial data.
@@ -436,8 +328,7 @@ function initDatabase(PDO $db): void
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         description TEXT,
-        price REAL NOT NULL,
-        deal INTEGER DEFAULT 0
+        price REAL NOT NULL
     )');
     $db->exec('CREATE TABLE IF NOT EXISTS orders (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -461,13 +352,6 @@ function initDatabase(PDO $db): void
         password_hash TEXT NOT NULL
     )');
 
-    // Favorites table for SQLite
-    $db->exec('CREATE TABLE IF NOT EXISTS favorites (
-        id INTEGER NOT NULL,
-        sku TEXT NOT NULL,
-        PRIMARY KEY (id, sku)
-    )');
-
     // Seed a default admin account if none exists yet.  We only want to
     // insert the default admin on initial setup when there are no rows
     // in the admin table.  The default password is "admin" and is
@@ -483,13 +367,14 @@ function initDatabase(PDO $db): void
         $insAdmin->execute([':hash' => $defaultHash]);
     }
 
-    // Optional first-run seeding from inventory.json (SQLite only).
-    // Disabled by default to avoid unintended overwrites; enable by setting
-    // ENABLE_INVENTORY_SEED=1 in the environment before first run.
+    // If a pre-defined inventory JSON exists and products table is empty,
+    // seed the products from that file.  This allows the catalogue to
+    // populate automatically on first run without requiring manual
+    // insertion.  The file should contain a JSON array of objects with
+    // keys "name", "description", and "price".
     $prodCount = (int)$db->query('SELECT COUNT(*) FROM products')->fetchColumn();
     $inventoryFile = __DIR__ . '/../data/inventory.json';
-    $seedEnabled = getenv('ENABLE_INVENTORY_SEED') === '1';
-    if ($prodCount === 0 && $seedEnabled && is_readable($inventoryFile)) {
+    if ($prodCount === 0 && is_readable($inventoryFile)) {
         $json = file_get_contents($inventoryFile);
         $items = json_decode($json, true);
         if (is_array($items)) {
@@ -504,57 +389,6 @@ function initDatabase(PDO $db): void
                 }
             }
         }
-    } elseif ($prodCount === 0 && !$seedEnabled) {
-        // No seed performed; leave products empty until inventory is updated via admin
-        error_log('initDatabase: inventory seed skipped (ENABLE_INVENTORY_SEED not set)');
-    }
-}
-
-/** Ensure SQLite favorites table uses composite primary key (id, sku). If not, rebuild table safely. */
-function ensureSQLiteFavoritesSchema(PDO $db): void
-{
-    $driver = $db->getAttribute(PDO::ATTR_DRIVER_NAME);
-    if (strcasecmp($driver, 'sqlite') !== 0) return;
-    // If table doesn't exist, create with correct schema
-    try { $db->exec('CREATE TABLE IF NOT EXISTS favorites (id INTEGER NOT NULL, sku TEXT NOT NULL, PRIMARY KEY (id, sku))'); } catch (Exception $e) { /* ignore */ }
-    try {
-        $stmt = $db->query('PRAGMA table_info(favorites)');
-        $pkCols = [];
-        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            if (!empty($row['pk']) && (int)$row['pk'] > 0) { $pkCols[(int)$row['pk']] = strtolower($row['name']); }
-        }
-        // pk index in SQLite starts at 1 and orders columns; collect and sort by index
-        if (!empty($pkCols)) { ksort($pkCols); }
-        $pkList = array_values($pkCols);
-        $ok = (count($pkList) === 2 && $pkList[0] === 'id' && $pkList[1] === 'sku');
-        if (!$ok) {
-            // Rebuild table to enforce composite primary key
-            $db->beginTransaction();
-            $db->exec('CREATE TABLE IF NOT EXISTS favorites_new (id INTEGER NOT NULL, sku TEXT NOT NULL, PRIMARY KEY (id, sku))');
-            // Insert unique pairs only
-            $db->exec('INSERT OR IGNORE INTO favorites_new (id, sku) SELECT id, sku FROM favorites');
-            $db->exec('DROP TABLE IF EXISTS favorites');
-            $db->exec('ALTER TABLE favorites_new RENAME TO favorites');
-            $db->commit();
-        }
-        // Drop any unique index on sku-only
-        try {
-            $ilist = $db->query("PRAGMA index_list('favorites')");
-            while ($ir = $ilist->fetch(PDO::FETCH_ASSOC)) {
-                $iname = $ir['name'] ?? null; $unique = (int)($ir['unique'] ?? 0);
-                if ($iname && $unique === 1) {
-                    $iinfo = $db->query("PRAGMA index_info('" . str_replace("'","''", $iname) . "')");
-                    $cols = [];
-                    while ($ci = $iinfo->fetch(PDO::FETCH_ASSOC)) { $cols[] = strtolower($ci['name'] ?? ''); }
-                    if (count($cols) === 1 && $cols[0] === 'sku') {
-                        try { $db->exec('DROP INDEX IF EXISTS ' . $iname); } catch (Exception $dx) { error_log('ensureSQLiteFavoritesSchema drop unique sku index failed: ' . $dx->getMessage()); }
-                    }
-                }
-            }
-        } catch (Exception $e2) { error_log('ensureSQLiteFavoritesSchema index_list error: ' . $e2->getMessage()); }
-    } catch (Exception $e) {
-        try { $db->rollBack(); } catch (Exception $_) {}
-        error_log('ensureSQLiteFavoritesSchema error: ' . $e->getMessage());
     }
 }
 

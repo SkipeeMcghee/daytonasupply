@@ -47,7 +47,7 @@ if (!isset($_SESSION['admin'])) {
         <p class="error"><?php echo htmlspecialchars($loginError); ?></p>
     <?php endif; ?>
     <form method="post" action="">
-        <p>Password: <input type="password" name="password" required class="search-variant"></p>
+        <p>Password: <input type="password" name="password" required></p>
         <p><button type="submit">Login</button></p>
     </form>
     <?php
@@ -164,101 +164,26 @@ if (isset($_GET['delete_product'])) {
     exit;
 }
 
-// Toggle deal flag for a product (GET action for simplicity)
-if (isset($_GET['toggle_deal'])) {
-    $prodId = (int)$_GET['toggle_deal'];
-    $db = getDb();
-    try {
-        // Ensure column exists; for MySQL ensure helper already runs at connect, SQLite migration covers others.
-        $row = getProductById($prodId);
-        if ($row) {
-            $newVal = (!empty($row['deal']) && (int)$row['deal'] === 1) ? 0 : 1;
-            $stmt = $db->prepare('UPDATE products SET deal = :deal WHERE id = :id');
-            $stmt->execute([':deal' => $newVal, ':id' => $prodId]);
-        }
-    } catch (Exception $e) {
-        error_log('toggle_deal error: ' . $e->getMessage());
-    }
-    invalidateProductsCache();
-    header('Location: managerportal.php#products');
-    exit;
-}
-
 // Handle POST actions for saving products, adding products, and saving customers
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Save products
     if (isset($_POST['save_products'])) {
-        $db = getDb();
-        $driver = 'unknown';
-        try { $driver = $db->getAttribute(PDO::ATTR_DRIVER_NAME); } catch (Exception $_) {}
-
-        // Prefer JSON payload to bypass PHP max_input_vars limits
-        $updates = [];
-        if (!empty($_POST['products_json'])) {
-            $decoded = json_decode((string)$_POST['products_json'], true);
-            if (is_array($decoded)) {
-                foreach ($decoded as $idStr => $vals) {
-                    $id = (int)$idStr;
-                    if ($id <= 0) continue;
-                    $name = normalizeScalar((string)($vals['name'] ?? ''), 128, '');
-                    $desc = normalizeScalar((string)($vals['description'] ?? ''), 512, '');
-                    $num = (string)($vals['price'] ?? '0');
-                    $num = str_replace([',', ' '], '', $num);
-                    if (!preg_match('/^-?\d*(?:\.\d+)?$/', $num)) { $num = '0'; }
-                    $price = number_format((float)$num, 2, '.', '');
-                    $updates[$id] = ['name' => $name, 'description' => $desc, 'price' => $price];
-                }
-            }
-        } else {
-            // Fallback: build updates from individual inputs (may be truncated by max_input_vars)
-            foreach ($_POST as $key => $val) {
-                if (!is_string($key)) continue;
-                if (preg_match('/^(name|desc|price)_(\d+)$/', $key, $m)) {
-                    $field = $m[1];
-                    $id = (int)$m[2];
-                    if ($id <= 0) continue;
-                    if (!isset($updates[$id])) $updates[$id] = ['name' => null, 'description' => null, 'price' => null];
-                    if ($field === 'name') {
-                        $updates[$id]['name'] = normalizeScalar((string)$val, 128, '');
-                    } elseif ($field === 'desc') {
-                        $updates[$id]['description'] = normalizeScalar((string)$val, 512, '');
-                    } elseif ($field === 'price') {
-                        $num = (string)$val;
-                        $num = str_replace([',', ' '], '', $num);
-                        if (!preg_match('/^-?\d*(?:\.\d+)?$/', $num)) { $num = '0'; }
-                        $updates[$id]['price'] = number_format((float)$num, 2, '.', '');
-                    }
-                }
+        $products = getAllProducts();
+        foreach ($products as $prod) {
+            $id = (int)$prod['id'];
+            $nameField = 'name_' . $id;
+            $descField = 'desc_' . $id;
+            $priceField = 'price_' . $id;
+            if (isset($_POST[$nameField], $_POST[$priceField])) {
+                $data = [
+                    'name' => normalizeScalar($_POST[$nameField] ?? '', 128, ''),
+                    'description' => normalizeScalar($_POST[$descField] ?? '', 512, ''),
+                    'price' => (float)($_POST[$priceField] ?? 0.0)
+                ];
+                saveProduct($data, $id);
             }
         }
-
-        if (!empty($updates)) {
-            // Start transaction where supported
-            $inTx = false;
-            try { $db->beginTransaction(); $inTx = true; } catch (Exception $_) {}
-
-            $stmt = $db->prepare('UPDATE products SET name = :name, description = :description, price = :price WHERE id = :id');
-            $updatedCount = 0;
-            foreach ($updates as $id => $vals) {
-                $name = (string)($vals['name'] ?? '');
-                $desc = (string)($vals['description'] ?? '');
-                $price = (string)($vals['price'] ?? '0.00');
-                $stmt->execute([':id' => (int)$id, ':name' => $name, ':description' => $desc, ':price' => $price]);
-                $updatedCount += (int)$stmt->rowCount();
-            }
-            if ($inTx) { try { $db->commit(); } catch (Exception $_) {} }
-            error_log('saveProducts: direct updates executed for ' . count($updates) . ' products; rows affected=' . $updatedCount);
-        }
-
-        // Invalidate caches and force a fresh reload
-        invalidateProductsCache();
-        $cacheFile = __DIR__ . '/data/cache_products.json';
-        if (file_exists($cacheFile)) { @unlink($cacheFile); }
-
-        header('Cache-Control: no-cache, no-store, must-revalidate');
-        header('Pragma: no-cache');
-        header('Expires: 0');
-        header('Location: managerportal.php?updated=' . time() . '&nocache=' . mt_rand());
+    header('Location: managerportal.php');
         exit;
     }
     // Add a new product
@@ -340,26 +265,7 @@ if ($filter === 'archived') {
 // Customers: separate lists for unverified and verified
 $unverifiedCustomers = getCustomersByVerified(false);
 $verifiedCustomers = getCustomersByVerified(true);
-
-// Debug: Check database driver and add timestamp
-$db = getDb();
-$driver = 'unknown';
-try { $driver = $db->getAttribute(PDO::ATTR_DRIVER_NAME); } catch (Exception $_) {}
-error_log('managerportal: loading products via driver=' . $driver . ' at ' . date('H:i:s'));
-
-// If we just updated products, force cache bypass
-if (isset($_GET['updated']) || isset($_GET['nocache'])) {
-    invalidateProductsCache();
-    $cacheFile = __DIR__ . '/data/cache_products.json';
-    if (file_exists($cacheFile)) {
-        unlink($cacheFile);
-    }
-    error_log('managerportal: forced cache clear due to updated parameter');
-}
-
-// Use a fresh DB read to ensure UI reflects the latest data immediately
-$products = getAllProductsFresh();
-error_log('managerportal: loaded ' . count($products) . ' products');
+$products = getAllProducts();
 
 // Whether we're showing archived orders (used by the toggle link below)
 $showArchived = ($filter === 'archived');
@@ -371,12 +277,6 @@ require_once __DIR__ . '/includes/header.php';
 <h2>Manager Portal</h2>
 
 <!-- Toolbar removed; Update Inventory button moved to Products section -->
-
-<?php if (isset($_GET['updated'])): ?>
-    <div style="margin:10px 0; padding:10px; background:#e7f5ff; border:1px solid #b3e0ff; border-radius:6px; color:#0b5ed7;">
-        Product changes saved at <?php echo htmlspecialchars(date('n/j/Y g:i:s A')); ?>.
-    </div>
-<?php endif; ?>
 
 <section id="orders-section">
     <h3>Orders</h3>
@@ -692,79 +592,26 @@ require_once __DIR__ . '/includes/header.php';
     </form>
 </section>
 
-<section id="products">
+<section>
     <h3>Products</h3>
-    <?php
-        // Derive list of active deals for display
-        $activeDeals = array_values(array_filter($products, function($p){ return !empty($p['deal']); }));
-    ?>
-    <h4>Active Deals</h4>
-    <table class="admin-table">
-        <tr><th>ID</th><th>Name</th><th>Description</th><th>Price</th><th>Actions</th></tr>
-        <?php foreach ($activeDeals as $d): ?>
-            <tr>
-                <td><?= (int)$d['id'] ?></td>
-                <td><?= htmlspecialchars($d['name']) ?></td>
-                <td><?= htmlspecialchars($d['description']) ?></td>
-                <td>$<?= number_format((float)$d['price'], 2) ?></td>
-                <td><a class="mgr-btn" href="?toggle_deal=<?= (int)$d['id'] ?>" style="background:#dc3545;color:#fff;" onclick="return confirm('Remove this item from Deals?');">Unset Deal</a></td>
-            </tr>
-        <?php endforeach; ?>
-        <?php if (empty($activeDeals)): ?>
-            <tr><td colspan="5">No active deals.</td></tr>
-        <?php endif; ?>
-    </table>
     <!-- Update Inventory button moved below the products table to sit beside Save Product Changes -->
-    <form method="post" action="" id="productsForm">
+    <form method="post" action="">
         <input type="hidden" name="save_products" value="1">
-        <input type="hidden" name="products_json" id="products_json" value="">
         <table class="admin-table">
-            <tr><th>ID</th><th>Name</th><th>Description</th><th>Price</th><th>Deal</th><th>Image</th><th>Actions</th></tr>
-            <?php foreach ($products as $prod): ?>
+            <tr><th>ID</th><th>Name</th><th>Description</th><th>Price</th><th>Actions</th></tr>
+            <?php $rowNum = 1; foreach ($products as $prod): ?>
                 <tr>
-                    <!-- Show the real product ID for clarity -->
-                    <td><?php echo (int)$prod['id']; ?></td>
-                    <td><input type="text" name="name_<?php echo (int)$prod['id']; ?>" value="<?php echo htmlspecialchars($prod['name']); ?>"></td>
-                    <td><input type="text" name="desc_<?php echo (int)$prod['id']; ?>" value="<?php echo htmlspecialchars($prod['description']); ?>"></td>
-                    <!-- Avoid number_format to prevent commas; let the browser handle display/format -->
-                    <td><input type="number" step="0.01" name="price_<?php echo (int)$prod['id']; ?>" value="<?php echo htmlspecialchars((string)$prod['price']); ?>"></td>
-                    <td>
-                        <?php $isDeal = !empty($prod['deal']); ?>
-                        <a class="mgr-btn" href="?toggle_deal=<?php echo (int)$prod['id']; ?>" style="background: <?php echo $isDeal ? '#dc3545' : '#198754'; ?>; color:#fff;" onclick="return confirm('<?php echo $isDeal ? 'Unset this deal?' : 'Mark this item as a Deal?'; ?>');"><?php echo $isDeal ? 'Unset' : 'Set'; ?> Deal</a>
-                    </td>
-                    <td>
-                        <?php
-                            // Resolve current image URL by trying extensions
-                            $name = (string)($prod['name'] ?? '');
-                            $slug = strtolower(preg_replace('/[^a-z0-9]+/i', '-', $name));
-                            $slug = trim(preg_replace('/-+/', '-', $slug), '-');
-                            if ($slug === '') $slug = 'product';
-                            $base = '/assets/uploads/products/' . $slug;
-                            $exts = ['jpg','jpeg','png','webp','gif'];
-                            $imgUrl = '';
-                            foreach ($exts as $e) {
-                                $path = __DIR__ . '/assets/uploads/products/' . $slug . '.' . $e;
-                                if (is_file($path)) { $imgUrl = $base . '.' . $e; break; }
-                            }
-                            $placeholder = '/assets/DaytonaSupplyDSlogo.png';
-                            if (!is_file(__DIR__ . '/assets/DaytonaSupplyDSlogo.png')) {
-                                // fallback to existing logo path in assets/images
-                                $placeholder = '/assets/images/DaytonaSupplyDSlogo.png';
-                            }
-                        ?>
-                        <div class="manager-dropzone" data-product-id="<?= (int)$prod['id'] ?>" data-product-name="<?= htmlspecialchars($name) ?>">
-                            <div class="dz-preview">
-                                <img src="<?= htmlspecialchars($imgUrl ?: $placeholder) ?>" alt="Preview" />
-                            </div>
-                            <div class="dz-instructions">Drop image here or click to upload</div>
-                            <input type="file" accept="image/*" class="dz-file" style="display:none;" />
-                        </div>
-                    </td>
-                    <td><a class="mgr-btn mgr-product-delete" href="?delete_product=<?php echo (int)$prod['id']; ?>" onclick="return confirm('Delete this product?');">Delete</a></td>
+                    <!-- Display a sequential row number instead of the raw product ID -->
+                    <td><?php echo $rowNum; ?></td>
+                    <td><input type="text" name="name_<?php echo $prod['id']; ?>" value="<?php echo htmlspecialchars($prod['name']); ?>"></td>
+                    <td><input type="text" name="desc_<?php echo $prod['id']; ?>" value="<?php echo htmlspecialchars($prod['description']); ?>"></td>
+                    <td><input type="number" step="0.01" name="price_<?php echo $prod['id']; ?>" value="<?php echo number_format($prod['price'], 2); ?>"></td>
+                    <td><a class="mgr-btn mgr-product-delete" href="?delete_product=<?php echo $prod['id']; ?>" onclick="return confirm('Delete this product?');">Delete</a></td>
                 </tr>
+                <?php $rowNum++; ?>
             <?php endforeach; ?>
             <?php if (empty($products)): ?>
-                <tr><td colspan="7">No products found.</td></tr>
+                <tr><td colspan="5">No products found.</td></tr>
             <?php endif; ?>
         </table>
     <p style="display:flex;gap:8px;align-items:center;">
@@ -772,85 +619,13 @@ require_once __DIR__ . '/includes/header.php';
         <a href="admin/update_inventory.php" style="background:#0b5ed7; color:#fff; padding:8px 14px; border-radius:6px; text-decoration:none; font-weight:600;">Update Inventory</a>
     </p>
     </form>
-    <script>
-    // Serialize the products table into a single JSON payload to avoid hitting PHP max_input_vars
-    (function(){
-        var form = document.getElementById('productsForm');
-        if (!form) return;
-        form.addEventListener('submit', function(){
-            try {
-                var rows = form.querySelectorAll('table.admin-table tr');
-                var data = {};
-                for (var i = 1; i < rows.length; i++) { // skip header row
-                    var r = rows[i];
-                    var idCell = r.children && r.children[0];
-                    if (!idCell) continue;
-                    var idText = idCell.textContent ? idCell.textContent.trim() : '';
-                    var id = parseInt(idText, 10);
-                    if (!id || id <= 0) continue;
-                    var nameInput = r.querySelector('input[name="name_' + id + '"]');
-                    var descInput = r.querySelector('input[name="desc_' + id + '"]');
-                    var priceInput = r.querySelector('input[name="price_' + id + '"]');
-                    if (!nameInput && !descInput && !priceInput) continue;
-                    var name = nameInput ? nameInput.value : '';
-                    var desc = descInput ? descInput.value : '';
-                    var price = priceInput ? priceInput.value : '0';
-                    data[id] = { name: name, description: desc, price: price };
-                }
-                var hidden = document.getElementById('products_json');
-                hidden.value = JSON.stringify(data);
-            } catch (e) {
-                // If serialization fails, allow normal submission of individual inputs
-                console.error('products_json serialization failed', e);
-            }
-        });
-    })();
-    // Bind manager dropzones
-    (function(){
-        function uploadFile(dz, file, name, id){
-            if (!file) return;
-            var fd = new FormData();
-            fd.append('image', file);
-            if (name) fd.append('product_name', name);
-            if (id) fd.append('product_id', String(id));
-            dz.classList.add('dz-uploading');
-            fetch('/ajax/upload_product_image.php', { method: 'POST', body: fd, credentials: 'same-origin' })
-                .then(function(r){ return r.json().catch(function(){ return {}; }); })
-                .then(function(json){
-                    dz.classList.remove('dz-uploading');
-                    if (!json || !json.success) { alert('Upload failed' + (json && json.error ? ': ' + json.error : '')); return; }
-                    var img = dz.querySelector('.dz-preview img');
-                    if (img) { img.src = json.url; }
-                })
-                .catch(function(){ dz.classList.remove('dz-uploading'); alert('Upload failed'); });
-        }
-        document.querySelectorAll('.manager-dropzone').forEach(function(dz){
-            var input = dz.querySelector('input.dz-file');
-            var name = dz.getAttribute('data-product-name') || '';
-            var id = parseInt(dz.getAttribute('data-product-id') || '0', 10) || 0;
-            dz.addEventListener('click', function(e){
-                if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON')) return;
-                if (input) input.click();
-            });
-            if (input) input.addEventListener('change', function(){ if (input.files && input.files[0]) uploadFile(dz, input.files[0], name, id); });
-            dz.addEventListener('dragover', function(e){ e.preventDefault(); dz.classList.add('dz-over'); });
-            dz.addEventListener('dragleave', function(e){ dz.classList.remove('dz-over'); });
-            dz.addEventListener('drop', function(e){ e.preventDefault(); dz.classList.remove('dz-over'); var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (f) uploadFile(dz, f, name, id); });
-        });
-    })();
-    </script>
     <h4>Add Product</h4>
     <form method="post" action="">
         <input type="hidden" name="add_product" value="1">
-        <p>Name: <input type="text" name="name" required class="search-variant"></p>
-        <p>Description: <input type="text" name="description" class="search-variant"></p>
-        <p>Price: <input type="number" step="0.01" name="price" required class="search-variant"></p>
+        <p>Name: <input type="text" name="name" required></p>
+        <p>Description: <input type="text" name="description"></p>
+        <p>Price: <input type="number" step="0.01" name="price" required></p>
     <p><button type="submit" class="proceed-btn">Add Product</button></p>
     </form>
 </section>
-    <!-- Back to top -->
-    <div id="backToTopWrap" class="back-to-top-wrap" aria-hidden="true">
-        <span class="back-to-top-label">Return To Top</span>
-        <button id="backToTop" class="back-to-top" aria-label="Back to top">↑</button>
-    </div>
 <?php include __DIR__ . '/includes/footer.php'; ?>

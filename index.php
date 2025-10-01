@@ -26,8 +26,7 @@ require_once __DIR__ . '/includes/header.php';
 						<div class="slide-copy">
 							<h2 class="slide-title">Order Faster — Account Tools for Businesses</h2>
 							<p class="slide-sub">View past orders, browse products and place orders in minutes.</p>
-							<?php $createAcctHref = isset($_SESSION['customer']) ? 'account.php' : 'signup.php'; ?>
-							<p><a class="cta" href="<?php echo $createAcctHref; ?>">Create an Account</a></p>
+							<p><a class="cta" href="login.php">Create an Account</a></p>
 						</div>
 					</article>
 					<article class="carousel-slide" aria-hidden="true">
@@ -52,7 +51,7 @@ require_once __DIR__ . '/includes/header.php';
 				<h3>View Catalog</h3>
 				<p>Explore our full product range and bulk pricing.</p>
 			</a>
-			<a class="promo card" href="account.php#your-orders">
+			<a class="promo card" href="login.php">
 				<h3>Check your Orders</h3>
 				<p>Log in to access account and order details.</p>
 			</a>
@@ -134,10 +133,7 @@ require_once __DIR__ . '/includes/header.php';
 	</section>
 
 	<!-- Back to top -->
-	<div id="backToTopWrap" class="back-to-top-wrap" aria-hidden="true">
-		<span class="back-to-top-label">Return To Top</span>
-		<button id="backToTop" class="back-to-top" aria-label="Back to top">↑</button>
-	</div>
+	<button id="backToTop" class="back-to-top" aria-label="Back to top">↑</button>
 </main>
 
 <?php include __DIR__ . '/includes/footer.php'; ?>

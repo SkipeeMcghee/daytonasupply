@@ -8,7 +8,6 @@
 
 session_start();
 require_once __DIR__ . '/../includes/db.php';
-require_once __DIR__ . '/../includes/functions.php';
 // Only proceed if admin is authenticated
 if (!isset($_SESSION['admin'])) {
     // Use relative path to manager portal when redirecting from within admin
@@ -27,16 +26,6 @@ try {
         }
     }
     $db->beginTransaction();
-    // If using MySQL, disable foreign key checks for the duration of the
-    // remap/swap to avoid transient violations while product IDs change.
-    $driver = $db->getAttribute(PDO::ATTR_DRIVER_NAME);
-    $fkDisabled = false;
-    if (strcasecmp($driver, 'mysql') === 0) {
-        try {
-            $db->exec('SET FOREIGN_KEY_CHECKS=0');
-            $fkDisabled = true;
-        } catch (Exception $_) { /* continue even if disable fails */ }
-    }
     // Capture mapping of old product IDs to their names before clearing the table.  This
     // allows us to update existing order_items records when the inventory is
     // reloaded.  We fetch all current products into an associative array keyed
@@ -174,7 +163,8 @@ try {
         exit;
     }
 
-    // Foreign key checks are already disabled above for MySQL
+    // Temporarily disable foreign key checks for the atomic swap
+    $db->exec('SET FOREIGN_KEY_CHECKS = 0');
     // Use a timestamped backup name to avoid collisions with previous runs
     $ts = preg_replace('/[^0-9]/', '', date('Ymd_His')) . '_' . getmypid();
     $oldName = 'products_old_' . $ts;
@@ -188,32 +178,10 @@ try {
     } catch (Exception $_) {
         // Keep the backup table for manual inspection; do not abort the update
     }
-    // Ensure order_items.product_id has a valid FK pointing to the current products table.
-    // Drop any existing product_id FKs and recreate a single correct FK.
-    $currentDb = $db->query('SELECT DATABASE()')->fetchColumn();
-    $kcu = $db->prepare(
-        'SELECT CONSTRAINT_NAME, REFERENCED_TABLE_NAME
-           FROM information_schema.KEY_COLUMN_USAGE
-          WHERE TABLE_SCHEMA = :db AND TABLE_NAME = "order_items" AND COLUMN_NAME = "product_id" AND REFERENCED_TABLE_NAME IS NOT NULL'
-    );
-    $kcu->execute([':db' => $currentDb]);
-    while ($fk = $kcu->fetch(PDO::FETCH_ASSOC)) {
-        $cname = $fk['CONSTRAINT_NAME'];
-        // Drop any existing FK (even if already correct) to normalize state
-        try { $db->exec('ALTER TABLE order_items DROP FOREIGN KEY `' . str_replace('`','',$cname) . '`'); } catch (Exception $_) {}
-    }
-    // Recreate canonical FK referencing products(id)
-    try { $db->exec('ALTER TABLE order_items ADD CONSTRAINT fk_order_items_product FOREIGN KEY (product_id) REFERENCES products(id)'); } catch (Exception $_) {}
-
-    // Re-enable foreign key checks if they were disabled
-    if ($fkDisabled) {
-        try { $db->exec('SET FOREIGN_KEY_CHECKS=1'); } catch (Exception $_) {}
-    }
+    $db->exec('SET FOREIGN_KEY_CHECKS = 1');
     }
 
     $db->commit();
-    // Invalidate any cached product listings so the portal/catalogue reflect updates
-    invalidateProductsCache();
     // Redirect back to the manager portal once done
     header('Location: ../managerportal.php');
     exit;

@@ -1,11 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/functions.php';
-
-// Ensure the session is started before performing auth checks/redirects
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+require_once __DIR__ . '/includes/header.php';
 
 $title = 'Checkout';
 
@@ -18,14 +14,11 @@ if (!$cart) {
     return;
 }
 
-// Require login: if not authenticated, send to login with a safe return to checkout
+// Require login
 if (!isset($_SESSION['customer'])) {
-    header('Location: login.php?next=checkout.php');
+    header('Location: login.php');
     exit;
 }
-
-// With authentication confirmed, include the page header (emits HTML)
-require_once __DIR__ . '/includes/header.php';
 
 $customer = $_SESSION['customer'];
 $message = '';
@@ -36,20 +29,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $cartTotal = 0.0;
     $itemsDesc = [];
     foreach ($cart as $pid => $entry) {
-        // Support snapshot entries stored in session cart or legacy numeric qty
         if (is_array($entry) && isset($entry['quantity'])) {
             $qty = (int)$entry['quantity'];
             $name = $entry['product_name'] ?? '';
-            $price = isset($entry['product_price']) ? (float)$entry['product_price'] : null;
-            // If snapshot fields are missing, resolve current product data
-            if ($name === '' || $price === null || $price === 0.0) {
+            $price = isset($entry['product_price']) ? (float)$entry['product_price'] : 0.0;
+            if ($name === '' || $price === 0.0) {
                 $prod = getProductById((int)$pid);
                 if ($prod) {
-                    if ($name === '') $name = $prod['name'] ?? 'Product #' . (int)$pid;
-                    if ($price === null || $price === 0.0) $price = (float)($prod['price'] ?? 0.0);
+                    $name = $prod['name'];
+                    if ($price === 0.0) $price = (float)$prod['price'];
                 } else {
-                    if ($name === '') $name = 'Product #' . (int)$pid;
-                    if ($price === null) $price = 0.0;
+                    $name = 'Product #' . (int)$pid;
                 }
             }
             $itemsDesc[] = $name . ' x' . $qty . ' ($' . number_format($price * $qty, 2) . ')';
@@ -109,56 +99,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Build order summary
 $items = [];
 $total = 0.0;
-foreach ($cart as $pid => $entry) {
-    // Support snapshot entries and legacy numeric-only entries
-    if (is_array($entry) && isset($entry['quantity'])) {
-        $qty = (int)$entry['quantity'];
-        $name = $entry['product_name'] ?? '';
-        $desc = $entry['product_description'] ?? '';
-        $price = isset($entry['product_price']) ? (float)$entry['product_price'] : null;
-        if ($name === '' || $price === null || $price === 0.0) {
-            $prod = getProductById((int)$pid);
-            if ($prod) {
-                if ($name === '') $name = $prod['name'] ?? '';
-                if ($desc === '') $desc = $prod['description'] ?? '';
-                if ($price === null || $price === 0.0) $price = (float)($prod['price'] ?? 0.0);
-            }
-        }
-        $subtotal = ($price ?? 0.0) * $qty;
+foreach ($cart as $pid => $qty) {
+    $prod = getProductById((int)$pid);
+    if ($prod) {
+        $subtotal = $prod['price'] * $qty;
         $items[] = [
             'id' => (int)$pid,
-            'name' => $name,
-            'description' => $desc,
-            'price' => ($price ?? 0.0),
+            'name' => $prod['name'],
+            'description' => $prod['description'] ?? '',
+            'price' => $prod['price'],
             'qty' => $qty,
             'subtotal' => $subtotal
         ];
         $total += $subtotal;
-    } else {
-        $qty = (int)$entry;
-        $prod = getProductById((int)$pid);
-        if ($prod) {
-            $subtotal = $prod['price'] * $qty;
-            $items[] = [
-                'id' => (int)$pid,
-                'name' => $prod['name'],
-                'description' => $prod['description'] ?? '',
-                'price' => $prod['price'],
-                'qty' => $qty,
-                'subtotal' => $subtotal
-            ];
-            $total += $subtotal;
-        }
     }
 }
 ?>
 
-<div class="container"><div class="form-card">
+<section class="page-hero">
     <h2>Checkout</h2>
+</section>
 <?php if ($message): ?>
     <div class="message"><?php echo htmlspecialchars($message); ?></div>
 <?php else: ?>
-    <table class="cart-table checkout-table">
+    <table class="cart-table">
         <tr>
             <th>SKU</th>
             <th>Description</th>
@@ -167,21 +131,10 @@ foreach ($cart as $pid => $entry) {
             <th class="numeric">Price</th>
         </tr>
         <?php foreach ($items as $it): ?>
-            <?php
-                // Prefer snapshot/cart-provided fields to keep checkout consistent with cart display
-                $sku = isset($it['name']) ? htmlspecialchars($it['name']) : '';
-                $description = isset($it['description']) ? htmlspecialchars($it['description']) : '';
-                if ($sku === '' || $description === '') {
-                    $prod = getProductById((int)$it['id']);
-                    if ($prod) {
-                        if ($sku === '') $sku = htmlspecialchars($prod['name']);
-                        if ($description === '') $description = htmlspecialchars($prod['description'] ?? $prod['name']);
-                    } else {
-                        if ($sku === '') $sku = 'Product #' . (int)$it['id'];
-                        if ($description === '') $description = $sku;
-                    }
-                }
-            ?>
+            <?php $prod = getProductById((int)$it['id']);
+                  // The product 'name' field is used as the visible SKU/code.
+                  $sku = $prod ? htmlspecialchars($prod['name']) : htmlspecialchars($it['name']);
+                  $description = $prod ? htmlspecialchars($prod['description'] ?? $prod['name']) : htmlspecialchars($it['name']); ?>
             <tr>
                 <td><?php echo $sku; ?></td>
                 <td><?php echo $description; ?></td>
@@ -190,17 +143,17 @@ foreach ($cart as $pid => $entry) {
                 <td class="numeric">$<?php echo number_format($it['subtotal'], 2); ?></td>
             </tr>
         <?php endforeach; ?>
-        <tr class="cart-total-row">
-            <td class="cart-total-label" colspan="4"><strong>Subtotal:</strong></td>
-            <td class="cart-total-amount numeric"><strong id="checkout-subtotal-amount">$<?php echo number_format($total, 2); ?></strong></td>
+        <tr>
+            <td colspan="4" style="text-align:right"><strong>Subtotal:</strong></td>
+            <td class="numeric" id="checkout-subtotal"><strong>$<?php echo number_format($total, 2); ?></strong></td>
         </tr>
-        <tr class="cart-total-row" id="checkout-tax-row" style="display:none;">
-            <td class="cart-total-label" colspan="4"><strong>Sales Tax (6.5%):</strong></td>
-            <td class="cart-total-amount numeric"><strong id="checkout-tax-amount">$0.00</strong></td>
+        <tr id="checkout-tax-row" style="display:none;">
+            <td colspan="4" style="text-align:right"><strong>Sales Tax (6.5%):</strong></td>
+            <td class="numeric" id="checkout-tax-amount">$0.00</td>
         </tr>
-        <tr class="cart-total-row">
-            <td class="cart-total-label" colspan="4"><strong>Total:</strong></td>
-            <td class="cart-total-amount numeric"><strong id="checkout-total-amount">$<?php echo number_format($total, 2); ?></strong></td>
+        <tr>
+            <td colspan="4" style="text-align:right"><strong>Total:</strong></td>
+            <td class="numeric" id="checkout-total"><strong>$<?php echo number_format($total, 2); ?></strong></td>
         </tr>
     </table>
     <form method="post" action="" id="checkout-form">
@@ -212,22 +165,22 @@ foreach ($cart as $pid => $entry) {
     <script>
     (function(){
         var taxCheckbox = document.getElementById('apply_tax');
-    var subtotalAmt = document.getElementById('checkout-subtotal-amount');
-    var taxRow = document.getElementById('checkout-tax-row');
-    var taxAmtEl = document.getElementById('checkout-tax-amount');
-    var totalAmt = document.getElementById('checkout-total-amount');
+        var subtotalEl = document.getElementById('checkout-subtotal');
+        var taxRow = document.getElementById('checkout-tax-row');
+        var taxAmtEl = document.getElementById('checkout-tax-amount');
+        var totalEl = document.getElementById('checkout-total');
         function parseMoney(s){ return parseFloat(s.replace(/[^0-9.-]+/g,'')) || 0; }
         function update() {
-            var sub = parseMoney(subtotalAmt.textContent || subtotalAmt.innerText || '0');
+            var sub = parseMoney(subtotalEl.textContent || subtotalEl.innerText || '0');
             if (taxCheckbox && taxCheckbox.checked) {
                 var tax = Math.round(sub * 0.065 * 100) / 100;
                 taxAmtEl.textContent = '$' + tax.toFixed(2);
                 taxRow.style.display = '';
-                totalAmt.textContent = '$' + ( (Math.round((sub + tax) * 100))/100 ).toFixed(2);
+                totalEl.textContent = '$' + ( (Math.round((sub + tax) * 100))/100 ).toFixed(2);
             } else {
                 taxRow.style.display = 'none';
                 taxAmtEl.textContent = '$0.00';
-                totalAmt.textContent = '$' + sub.toFixed(2);
+                totalEl.textContent = '$' + sub.toFixed(2);
             }
         }
         if (taxCheckbox) {
@@ -239,24 +192,8 @@ foreach ($cart as $pid => $entry) {
         <?php if ($message): ?>
             var lead = document.getElementById('checkout-lead'); if (lead) lead.style.display = 'none';
         <?php endif; ?>
-        
-        // Adjust totals label colspan to span all but the last column; when SKU is hidden at <=735px, reduce by 1
-        function adjustCheckoutTotalsColspan(){
-            var mobile = window.matchMedia && window.matchMedia('(max-width: 735px)').matches;
-            document.querySelectorAll('.checkout-table .cart-total-row').forEach(function(row){
-                var firstCell = row.querySelector('td');
-                if (firstCell) {
-                    // Desktop: 5 columns (SKU, Desc, Qty, Rate, Price) -> span 4 before Price
-                    // Mobile (<=735px): SKU hidden -> 4 columns (Desc, Qty, Rate, Price) -> span 3 before Price
-                    firstCell.colSpan = mobile ? 3 : 4;
-                }
-            });
-        }
-        adjustCheckoutTotalsColspan();
-        window.addEventListener('resize', adjustCheckoutTotalsColspan);
     })();
     </script>
 <?php endif; ?>
-</div></div>
 
 <?php include __DIR__ . '/includes/footer.php'; ?>
