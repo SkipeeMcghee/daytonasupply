@@ -277,11 +277,31 @@ document.addEventListener('DOMContentLoaded', function () {
 		var mega = prodLi ? prodLi.querySelector('.mega') : null;
 		var closeBtn = mega ? mega.querySelector('.mega-close') : null;
 		var hideTimer = null;
+		var manuallyClosed = false; // when true, keep closed until pointer/focus fully leaves
+		var onProductsPage = (function(){
+			try {
+				var p = window.location.pathname || '';
+				return /(^|\/)products\.php$/.test(p);
+			} catch(e){ return false; }
+		})();
+
 		function showMega() {
+			if (onProductsPage) return; // disabled on products listing page
+			if (manuallyClosed) return; // don't reopen until user leaves and re-enters
 			if (!mega) return;
 			clearTimeout(hideTimer);
 			mega.style.display = 'block';
 			prodBtn.setAttribute('aria-expanded', 'true');
+		}
+		function hideMegaNow(force) {
+			if (!mega) return;
+			clearTimeout(hideTimer);
+			mega.style.display = 'none';
+			prodBtn.setAttribute('aria-expanded', 'false');
+			if (force) {
+				manuallyClosed = true;
+				if (prodLi) prodLi.classList.add('force-closed');
+			}
 		}
 		function scheduleHide(delay) {
 			if (!mega) return;
@@ -291,8 +311,7 @@ document.addEventListener('DOMContentLoaded', function () {
 				var hovering = (prodLi && prodLi.matches && prodLi.matches(':hover')) || (mega && mega.matches && mega.matches(':hover'));
 				var hasFocus = (prodLi && prodLi.contains && prodLi.contains(document.activeElement));
 				if (!hovering && !hasFocus) {
-					mega.style.display = 'none';
-					prodBtn.setAttribute('aria-expanded', 'false');
+					hideMegaNow(false);
 				}
 			}, delay || 160);
 		}
@@ -302,7 +321,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			prodBtn.addEventListener('click', function (e) {
 				e.preventDefault();
 				var expanded = prodBtn.getAttribute('aria-expanded') === 'true';
-				if (expanded) { scheduleHide(0); }
+				if (expanded) { hideMegaNow(true); }
 				else { showMega(); }
 			});
 		}
@@ -337,20 +356,36 @@ document.addEventListener('DOMContentLoaded', function () {
 				var rt = e.relatedTarget;
 				if (rt && mega.contains(rt)) return;
 				scheduleHide(140);
+				// once the user fully leaves the area, allow re-opening again
+				manuallyClosed = false;
+				if (prodLi) prodLi.classList.remove('force-closed');
 			});
 			mega.addEventListener('mouseenter', function(){ clearTimeout(hideTimer); showMega(); });
 			mega.addEventListener('mouseleave', function(){ scheduleHide(140); });
 			// Escape key closes when focused inside the menu
-			mega.addEventListener('keydown', function(e){ if (e.key === 'Escape') { scheduleHide(0); prodBtn.focus(); } });
+			mega.addEventListener('keydown', function(e){ if (e.key === 'Escape') { hideMegaNow(true); prodBtn.blur(); } });
 			if (closeBtn) {
 				closeBtn.addEventListener('click', function(e){
 					e.preventDefault(); e.stopPropagation();
-					// Close and suppress hover reopening
-					scheduleHide(0);
+					// Close immediately and keep it closed until user leaves the area
+					hideMegaNow(true);
+					try { closeBtn.blur(); } catch(err) {}
 					prodLi.classList.add('suppress-hover');
 					setTimeout(function(){ prodLi.classList.remove('suppress-hover'); }, 600);
 				});
 			}
+		}
+
+		// If on the products page, keep the mega menu disabled entirely (no hover/focus open)
+		if (onProductsPage && mega) {
+			try {
+				mega.style.display = 'none';
+				prodBtn.setAttribute('aria-expanded','false');
+				manuallyClosed = true;
+				// Prevent accidental open via keyboard focus
+				prodLi.addEventListener('focusin', function(e){ if (mega) { e.stopPropagation(); hideMegaNow(true); } }, true);
+				prodLi.addEventListener('mouseenter', function(){ hideMegaNow(true); }, true);
+			} catch(e){}
 		}
 	})();
 

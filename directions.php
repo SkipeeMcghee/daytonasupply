@@ -5,10 +5,7 @@ include __DIR__ . '/includes/header.php';
 ?>
 <main id="main" class="site-main" role="main">
   <section class="container" style="padding:28px 0;">
-    <header style="text-align:center; margin-bottom:18px;">
-      <h1 style="margin:0 0 6px;">Directions</h1>
-      <p style="margin:0; color: var(--muted);">Visit us at 1022 Reed Canal Rd, South Daytona, FL</p>
-    </header>
+    <!-- Removed top Directions heading for a cleaner start with the map -->
 
     <div class="map-card">
       <div class="map-aspect">

@@ -98,8 +98,13 @@ if ($loggedIn) {
     <?php $cssPath = __DIR__ . '/../assets/styles.css'; ?>
     <link rel="stylesheet" href="assets/styles.css?v=<?php echo file_exists($cssPath) ? filemtime($cssPath) : time(); ?>">
 </head>
-<?php $authClass = $loggedIn ? 'is-authenticated' : 'guest'; ?>
-<body class="<?php echo trim($serverThemeClass . ' ' . $authClass); ?>">
+<?php 
+    $authClass = $loggedIn ? 'is-authenticated' : 'guest';
+    // Add a page identifier class like page-products, page-catalogue, etc.
+    $script = basename($_SERVER['SCRIPT_NAME'] ?? '');
+    $pageId = $script ? 'page-' . strtolower(preg_replace('/\.[^.]+$/', '', $script)) : '';
+?>
+<body class="<?php echo trim($serverThemeClass . ' ' . $authClass . ' ' . $pageId); ?>">
     <?php if (!empty($_SESSION['admin']) && !empty($GLOBALS['DB_FALLBACK_REASON'])): ?>
     <div style="background:#dc3545;color:#fff;padding:8px 12px;font-weight:600;">
         Database fallback active: using SQLite because MySQL connection failed. Edits won’t affect MySQL until the connection succeeds.

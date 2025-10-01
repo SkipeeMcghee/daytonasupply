@@ -359,8 +359,20 @@ body.theme-dark .site-header .header-actions .nav-cart:active {
 .mega h4{margin:0 0 8px;font-size:14px;letter-spacing:0.06em}
 .has-mega:hover .mega,.has-mega:focus-within .mega,
 .products-item:hover .mega, .products-item:focus-within .mega {display:block}
-/* When suppress-hover is set on the container, do not show the mega on hover */
-.has-mega.suppress-hover:hover .mega, .products-item.suppress-hover:hover .mega { display: none !important; }
+/* When suppress-hover/force-closed is set on the container, do not show the mega on hover or focus */
+.has-mega.suppress-hover:hover .mega,
+.products-item.suppress-hover:hover .mega,
+.has-mega.suppress-hover:focus-within .mega,
+.products-item.suppress-hover:focus-within .mega,
+.has-mega.force-closed:hover .mega,
+.products-item.force-closed:hover .mega,
+.has-mega.force-closed:focus-within .mega,
+.products-item.force-closed:focus-within .mega { display: none !important; }
+
+/* On the products listing page, never open the products mega dropdown */
+body.page-products .products-item .mega { display: none !important; }
+body.page-products .products-item:hover .mega,
+body.page-products .products-item:focus-within .mega { display: none !important; }
 
 /* Center lower nav across the full width on desktop */
 .main-nav .nav-toggle { display: none; }

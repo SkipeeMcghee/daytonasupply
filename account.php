@@ -380,7 +380,12 @@ include __DIR__ . '/includes/header.php';
     <?php endif; ?>
 
   </div>
-</div>
+    <!-- Back to top -->
+    <div id="backToTopWrap" class="back-to-top-wrap" aria-hidden="true">
+        <span class="back-to-top-label">Return To Top</span>
+        <button id="backToTop" class="back-to-top" aria-label="Back to top">↑</button>
+    </div>
+
 <?php include __DIR__ . '/includes/footer.php'; ?>
 <script>
 // Ensure anchored sections (Account Details, Change Password, Orders) place the heading at top of the viewport (beneath sticky header)

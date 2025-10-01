@@ -110,17 +110,17 @@ $placeholder = 'assets/images/DaytonaSupplyDSlogo.png';
                 <h2 class="subcats-title">Corrugated Boxes</h2>
             </div>
             <div class="grid categories-grid">
-                <a class="category-card" href="<?php echo htmlspecialchars($cubeUrl); ?>">
-                    <img src="<?php echo htmlspecialchars($cubeImg); ?>" alt="Cube Boxes" loading="lazy">
-                    <div class="cat-body">
-                        <h3>Cube Corrugated Boxes</h3>
-                        <button class="shop-btn">Shop<br>Subcategory</button>
-                    </div>
-                </a>
                 <a class="category-card" href="<?php echo htmlspecialchars($allCorrUrl); ?>">
                     <img src="<?php echo htmlspecialchars($allCorrImg); ?>" alt="All Corrugated Boxes" loading="lazy">
                     <div class="cat-body">
                         <h3>All Corrugated Boxes</h3>
+                        <button class="shop-btn">Shop<br>Subcategory</button>
+                    </div>
+                </a>
+                <a class="category-card" href="<?php echo htmlspecialchars($cubeUrl); ?>">
+                    <img src="<?php echo htmlspecialchars($cubeImg); ?>" alt="Cube Boxes" loading="lazy">
+                    <div class="cat-body">
+                        <h3>Cube Corrugated Boxes</h3>
                         <button class="shop-btn">Shop<br>Subcategory</button>
                     </div>
                 </a>
