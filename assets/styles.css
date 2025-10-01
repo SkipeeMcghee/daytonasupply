@@ -618,7 +618,7 @@ html.theme-dark .map-meta, body.theme-dark .map-meta { border-top:1px solid rgba
 
 /* Message strip */
 .message-strip{padding:8px 0;background:#fff;border-top:1px solid #eef4fb;border-bottom:1px solid #eef4fb}
-.message-list{display:flex;gap:18px;list-style:none;margin:0;padding:8px 0;overflow:hidden}
+.message-list{display:flex;gap:18px;list-style:none;margin:0;padding:8px 0;overflow:hidden;justify-content:center}
 .message-list li{font-weight:700;color:var(--brand)}
 
 /* Dark-mode: make the message strip readable with white text and a subtle dark card */
@@ -830,7 +830,7 @@ html.theme-dark .carousel-dots button.active { background: #e8f6ff; }
 }
 
 /* Categories grid */
-.categories-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.categories-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
 .category-card{display:block;background:var(--card);border-radius:12px;overflow:hidden;text-decoration:none;color:var(--text);position:relative}
 /* Make category tiles square for visual consistency */
 .category-card { aspect-ratio: 1 / 1; display:flex; flex-direction:column; }
@@ -1136,6 +1136,8 @@ main > :last-child { margin-bottom: 0 !important; }
 @media(min-width:700px){
   .promo-grid{grid-template-columns:repeat(3,1fr)}
   .categories-grid{grid-template-columns:repeat(3,1fr)}
+  /* Make the bottom homepage category buttons about half the screen width and centered */
+  .categories .categories-grid{width:50vw;max-width:50vw;margin-left:auto;margin-right:auto}
   .footer-grid{grid-template-columns:2fr 1fr 1fr 1fr}
 }
 /* Collapse deals grid to one column on tablets/phones at 768px and narrower */
