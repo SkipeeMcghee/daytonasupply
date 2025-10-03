@@ -103,13 +103,17 @@ if ($loggedIn) {
         $dsLogoVer = file_exists($dsLogoFile) ? filemtime($dsLogoFile) : time();
         // Use the same source image for multiple rels; browsers will downscale.
     ?>
-    <link rel="icon" type="image/png" href="assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $dsLogoVer; ?>">
-    <link rel="icon" sizes="32x32" type="image/png" href="assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $dsLogoVer; ?>">
+    <!-- Favicon matrix (currently all point to same base image; replace with real resized exports for crispness) -->
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $dsLogoVer; ?>">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $dsLogoVer; ?>">
+    <link rel="icon" type="image/png" sizes="48x48" href="assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $dsLogoVer; ?>">
+    <link rel="icon" type="image/png" sizes="96x96" href="assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $dsLogoVer; ?>">
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $dsLogoVer; ?>">
+    <link rel="icon" type="image/png" sizes="512x512" href="assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $dsLogoVer; ?>">
+    <link rel="apple-touch-icon" sizes="167x167" href="assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $dsLogoVer; ?>">
     <link rel="apple-touch-icon" sizes="180x180" href="assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $dsLogoVer; ?>">
     <link rel="apple-touch-icon-precomposed" href="assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $dsLogoVer; ?>">
     <link rel="shortcut icon" href="assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $dsLogoVer; ?>">
-    <link rel="icon" sizes="192x192" href="assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $dsLogoVer; ?>">
-    <link rel="icon" sizes="512x512" href="assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $dsLogoVer; ?>">
     <link rel="manifest" href="/site.webmanifest?v=<?php echo $dsLogoVer; ?>">
     <meta name="theme-color" content="#0b5ed7">
 </head>
