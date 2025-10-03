@@ -1,0 +1,20 @@
+{
+  "name": "Daytona Supply",
+  "short_name": "Daytona",
+  "start_url": "/index.php",
+  "display": "standalone",
+  "background_color": "#0b5ed7",
+  "theme_color": "#0b5ed7",
+  "icons": [
+    {
+      "src": "assets/images/DaytonaSupplyDSlogo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/images/DaytonaSupplyDSlogo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

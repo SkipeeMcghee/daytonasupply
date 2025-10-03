@@ -492,7 +492,7 @@ html.theme-dark .map-meta, body.theme-dark .map-meta { border-top:1px solid rgba
 
 /* Message strip */
 .message-strip{padding:8px 0;background:#fff;border-top:1px solid #eef4fb;border-bottom:1px solid #eef4fb}
-.message-list{display:flex;gap:18px;list-style:none;margin:0;padding:8px 0;overflow:hidden}
+.message-list{display:flex;gap:18px;list-style:none;margin:0;padding:8px 0;overflow:hidden;justify-content:center;text-align:center}
 .message-list li{font-weight:700;color:var(--brand)}
 
 /* Dark-mode: make the message strip readable with white text and a subtle dark card */

@@ -415,12 +415,13 @@ require_once __DIR__ . '/includes/header.php';
         ?>
     </div>
     <?php foreach ($orders as $order): ?>
-    <div id="order-<?php echo $order['id']; ?>" class="order-group">
+    <?php $isCollapsed = $showArchived ? true : false; ?>
+    <div id="order-<?php echo $order['id']; ?>" class="order-group<?php echo $isCollapsed ? ' is-collapsed' : ''; ?>">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
     <div><strong>Order #<?php echo $order['id']; ?></strong> — <?php echo htmlspecialchars(date('n/j/Y g:i A', strtotime($order['created_at']))); ?><?php if (!empty($order['po_number'])): ?> <span class="order-po">PO: <?php echo htmlspecialchars($order['po_number']); ?></span><?php endif; ?> by <?php echo htmlspecialchars((getCustomerById((int)$order['customer_id'])['name'] ?? 'Unknown')); ?></div>
-        <div><span class="order-toggle" data-order="<?php echo $order['id']; ?>">Collapse</span></div>
+        <div><span class="order-toggle" role="button" tabindex="0" aria-expanded="<?php echo $isCollapsed ? 'false' : 'true'; ?>" data-order="<?php echo $order['id']; ?>" data-collapsed="<?php echo $isCollapsed ? '1' : '0'; ?>" style="cursor:pointer;color:#0d6efd;font-weight:600;"><?php echo $isCollapsed ? 'Expand' : 'Collapse'; ?></span></div>
     </div>
-    <table class="admin-table order-items" data-order="<?php echo $order['id']; ?>">
+    <table class="admin-table order-items" data-order="<?php echo $order['id']; ?>" style="<?php echo $isCollapsed ? 'display:none;' : ''; ?>">
         <tr>
             <th>ID</th>
             <th>Date</th>
@@ -508,6 +509,40 @@ require_once __DIR__ . '/includes/header.php';
     </table>
     </div>
     <?php endforeach; ?>
+    <script>
+    // Order collapse/expand toggler; archived view starts collapsed
+    (function(){
+        function toggleOrder(orderId, force){
+            var table = document.querySelector('table.order-items[data-order="' + orderId + '"]');
+            var toggle = document.querySelector('.order-toggle[data-order="' + orderId + '"]');
+            if (!table || !toggle) return;
+            var collapsed = toggle.getAttribute('data-collapsed') === '1';
+            if (force === true) collapsed = false;
+            else if (force === false) collapsed = true; // invert logic for force flags
+            else collapsed = !collapsed; // normal toggle
+            if (collapsed) {
+                table.style.display = 'none';
+                toggle.textContent = 'Expand';
+                toggle.setAttribute('data-collapsed','1');
+                toggle.setAttribute('aria-expanded','false');
+            } else {
+                table.style.display = '';
+                toggle.textContent = 'Collapse';
+                toggle.setAttribute('data-collapsed','0');
+                toggle.setAttribute('aria-expanded','true');
+            }
+        }
+        function onActivate(e){
+            var t = e.target.closest && e.target.closest('.order-toggle');
+            if (!t) return;
+            var oid = t.getAttribute('data-order');
+            if (!oid) return;
+            toggleOrder(oid);
+        }
+        document.addEventListener('click', onActivate);
+        document.addEventListener('keydown', function(e){ if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('order-toggle')) { e.preventDefault(); onActivate(e); } });
+    })();
+    </script>
     <?php if (empty($orders)): ?>
         <p>No orders found.</p>
     <?php endif; ?>

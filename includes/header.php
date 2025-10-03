@@ -97,6 +97,21 @@ if ($loggedIn) {
     <meta name="twitter:card" content="summary_large_image">
     <?php $cssPath = __DIR__ . '/../assets/styles.css'; ?>
     <link rel="stylesheet" href="assets/styles.css?v=<?php echo file_exists($cssPath) ? filemtime($cssPath) : time(); ?>">
+    <?php 
+        // Favicon / app icon tags so mobile browsers use the DS logo.
+        $dsLogoFile = __DIR__ . '/../assets/images/DaytonaSupplyDSlogo.png';
+        $dsLogoVer = file_exists($dsLogoFile) ? filemtime($dsLogoFile) : time();
+        // Use the same source image for multiple rels; browsers will downscale.
+    ?>
+    <link rel="icon" type="image/png" href="assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $dsLogoVer; ?>">
+    <link rel="icon" sizes="32x32" type="image/png" href="assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $dsLogoVer; ?>">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $dsLogoVer; ?>">
+    <link rel="apple-touch-icon-precomposed" href="assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $dsLogoVer; ?>">
+    <link rel="shortcut icon" href="assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $dsLogoVer; ?>">
+    <link rel="icon" sizes="192x192" href="assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $dsLogoVer; ?>">
+    <link rel="icon" sizes="512x512" href="assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $dsLogoVer; ?>">
+    <link rel="manifest" href="/site.webmanifest?v=<?php echo $dsLogoVer; ?>">
+    <meta name="theme-color" content="#0b5ed7">
 </head>
 <?php 
     $authClass = $loggedIn ? 'is-authenticated' : 'guest';
