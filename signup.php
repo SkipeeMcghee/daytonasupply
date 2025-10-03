@@ -241,7 +241,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $showForm) {
 }
 include __DIR__ . '/includes/header.php';
 ?>
-<main class="login-page" id="content" role="main">
   <section class="login-card" aria-labelledby="signup-heading">
     <h1 id="signup-heading">Create a Daytona Supply account</h1>
     <p class="login-sub">Create an account to place orders, track shipments, and manage your billing.</p>

@@ -3,7 +3,6 @@ $title = 'About Daytona Supply';
 $metaDescription = 'Daytona Supply provides businesses with reliable packaging and janitorial supplies, next-day local delivery, and personalized account support.';
 include __DIR__ . '/includes/header.php';
 ?>
-<main id="main" class="site-main" role="main">
     <div class="container"><div class="form-card">
     <section style="padding:18px 0;">
         <h1>About Daytona Supply</h1>
@@ -23,5 +22,4 @@ include __DIR__ . '/includes/header.php';
         <button id="backToTop" class="back-to-top" aria-label="Back to top">↑</button>
     </div>
     </div></div>
-</main>
 <?php include __DIR__ . '/includes/footer.php'; ?>

@@ -19,7 +19,6 @@ $imgMap = [
 ];
 $placeholder = 'assets/images/DaytonaSupplyDSlogo.png';
 ?>
-<main id="main" class="site-main" role="main">
     <div class="container"><div class="form-card">
     <section class="page-hero centered">
         <h1>Products</h1>
@@ -195,7 +194,6 @@ $placeholder = 'assets/images/DaytonaSupplyDSlogo.png';
         <button id="backToTop" class="back-to-top" aria-label="Back to top">↑</button>
     </div>
     </div></div>
-</main>
 
 <?php include __DIR__ . '/includes/footer.php'; ?>
 
@@ -258,6 +256,31 @@ document.addEventListener('DOMContentLoaded', function(){
             scrollToHero();
         });
     });
+
+    // If landing with ?cat=... from the homepage, auto-open that category's subcategories
+    try {
+        var params = new URLSearchParams(window.location.search);
+        var cat = (params.get('cat') || '').toLowerCase();
+        if (cat) {
+            // Map url slugs used on index.php to SKU labels used on products.php panels
+            var map = {
+                'corrugated': 'corrugated-boxes',
+                'tape': 'tape',
+                'packaging-supplies': 'packaging-supplies',
+                'paper-products': 'paper-products',
+                'bubble-products': 'bubble-products',
+                'foam': 'foam'
+            };
+            var slug = map[cat] || cat;
+            var targetId = (slug === 'corrugated-boxes') ? 'subcats-corrugated' : ('subcats-' + slug);
+            var panel = document.getElementById(targetId);
+            if (panel) {
+                allCats.style.display = 'none';
+                panel.hidden = false;
+                scrollToHero();
+            }
+        }
+    } catch (e) { /* no-op */ }
 
     // If a ?cat=slug is present, auto-open that category's subcategories panel
     var params = new URLSearchParams(window.location.search);

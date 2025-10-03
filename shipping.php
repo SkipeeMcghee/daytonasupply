@@ -68,6 +68,14 @@ include __DIR__ . '/includes/header.php';
         <p>For questions about rates, packaging, or scheduling a pickup, call us or stop by during business hours. We can also help prepare commercial invoices for international shipments and advise on customs requirements.</p>
 
         <p><a class="proceed-btn btn-catalog" href="contact.php">Contact Packing Generals</a></p>
+
+        <hr style="margin:28px 0;border:0;border-top:1px solid rgba(11,34,56,0.12);">
+        <h3>Track a FedEx Shipment</h3>
+        <p>
+            <a href="http://www.fedex.com/Tracking?tracknumbers=YOUR_TRACKING_NUMBER&amp;country_code=us&amp;clienttype=ivother&amp;" target="_blank" rel="noopener" class="proceed-btn btn-track-fedex">
+                Track Your FedEx Package
+            </a>
+        </p>
     </div>
 </div>
 

@@ -7,7 +7,7 @@ include __DIR__ . '/includes/header.php';
     <h1>Terms of Service</h1>
     <p class="lead">These Terms of Service govern your use of Daytona Supply's website and services. Please read them carefully.</p>
 </section>
-<main class="container">
+<div class="container">
     <article class="form-card" style="max-width:900px;">
         <p class="updated"><strong>Effective date:</strong> <?php echo date('F j, Y'); ?></p>
 
@@ -64,6 +64,6 @@ include __DIR__ . '/includes/header.php';
     <h2>Contact</h2>
     <p>Questions regarding these Terms may be directed to <a href="mailto:packinggenerals@gmail.com">packinggenerals@gmail.com</a>.</p>
     </article>
-</main>
+</div>
 
 <?php include __DIR__ . '/includes/footer.php'; ?>

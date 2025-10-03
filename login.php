@@ -50,7 +50,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $title = 'Login';
 include __DIR__ . '/includes/header.php';
 ?>
-<main class="login-page" id="content" role="main">
     <section class="login-card" aria-labelledby="login-heading">
         <h1 id="login-heading">Sign in to your account</h1>
         <p class="login-sub">Access your account to order, view invoices, and manage your catalog.</p>

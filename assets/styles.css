@@ -18,7 +18,8 @@
   --brand: #0d2b52; /* much darker blue */
 }
 *{box-sizing:border-box}
-html,body{height:100%}
+/* Ensure the page can grow naturally with content; avoid locking body to viewport height */
+html, body { min-height: 100%; height: auto; overscroll-behavior: contain; }
 body{
   margin:0;
   font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,"Noto Sans",sans-serif;
@@ -182,9 +183,38 @@ body.theme-dark .catalogue-table select.qty-preset {
 @media (max-width:480px) {
   .f-social .social-icon { width:40px; height:40px; }
 }
-html.theme-dark .f-social .social-icon, body.theme-dark .f-social .social-icon { filter: drop-shadow(0 6px 18px rgba(0,0,0,0.6)); }
-.nav-cart #cart-count{font-weight:800}
+  .catalogue-table td:nth-child(3),
+  .catalogue-table td:nth-child(3) form.cart-add { display: flex !important; flex-direction: column !important; align-items: stretch; gap: 6px; }
+  .catalogue-table td:nth-child(3) { overflow: visible !important; height: auto !important; }
+  .catalogue-table td:nth-child(3) .qty-wrap { display: flex !important; gap: 6px; align-items: center; flex-wrap: nowrap; }
+  /* Keep qty input and preset select on the same (top) row and make select a compact chevron-only control */
+  .catalogue-table td:nth-child(3) .qty-wrap select.qty-preset {
+    width: 2.6em !important;
+    min-width: 2.4em !important;
+    padding-right: 0 !important;
+    background-position: center center !important; /* center the chevron */
+    background-size: 14px 14px !important;
+  }
+  .catalogue-table td:nth-child(3) .actions-inline { display: flex !important; gap: 8px; align-items: stretch; flex-wrap: nowrap; }
+  .catalogue-table td:nth-child(3) .actions-inline > * { flex: 0 0 auto; min-width: 0; }
+  .catalogue-table td:nth-child(3) .actions-inline button[type="submit"] {
+    flex: 1 1 auto; min-width: 56px; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center;
+  }
 
+  /* Force a stable compact size for the Add button so text stays horizontal (no letter stacking) */
+  .catalogue-table td:nth-child(3) .actions-inline button[type="submit"] {
+    width: 32px !important;
+    min-width: 32px !important;
+    height: 28px !important;
+    flex: 0 0 32px !important;
+    padding: 0 !important;
+    line-height: 1 !important;
+    writing-mode: horizontal-tb !important;
+    letter-spacing: 0.5px;
+    font-size: 12px;
+  }
+  .catalogue-table td:nth-child(3) form.cart-add select.qty-preset { min-width: 0; }
+  .catalogue-table td:nth-child(3) input[type=number] { width: 2.8em !important; }
 /* Small screens: remove dividers to keep layout compact */
 @media (max-width: 720px) {
   .header-actions .action + .action {
@@ -395,6 +425,11 @@ body.page-products .products-item:focus-within .mega { display: none !important;
 /* Make All Products behave like the categories hover (show a simple dropdown) */
 .nav-cats .all-products{position:relative}
 .nav-cats .all-products:hover + .mega, .nav-cats .all-products:focus + .mega { display: block; }
+
+/* On mobile, let the header scroll away normally (disable sticky) */
+@media (max-width: 768px) {
+  .site-header { position: static; top: auto; }
+}
 
 /* Directions map card */
 .map-card{background:var(--card);border-radius:12px;box-shadow:0 10px 30px rgba(11,34,56,0.06);overflow:hidden}
@@ -784,7 +819,7 @@ html.theme-dark .carousel-dots button.active { background: #e8f6ff; }
 /* Ensure catalogue product columns are left-aligned for Name, Description, Price and Add-to-Cart */
 .catalogue-table th, .catalogue-table td { text-align: left; }
 .catalogue-table thead th{background:#f6f8fb;border-bottom:2px solid #e6eef8;font-weight:700}
-.catalogue-table tr:nth-child(even) td{background:#fbfdff}
+.catalogue-table tr:nth-child(even):not(.sale-row){background:#fbfdff}
 /* Flash highlight for newly added product row (light mode) */
 @keyframes rowFlashFade {
   0% { background: #ffe9a8; }
@@ -1042,6 +1077,30 @@ body.theme-dark .order-toggle:focus-visible {
   outline-offset: 3px;
 }
 
+/* Ultra-narrow adjustments so catalogue buttons don't blow up at <=420px */
+@media (max-width: 420px) {
+  .sku-btn { padding: 6px 10px; font-size: 13px; box-shadow: 0 4px 0 rgba(11,34,56,0.06); }
+  /* Keep actions row compact and prevent awkward wrapping */
+  .catalogue-table td:nth-child(3) .actions-inline { gap: 6px; }
+  .catalogue-table td:nth-child(3) .actions-inline button[type="submit"] { min-width: 0; }
+  .catalogue-table td:nth-child(3) form.cart-add select.qty-preset { min-width: 0; }
+  /* Prevent view-toggle buttons (Show All / Favorites / On Sale) from reflowing vertically */
+  .catalogue-view-row {
+    display: flex !important;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap !important;    /* lock orientation */
+    overflow-x: auto;                /* allow horizontal scroll if needed */
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+  .catalogue-view-row .sku-btn { flex: 0 0 auto; white-space: nowrap; }
+  .catalogue-view-row > div:first-child { flex: 0 0 auto; white-space: nowrap; font-size: 12px; }
+  .catalogue-view-row .mini-star { display: inline; }
+  /* Slightly tighten the label spacing to save a few pixels */
+  .catalogue-view-row > div:first-child { margin-right: 4px; }
+}
+
 /* Manager portal: stronger gridlines and consistent column sizing for admin tables */
 .admin-table {
   width: 100%;
@@ -1210,7 +1269,9 @@ body.theme-dark .admin-table input::placeholder {
 }
 
 /* Dark mode adjustments for the shipping media and form card */
-html.theme-dark .shipping-media img,
+  /* Critical: undo any nowrap/overflow hidden from generic small table rules */
+  .catalogue-table td:last-child { white-space: normal !important; overflow: visible !important; text-overflow: clip !important; height: auto !important; }
+  .catalogue-table td:nth-child(3) { white-space: normal !important; overflow: visible !important; height: auto !important; }
 body.theme-dark .shipping-media img {
   box-shadow: 0 8px 28px rgba(0,0,0,0.6);
   border-color: rgba(255,255,255,0.06);
@@ -1534,6 +1595,20 @@ html.theme-dark .proceed-btn.btn-catalog, body.theme-dark .proceed-btn.btn-catal
   box-shadow: 0 6px 0 rgba(11,34,56,0.06);
 }
 .proceed-btn.btn-catalog:hover { transform: translateY(-3px); box-shadow: 0 10px 0 rgba(11,34,56,0.06); }
+
+/* FedEx tracking button variant: blue & orange (FedEx-inspired) */
+.proceed-btn.btn-track-fedex {
+  background: linear-gradient(90deg,#004080 0%, #ff7a00 100%);
+  color:#fff;
+  border:0;
+  position:relative;
+  overflow:hidden;
+}
+.proceed-btn.btn-track-fedex::after { content:""; position:absolute; inset:0; background:linear-gradient(120deg,rgba(255,255,255,0.05),rgba(255,255,255,0)); pointer-events:none; }
+.proceed-btn.btn-track-fedex:hover { filter:brightness(1.05); transform:translateY(-3px); box-shadow:0 10px 0 rgba(11,34,56,0.06); }
+.proceed-btn.btn-track-fedex:active { transform:translateY(0); box-shadow:0 3px 0 rgba(11,34,56,0.06); }
+html.theme-dark .proceed-btn.btn-track-fedex, body.theme-dark .proceed-btn.btn-track-fedex { box-shadow:0 6px 18px rgba(0,0,0,0.5); }
+html.theme-dark .proceed-btn.btn-track-fedex:hover, body.theme-dark .proceed-btn.btn-track-fedex:hover { box-shadow:0 10px 24px rgba(0,0,0,0.55); }
 .proceed-btn.btn-catalog:active { transform: translateY(1px); box-shadow: 0 3px 0 rgba(0,0,0,0.04); }
 .proceed-btn.btn-catalog:focus { outline: 3px solid rgba(0,64,128,0.12); outline-offset: 3px; }
 
@@ -1991,18 +2066,15 @@ html.theme-dark .cart-table th {
   border-bottom: 1px solid rgba(255,255,255,0.03);
 }
 
-/* Zebra rows subtle overlay for readability */
-body.theme-dark .catalogue-table tr:nth-child(even) td,
-body.theme-dark .account-table tr:nth-child(even) td,
-body.theme-dark .cart-table tr:nth-child(even) td,
-html.theme-dark .catalogue-table tr:nth-child(even) td,
-html.theme-dark .account-table tr:nth-child(even) td,
-html.theme-dark .cart-table tr:nth-child(even) td {
+/* Zebra rows subtle overlay for readability — apply to whole row and exclude sale rows */
+body.theme-dark .catalogue-table tr:nth-child(even):not(.sale-row),
+html.theme-dark .catalogue-table tr:nth-child(even):not(.sale-row),
+body.theme-dark .account-table tr:nth-child(even),
+html.theme-dark .account-table tr:nth-child(even),
+body.theme-dark .cart-table tr:nth-child(even),
+html.theme-dark .cart-table tr:nth-child(even) {
   background: rgba(255,255,255,0.01);
 }
-
-/* Inputs and buttons inside tables should also match dark theme */
-body.theme-dark .catalogue-table input,
 body.theme-dark .catalogue-table button,
 body.theme-dark .account-table input,
 body.theme-dark .account-table button,

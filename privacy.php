@@ -7,7 +7,7 @@ include __DIR__ . '/includes/header.php';
     <h1>Privacy Policy</h1>
     <p class="lead">This Privacy Policy explains how Daytona Supply collects, uses, discloses, and safeguards your information when you use our website.</p>
 </section>
-<main class="container">
+<div class="container">
     <article class="form-card" style="max-width:900px;">
         <p class="updated"><strong>Effective date:</strong> <?php echo date('F j, Y'); ?></p>
 
@@ -73,6 +73,6 @@ include __DIR__ . '/includes/header.php';
         <h2>Changes to this Policy</h2>
         <p>We may update this policy occasionally. We will post the updated date at the top and, where required by law, notify users by email.</p>
     </article>
-</main>
+</div>
 
 <?php include __DIR__ . '/includes/footer.php'; ?>

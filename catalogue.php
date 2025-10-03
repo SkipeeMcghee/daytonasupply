@@ -57,7 +57,7 @@ try {
     }
     http_response_code(500);
     include __DIR__ . '/includes/header.php';
-    echo '<main><h1>Product Catalogue</h1>';
+    echo '<h1>Product Catalogue</h1>';
     echo '<p>Sorry, we are unable to perform that search right now. Our team has been notified.</p>';
     echo '<p>Please quote reference <strong>' . htmlspecialchars($errorRef) . '</strong> when contacting support.</p></main>';
     include __DIR__ . '/includes/footer.php';
@@ -327,7 +327,7 @@ try {
     }
     http_response_code(500);
     include __DIR__ . '/includes/header.php';
-    echo '<main><h1>Product Catalogue</h1>';
+    echo '<h1>Product Catalogue</h1>';
     echo '<p>Sorry, we are unable to perform that search right now. Our team has been notified.</p>';
     echo '<p>If this problem continues, please contact support and quote reference <strong>' . htmlspecialchars($errorRef) . '</strong>.</p></main>';
     include __DIR__ . '/includes/footer.php';
@@ -421,6 +421,9 @@ if ($subParam === 'cube') {
 include __DIR__ . '/includes/header.php';
 ?>
 <style>
+/* Inline actions row: keep Add and star side-by-side */
+.actions-inline { display: inline-flex; align-items: center; gap: 8px; }
+
 /* Item/Price/Actions layout: make Price compact */
 table.catalogue-table th:nth-child(2),
 table.catalogue-table td:nth-child(2) {
@@ -438,12 +441,12 @@ html.theme-dark .cat-desc-clip, body.theme-dark .cat-desc-clip { color: #ffffff;
     table.catalogue-table th, table.catalogue-table td { white-space: normal !important; min-width: 0 !important; padding: 8px 6px; font-size: 13px; }
 }
 
-/* Compress layout at ≤640px: keep description (smaller), shrink thumbnail, narrow Item col, use line breaks */
+/* Compress layout at ≤640px: keep description (smaller), shrink thumbnail, make Actions even narrower, use line breaks */
 @media (max-width: 640px) {
-    /* Rebalance widths: make Actions wider for buttons; compress Price; keep Item narrower */
-    table.catalogue-table th:nth-child(1), table.catalogue-table td:nth-child(1) { width: 42%; }
+    /* Rebalance widths: maximize Item, keep Price compact, and make Actions tighter */
+    table.catalogue-table th:nth-child(1), table.catalogue-table td:nth-child(1) { width: 56%; }
     table.catalogue-table th:nth-child(2), table.catalogue-table td:nth-child(2) { width: 14%; text-align: right; }
-    table.catalogue-table th:nth-child(3), table.catalogue-table td:nth-child(3) { width: 44%; }
+    table.catalogue-table th:nth-child(3), table.catalogue-table td:nth-child(3) { width: 30%; }
     /* Visually tighten header so it feels narrower */
     table.catalogue-table tr:first-child th { padding: 6px 4px; font-size: 12px; }
     table.catalogue-table tr:first-child th:nth-child(3) { font-size: 11.5px; }
@@ -452,11 +455,13 @@ html.theme-dark .cat-desc-clip, body.theme-dark .cat-desc-clip { color: #ffffff;
     /* Stack name and description with small, tight typography */
     table.catalogue-table td:first-child strong { display:block; font-size: 12.5px; line-height: 1.15; max-width:100%; word-break: break-word; }
     table.catalogue-table .cat-desc-clip { display:block !important; white-space: normal !important; font-size: 11.5px; line-height: 1.15; margin-top: 2px; max-width: 100%; overflow: hidden; }
-    /* Actions stacked to fit */
+    /* Actions stacked to fit; show Add + star inline row */
     table.catalogue-table td:nth-child(3) { display: flex; flex-direction: column; align-items: stretch; gap: 4px; }
     table.catalogue-table td:nth-child(3) form.cart-add { display: flex !important; flex-direction: column; gap: 4px; width: 100%; }
-    table.catalogue-table td:nth-child(3) form.cart-add input[type="number"] { width: 2.6em; padding: 2px 4px; }
-    table.catalogue-table td:nth-child(3) .fav-toggle { margin-left: 0 !important; }
+    table.catalogue-table td:nth-child(3) form.cart-add input[type="number"] { width: 3.2em; padding: 2px 4px; }
+    table.catalogue-table td:nth-child(3) .actions-inline { display: flex; align-items: stretch; gap: 8px; }
+    table.catalogue-table td:nth-child(3) .actions-inline button[type="submit"] { flex: 1 1 auto; }
+    table.catalogue-table td:nth-child(3) .fav-toggle { margin-left: 0 !important; flex: 0 0 auto; }
 }
 
 /* Small screens: stack Actions cell controls vertically */
@@ -470,29 +475,30 @@ html.theme-dark .cat-desc-clip, body.theme-dark .cat-desc-clip { color: #ffffff;
         gap: 6px;
     }
     table.catalogue-table td:nth-child(3) form.cart-add { display:flex !important; flex-direction:column; gap:6px; width:100%; }
-    table.catalogue-table td:nth-child(3) form.cart-add input[type="number"],
+    table.catalogue-table td:nth-child(3) form.cart-add input[type="number"] { display:block; box-sizing:border-box; margin-bottom:6px; }
     table.catalogue-table td:nth-child(3) form.cart-add select.qty-preset { display:block; width:100% !important; box-sizing:border-box; margin-bottom:6px; }
-    table.catalogue-table td:nth-child(3) form.cart-add button[type="submit"] { display:block; width:100% !important; box-sizing:border-box; }
-    table.catalogue-table td:nth-child(3) .fav-toggle { display:block; margin-left:0 !important; width:100%; text-align:left; }
+    table.catalogue-table td:nth-child(3) .actions-inline { display:flex; gap:8px; align-items:stretch; }
+    table.catalogue-table td:nth-child(3) .actions-inline button[type="submit"] { flex:1 1 auto; }
+    table.catalogue-table td:nth-child(3) .fav-toggle { margin-left:0 !important; width:auto; }
 }
 
 /* Ultra-small screens: aggressively compress to fit, keep description visible but tiny */
 @media (max-width: 420px) {
     table.catalogue-table { table-layout: fixed; width: 100%; }
     table.catalogue-table th, table.catalogue-table td { white-space: normal; word-break: break-word; overflow-wrap: anywhere; padding: 5px 4px; font-size: 11px; }
-    /* Ultra-small: give Actions the most space, compress Price */
-    table.catalogue-table th:nth-child(1), table.catalogue-table td:nth-child(1) { width: 40%; }
+    /* Ultra-small: maximize Item, keep Price compact, keep Actions tight */
+    table.catalogue-table th:nth-child(1), table.catalogue-table td:nth-child(1) { width: 56%; }
     table.catalogue-table th:nth-child(2), table.catalogue-table td:nth-child(2) { width: 14%; text-align: right; }
-    table.catalogue-table th:nth-child(3), table.catalogue-table td:nth-child(3) { width: 46%; }
+    table.catalogue-table th:nth-child(3), table.catalogue-table td:nth-child(3) { width: 30%; }
     /* Visually tighter header */
     table.catalogue-table tr:first-child th { padding: 6px 3px; font-size: 11.5px; }
     table.catalogue-table tr:first-child th:nth-child(3) { font-size: 11px; }
     table.catalogue-table td:first-child img { width: 28px !important; height: 28px !important; }
     table.catalogue-table td:first-child strong { font-size: 11.5px; line-height: 1.12; }
     table.catalogue-table .cat-desc-clip { font-size: 10.5px; line-height: 1.12; }
-    table.catalogue-table td:nth-child(3) form.cart-add input[type="number"] { width: 2.4em !important; padding: 2px 3px; }
+    table.catalogue-table td:nth-child(3) form.cart-add input[type="number"] { width: 2.8em !important; padding: 2px 3px; }
     table.catalogue-table td:nth-child(3) form.cart-add select.qty-preset { min-width: 0; width: 100% !important; }
-    table.catalogue-table td:nth-child(3) form.cart-add button[type="submit"] { padding: 4px 6px; font-size: 11.5px; }
+    table.catalogue-table td:nth-child(3) .actions-inline button[type="submit"] { padding: 4px 6px; font-size: 11.5px; }
 }
 </style>
 <style>
@@ -503,9 +509,14 @@ html.theme-dark .cat-desc-clip, body.theme-dark .cat-desc-clip { color: #ffffff;
 <style>
 /* On-sale visuals: tint full row and show compact green badge next to favorite.
     Do not use !important so the flash-added animation can temporarily override. */
-.catalogue-table tr.sale-row td { background: #f1fbf4; }
+.catalogue-table tr.sale-row { background: #f1fbf4; }
+/* Make cells transparent so the row background shows as a single band; harmonize divider */
+.catalogue-table tr.sale-row td { background: transparent; border-bottom-color: #e0f3e8; }
+/* Dark mode: single uniform tint for sale rows; keep cells transparent to avoid seams */
+html.theme-dark .catalogue-table tr.sale-row,
+body.theme-dark .catalogue-table tr.sale-row { background: rgba(16,185,129,0.16) !important; }
 html.theme-dark .catalogue-table tr.sale-row td,
-body.theme-dark .catalogue-table tr.sale-row td { background: rgba(16,185,129,0.16); }
+body.theme-dark .catalogue-table tr.sale-row td { background: transparent !important; border-bottom-color: rgba(16,185,129,0.25) !important; }
 .on-sale-badge {
     display: inline-flex;
     align-items: center;
@@ -528,7 +539,7 @@ body.theme-dark .catalogue-table tr.sale-row td { background: rgba(16,185,129,0.
     <h1>Catalog</h1>
     <p class="lead">Browse through our extensive product listings or click on a category below to go directly to a product group. Use the SEARCH box to find a product or product group. Click ADD to order a product. When ready, <a href="cart.php" class="proceed-btn btn-cart">PROCEED TO CART</a></p>
 </section>
-<div style="margin-bottom:8px; display:flex; gap:10px; align-items:center;">
+<div class="catalogue-view-row" style="margin-bottom:8px; display:flex; gap:10px; align-items:center;">
     <div style="font-weight:700;">View:</div>
     <?php
         // Active states: Show All is active when no specific category is selected
@@ -711,18 +722,20 @@ body.theme-dark .catalogue-table tr.sale-row td { background: rgba(16,185,129,0.
                     <?php if ($onSaleOn): ?>
                         <input type="hidden" name="onsale" value="1">
                     <?php endif; ?>
-                    <button type="submit">Add</button>
+                    <div class="actions-inline">
+                        <button type="submit">Add</button>
+                        <?php
+                            $skuName = getProductDisplayName($p);
+                            $isFav = $skuName !== '' && isset($favoriteSkuSet[$skuName]);
+                        ?>
+                        <button type="button" class="fav-toggle <?php echo $isFav ? 'fav-on' : ''; ?>" data-product-id="<?= (int)$p['id'] ?>" aria-pressed="<?= $isFav ? 'true' : 'false' ?>" title="<?= $isFav ? 'Remove from favorites' : 'Add to favorites' ?>" style="background:transparent;border:0;padding:4px;cursor:pointer;margin-left:0;vertical-align:middle;">
+                            <!-- SVG star: hollow by default (white stroke), filled yellow when .fav-on is present -->
+                            <svg class="fav-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                <path d="M12 .587l3.668 7.431 8.2 1.192-5.934 5.787 1.402 8.169L12 18.897l-7.336 3.866 1.402-8.169L.132 9.21l8.2-1.192z" />
+                            </svg>
+                        </button>
+                    </div>
                 </form>
-                <?php
-                    $skuName = getProductDisplayName($p);
-                    $isFav = $skuName !== '' && isset($favoriteSkuSet[$skuName]);
-                ?>
-                <button class="fav-toggle <?php echo $isFav ? 'fav-on' : ''; ?>" data-product-id="<?= (int)$p['id'] ?>" aria-pressed="<?= $isFav ? 'true' : 'false' ?>" title="<?= $isFav ? 'Remove from favorites' : 'Add to favorites' ?>" style="background:transparent;border:0;padding:4px;cursor:pointer;margin-left:8px;vertical-align:middle;">
-                    <!-- SVG star: hollow by default (white stroke), filled yellow when .fav-on is present -->
-                    <svg class="fav-icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                        <path d="M12 .587l3.668 7.431 8.2 1.192-5.934 5.787 1.402 8.169L12 18.897l-7.336 3.866 1.402-8.169L.132 9.21l8.2-1.192z" />
-                    </svg>
-                </button>
             </td>
         </tr>
     <?php endforeach; ?>

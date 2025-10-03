@@ -4,9 +4,8 @@
 // Set page meta before including header
 $title = 'Daytona Supply — Packaging & Janitorial Supplies';
 $metaDescription = 'Daytona Supply is your local B2B partner for packaging, janitorial, and cleaning supplies. Fast local delivery, competitive pricing, and easy account management.';
-require_once __DIR__ . '/includes/header.php';
+require_once __DIR__ . '/includes/header.php'; 
 ?>
-<main id="main" class="site-main" role="main">
 	<!-- Hero Carousel -->
 	<section id="content" class="hero-section" aria-label="Featured promotions">
 		<div class="hero-wrap">
@@ -88,42 +87,42 @@ require_once __DIR__ . '/includes/header.php';
 	<section class="categories container" aria-label="Shop by category">
 		<h2 class="sr-only">Shop by category</h2>
 		<div class="grid categories-grid">
-			<a class="category-card" href="catalogue.php?cat=corrugated">
+			<a class="category-card" href="products.php?cat=corrugated">
 				<img src="assets/images/boxes.png" alt="Corrugated Boxes" loading="lazy">
 				<div class="cat-body">
 					<h3>Corrugated Boxes</h3>
 					<button class="shop-btn">Shop Category</button>
 				</div>
 			</a>
-			<a class="category-card" href="catalogue.php?cat=tape">
+			<a class="category-card" href="products.php?cat=tape">
 				<img src="assets/images/tape.png" alt="Tape" loading="lazy">
 				<div class="cat-body">
 					<h3>Tape</h3>
 					<button class="shop-btn">Shop Category</button>
 				</div>
 			</a>
-			<a class="category-card" href="catalogue.php?cat=packaging-supplies">
+			<a class="category-card" href="products.php?cat=packaging-supplies">
 				<img src="assets/images/stretchfilm.png" alt="Packaging Supplies" loading="lazy">
 				<div class="cat-body">
 					<h3>Packaging Supplies</h3>
 					<button class="shop-btn">Shop Category</button>
 				</div>
 			</a>
-			<a class="category-card" href="catalogue.php?cat=paper-products">
+			<a class="category-card" href="products.php?cat=paper-products">
 				<img src="assets/images/paper.png" alt="Paper Products" loading="lazy">
 				<div class="cat-body">
 					<h3>Paper Products</h3>
 					<button class="shop-btn">Shop Category</button>
 				</div>
 			</a>
-			<a class="category-card" href="catalogue.php?cat=bubble-products">
+			<a class="category-card" href="products.php?cat=bubble-products">
 				<img src="assets/images/bubble.png" alt="Bubble Products" loading="lazy">
 				<div class="cat-body">
 					<h3>Bubble Products</h3>
 					<button class="shop-btn">Shop Category</button>
 				</div>
 			</a>
-			<a class="category-card" href="catalogue.php?cat=foam">
+			<a class="category-card" href="products.php?cat=foam">
 				<img src="assets/images/foam.png" alt="Foam" loading="lazy">
 				<div class="cat-body">
 					<h3>Foam</h3>
@@ -138,6 +137,4 @@ require_once __DIR__ . '/includes/header.php';
 		<span class="back-to-top-label">Return To Top</span>
 		<button id="backToTop" class="back-to-top" aria-label="Back to top">↑</button>
 	</div>
-</main>
-
 <?php include __DIR__ . '/includes/footer.php'; ?>

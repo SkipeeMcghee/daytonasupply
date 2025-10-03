@@ -3,7 +3,6 @@ $title = 'Directions & Map';
 $metaDescription = 'Find directions to Daytona Supply — map and driving instructions to 1022 Reed Canal Rd.';
 include __DIR__ . '/includes/header.php';
 ?>
-<main id="main" class="site-main" role="main">
   <section class="container" style="padding:28px 0;">
     <!-- Removed top Directions heading for a cleaner start with the map -->
 
@@ -24,5 +23,4 @@ include __DIR__ . '/includes/header.php';
       </div>
     </div>
   </section>
-</main>
 <?php include __DIR__ . '/includes/footer.php'; ?>
