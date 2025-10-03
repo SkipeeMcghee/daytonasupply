@@ -97,5 +97,5 @@ include __DIR__ . '/includes/header.php';
             </div>
         </div>
     </section>
-</main>
+    <!-- Removed stray closing </main>; footer will close the single main opened in header -->
 <?php include __DIR__ . '/includes/footer.php'; ?>

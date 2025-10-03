@@ -1424,6 +1424,32 @@ textarea.autosize {
   background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0));
 }
 
+/* Page-scoped centering for login & signup (without requiring an extra wrapper) */
+body.page-login main {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 2.5rem 1rem;
+  /* Allow the footer to sit below while visually centering relative to viewport */
+  min-height: calc(100vh - 140px);
+  box-sizing: border-box;
+}
+/* Signup form is tall; center horizontally, start near top with comfortable spacing */
+body.page-signup main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 1rem 3rem;
+  box-sizing: border-box;
+}
+/* Prevent flex shrink on auth card so tall content (signup) scrolls the page naturally */
+body.page-login .login-card, body.page-signup .login-card { flex: 0 0 auto; }
+/* When viewport is very short (<600px tall), avoid awkward vertical centering for login; anchor higher */
+@media (max-height: 600px) {
+  body.page-login main { justify-content: flex-start; padding-top: 1.5rem; }
+}
+
 .login-card {
   width: 100%;
   max-width: 520px;
@@ -1520,6 +1546,31 @@ body.theme-dark .login-helpers .signup-trigger:hover {
 .form-hint { font-size:.88rem; color: rgba(16,22,30,0.55); }
 
 .login-card a:focus, .login-card button:focus { outline: 3px solid rgba(0,90,180,0.12); outline-offset: 2px; }
+
+/* Dark mode inline link adjustments for specific pages */
+/* 1. Contact page informational paragraph: "logged in" link (login.php target) */
+/* 2. About page paragraph links to Contact and Catalog */
+body.theme-dark .login-card p a[href="login.php"],
+html.theme-dark .login-card p a[href="login.php"],
+body.theme-dark .form-card p a[href="contact.php"],
+body.theme-dark .form-card p a[href="catalogue.php"],
+html.theme-dark .form-card p a[href="contact.php"],
+html.theme-dark .form-card p a[href="catalogue.php"] {
+  color: #ffffff !important;
+  text-decoration: underline;
+  text-decoration-color: rgba(255,255,255,0.35);
+  transition: background .12s, color .12s, text-decoration-color .12s;
+}
+body.theme-dark .form-card p a[href="contact.php"]:hover,
+body.theme-dark .form-card p a[href="catalogue.php"]:hover,
+body.theme-dark .login-card p a[href="login.php"]:hover,
+html.theme-dark .form-card p a[href="contact.php"]:hover,
+html.theme-dark .form-card p a[href="catalogue.php"]:hover,
+html.theme-dark .login-card p a[href="login.php"]:hover {
+  text-decoration-color: #ffffff;
+  background: rgba(255,255,255,0.08);
+  border-radius: 4px;
+}
 
 /* Favorite toggle (catalogue) */
 .fav-toggle { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:6px; background:transparent; }

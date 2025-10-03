@@ -404,7 +404,7 @@ include __DIR__ . '/includes/header.php';
     <p><button type="submit" class="btn-primary">Create Account</button></p>
     </form>
     </section>
-</main>
+    <!-- Removed stray closing </main>; footer will close the single main opened in header -->
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         var checkbox = document.getElementById('signup_same_billing');
