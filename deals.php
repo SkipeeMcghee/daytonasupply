@@ -100,7 +100,7 @@ require __DIR__ . '/includes/header.php';
     <?php else: ?>
   <div class="categories-grid deals-grid">
         <?php foreach ($deals as $p): $pid=(int)$p['id']; $name=getProductDisplayName($p); $desc=getProductDescription($p); $price=getProductPrice($p); $img=resolveImageForProduct($p, $skuFilters, $imgMap, $placeholder); ?>
-          <div class="category-card" style="position:relative;">
+          <div class="category-card deal-card" data-product-id="<?= $pid ?>" data-product-url="productinfo.php?id=<?= $pid ?>" tabindex="0" role="button" aria-label="View details for <?= htmlspecialchars($name) ?>" style="position:relative; cursor:pointer;">
             <div class="cat-img-wrap" style="position:relative; overflow:hidden; border-radius:12px;">
               <img src="<?= htmlspecialchars($img) ?>" alt="<?= htmlspecialchars($name) ?>" style="width:100%; height:220px; object-fit:cover; display:block;">
               <div class="cat-body" style="position:absolute; left:0; right:0; bottom:0; background:linear-gradient(180deg, rgba(0,0,0,0.0), rgba(0,0,0,0.55)); color:#fff; padding:10px;">
@@ -110,7 +110,7 @@ require __DIR__ . '/includes/header.php';
                 <div style="opacity:0.95; font-weight:400; font-size:0.95rem; margin-bottom:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:center;"><?= htmlspecialchars($name) ?></div>
                 <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
                   <div style="font-weight:800; font-size:1.0rem;">$<?= number_format($price,2) ?></div>
-                  <form class="cart-add" method="post" action="catalogue.php" style="margin:0;">
+                  <form class="cart-add" method="post" action="catalogue.php" style="margin:0;" onclick="event.stopPropagation();" onkeydown="event.stopPropagation();">
                     <input type="hidden" name="product_id" value="<?= $pid ?>">
                     <input type="hidden" name="product_name" value="<?= htmlspecialchars($name, ENT_QUOTES) ?>">
                     <input type="hidden" name="product_description" value="<?= htmlspecialchars($desc, ENT_QUOTES) ?>">
@@ -128,4 +128,18 @@ require __DIR__ . '/includes/header.php';
     <?php endif; ?>
   </div>
 </div>
+<script>
+// Make entire deal card clickable (excluding Add to Cart form)
+document.addEventListener('DOMContentLoaded', function(){
+  document.querySelectorAll('.deal-card').forEach(function(card){
+    function go(){ var url = card.getAttribute('data-product-url'); if (url) window.location.href = url; }
+    card.addEventListener('click', function(e){
+      // Ignore clicks originating from inside a form or button
+      if (e.target.closest && e.target.closest('form')) return;
+      go();
+    });
+    card.addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
+  });
+});
+</script>
 <?php require __DIR__ . '/includes/footer.php'; ?>
