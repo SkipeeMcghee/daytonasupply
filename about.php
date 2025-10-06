@@ -7,7 +7,7 @@ include __DIR__ . '/includes/header.php';
     <section style="padding:18px 0;">
         <h1>About Daytona Supply</h1>
         <p>
-            Daytona Supply is a trusted local supplier of packaging, janitorial, and safety products for businesses across the Daytona Beach area. We offer a curated selection of over 20,000 items, competitive wholesale pricing, and fast local delivery to keep operations running smoothly.
+            Daytona Supply is your trusted local supplier of packaging, janitorial, and safety products for businesses across the Daytona Beach area. We offer a curated selection of over 20,000 items, competitive wholesale pricing, and fast local delivery to keep your operations running smoothly.
         </p>
         <p>
             Our team focuses on reliable fulfillment, personalized account management, and sustainable product choices when available. Whether you need corrugated boxes, cleaning chemicals, gloves, or foodservice disposables, we partner with reputable manufacturers to deliver quality products on time.

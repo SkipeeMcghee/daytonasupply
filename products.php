@@ -205,7 +205,36 @@ $placeholder = 'assets/images/DaytonaSupplyDSlogo.png';
 }
 /* Group blocks for Packaging / Janitorial / Safety */
 .group-block { margin-bottom: 28px; }
-.group-title { margin: 10px 0 12px; font-size: 1.25rem; }
+.group-title { 
+    margin: 18px 0 14px; 
+    font-size: clamp(1.6rem, 2.2vw, 1.95rem); 
+    font-weight: 800; 
+    letter-spacing: .5px; 
+    line-height: 1.15; 
+    color: #0b5ed7; 
+    display: flex; 
+    align-items: center; 
+    gap: .65rem; 
+    position: relative;
+}
+/* Vertical accent bar */
+.group-title::before { 
+    content: ""; 
+    width: 6px; 
+    height: 1.05em; 
+    background: linear-gradient(180deg,#0b5ed7,#3d8bfd); 
+    border-radius: 3px; 
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+/* Dark mode adjustments for readability */
+html.theme-dark .group-title, body.theme-dark .group-title { 
+    color: #58b4ff; 
+    text-shadow: 0 2px 8px rgba(0,0,0,0.55); 
+}
+html.theme-dark .group-title::before, body.theme-dark .group-title::before { 
+    background: linear-gradient(180deg,#1d6fd7,#56a5ff); 
+    box-shadow: 0 2px 10px rgba(0,0,0,0.6); 
+}
 @media (max-width: 900px) {
     .categories-grid { grid-template-columns: repeat(2, 1fr); }
 }

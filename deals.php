@@ -99,6 +99,7 @@ require __DIR__ . '/includes/header.php';
       <p>No active deals right now. Please check back soon.</p>
     <?php else: ?>
   <div class="categories-grid deals-grid">
+        <?php $dealsLoggedIn = !empty($_SESSION['customer']); ?>
         <?php foreach ($deals as $p): $pid=(int)$p['id']; $name=getProductDisplayName($p); $desc=getProductDescription($p); $price=getProductPrice($p); $img=resolveImageForProduct($p, $skuFilters, $imgMap, $placeholder); ?>
           <div class="category-card deal-card" data-product-id="<?= $pid ?>" data-product-url="productinfo.php?id=<?= $pid ?>" tabindex="0" role="button" aria-label="View details for <?= htmlspecialchars($name) ?>" style="position:relative; cursor:pointer;">
             <div class="cat-img-wrap" style="position:relative; overflow:hidden; border-radius:12px;">
@@ -109,7 +110,14 @@ require __DIR__ . '/includes/header.php';
                 <!-- SKU centered, not bold -->
                 <div style="opacity:0.95; font-weight:400; font-size:0.95rem; margin-bottom:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:center;"><?= htmlspecialchars($name) ?></div>
                 <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
-                  <div style="font-weight:800; font-size:1.0rem;">$<?= number_format($price,2) ?></div>
+                  <div style="font-weight:800; font-size:1.0rem;">
+                  <?php if ($dealsLoggedIn): ?>
+                    $<?= number_format($price,2) ?>
+                  <?php else: ?>
+                    <a href="login.php?next=<?= urlencode('deals.php#deal-' . (int)$p['id']) ?>" style="font-size:.8rem;font-weight:600;color:#fff;background:rgba(11,94,215,0.85);padding:4px 8px;border-radius:6px;text-decoration:none;">Log in</a>
+                  <?php endif; ?>
+                  </div>
+                  <?php if ($dealsLoggedIn): ?>
                   <form class="cart-add" method="post" action="catalogue.php" style="margin:0;" onclick="event.stopPropagation();" onkeydown="event.stopPropagation();">
                     <input type="hidden" name="product_id" value="<?= $pid ?>">
                     <input type="hidden" name="product_name" value="<?= htmlspecialchars($name, ENT_QUOTES) ?>">
@@ -118,6 +126,7 @@ require __DIR__ . '/includes/header.php';
                     <input type="hidden" name="quantity" value="1">
                     <button type="submit" class="shop-btn deals-add" style="background:#0b5ed7;color:#fff;border:none;border-radius:8px;padding:8px 12px;font-weight:800;line-height:1;white-space:nowrap;">Add to Cart</button>
                   </form>
+                  <?php endif; ?>
                 </div>
               </div>
               <div style="position:absolute;top:8px;left:8px;background:#dc3545;color:#fff;padding:6px 10px;border-radius:999px;font-weight:800;">Deal</div>

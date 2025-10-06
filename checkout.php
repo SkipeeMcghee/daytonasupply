@@ -31,8 +31,14 @@ $customer = $_SESSION['customer'];
 $message = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Apply optional sales tax (6.5%)
-    $applyTax = isset($_POST['apply_tax']) && ($_POST['apply_tax'] === '1' || $_POST['apply_tax'] === 'on');
+    // Tax region selection: volusia (6.5%), flagler (7%), exempt (0%)
+    $taxRates = [
+        'volusia' => 0.065,
+        'flagler' => 0.07,
+        'exempt'  => 0.0,
+    ];
+    $taxRegion = isset($_POST['tax_region']) ? strtolower(trim((string)$_POST['tax_region'])) : 'volusia';
+    if (!array_key_exists($taxRegion, $taxRates)) { $taxRegion = 'volusia'; }
     $cartTotal = 0.0;
     $itemsDesc = [];
     foreach ($cart as $pid => $entry) {
@@ -65,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     }
-    $taxAmount = $applyTax ? round($cartTotal * 0.065, 2) : 0.0;
+    $taxAmount = round($cartTotal * $taxRates[$taxRegion], 2);
     // Collect optional PO number
     $poNumber = isset($_POST['po_number']) ? trim((string)$_POST['po_number']) : null;
     // Create order (include tax)
@@ -195,7 +201,7 @@ foreach ($cart as $pid => $entry) {
             <td class="cart-total-amount numeric"><strong id="checkout-subtotal-amount">$<?php echo number_format($total, 2); ?></strong></td>
         </tr>
         <tr class="cart-total-row" id="checkout-tax-row" style="display:none;">
-            <td class="cart-total-label" colspan="4"><strong>Sales Tax (6.5%):</strong></td>
+            <td class="cart-total-label" colspan="4"><strong id="checkout-tax-label">Sales Tax:</strong></td>
             <td class="cart-total-amount numeric"><strong id="checkout-tax-amount">$0.00</strong></td>
         </tr>
         <tr class="cart-total-row">
@@ -204,37 +210,51 @@ foreach ($cart as $pid => $entry) {
         </tr>
     </table>
     <form method="post" action="" id="checkout-form">
-    <p><label><input type="checkbox" name="apply_tax" id="apply_tax" value="1"> Apply sales tax (6.5%)</label></p>
+    <?php 
+        $postedRegion = $_POST['tax_region'] ?? 'volusia'; 
+        $taxRegionValue = htmlspecialchars($postedRegion); 
+    ?>
+    <fieldset class="tax-region-group" style="margin:14px 0 18px; padding:12px 14px; border:1px solid #d7e1ea; border-radius:8px;">
+        <legend style="font-weight:600; font-size:.95rem; padding:0 6px;">Sales Tax</legend>
+        <label style="display:inline-flex;align-items:center;gap:6px;margin:4px 18px 4px 0;cursor:pointer;">
+            <input type="radio" name="tax_region" value="volusia" data-rate="0.065" <?php echo ($postedRegion==='volusia')?'checked':''; ?>>
+            <span>Volusia (6.5%)</span>
+        </label>
+        <label style="display:inline-flex;align-items:center;gap:6px;margin:4px 18px 4px 0;cursor:pointer;">
+            <input type="radio" name="tax_region" value="flagler" data-rate="0.07" <?php echo ($postedRegion==='flagler')?'checked':''; ?>>
+            <span>Flagler (7%)</span>
+        </label>
+        <label style="display:inline-flex;align-items:center;gap:6px;margin:4px 18px 4px 0;cursor:pointer;">
+            <input type="radio" name="tax_region" value="exempt" data-rate="0" <?php echo ($postedRegion==='exempt')?'checked':''; ?>>
+            <span>Tax Exempt (0%)</span>
+        </label>
+    </fieldset>
     <p><label>PO Number (optional): <input type="text" name="po_number" value="<?php echo htmlspecialchars($_POST['po_number'] ?? ''); ?>" maxlength="255"></label></p>
         <p class="lead" id="checkout-lead">Once you click on PLACE ORDER, the request is received at our Order Desk for review and fulfillment.  You will receive a confirmation Email when your order has been accepted. Sales Tax applies unless you have a valid Sales Tax Exemption Form on file with us.</p>
     <p><button type="submit" class="proceed-btn place-order">Place Order</button></p>
     </form>
     <script>
     (function(){
-        var taxCheckbox = document.getElementById('apply_tax');
-    var subtotalAmt = document.getElementById('checkout-subtotal-amount');
-    var taxRow = document.getElementById('checkout-tax-row');
-    var taxAmtEl = document.getElementById('checkout-tax-amount');
-    var totalAmt = document.getElementById('checkout-total-amount');
+        var subtotalAmt = document.getElementById('checkout-subtotal-amount');
+        var taxRow = document.getElementById('checkout-tax-row');
+        var taxAmtEl = document.getElementById('checkout-tax-amount');
+        var taxLabel = document.getElementById('checkout-tax-label');
+        var totalAmt = document.getElementById('checkout-total-amount');
+        var radios = document.querySelectorAll('input[name="tax_region"]');
         function parseMoney(s){ return parseFloat(s.replace(/[^0-9.-]+/g,'')) || 0; }
-        function update() {
+        function currentRate(){ var r=document.querySelector('input[name="tax_region"]:checked'); return r?parseFloat(r.getAttribute('data-rate')):0; }
+        function labelText(rate){ if (rate===0) return 'Sales Tax (0%):'; if (Math.abs(rate-0.065)<0.0001) return 'Sales Tax (6.5%):'; if (Math.abs(rate-0.07)<0.0001) return 'Sales Tax (7%):'; return 'Sales Tax:'; }
+        function update(){
             var sub = parseMoney(subtotalAmt.textContent || subtotalAmt.innerText || '0');
-            if (taxCheckbox && taxCheckbox.checked) {
-                var tax = Math.round(sub * 0.065 * 100) / 100;
-                taxAmtEl.textContent = '$' + tax.toFixed(2);
-                taxRow.style.display = '';
-                totalAmt.textContent = '$' + ( (Math.round((sub + tax) * 100))/100 ).toFixed(2);
-            } else {
-                taxRow.style.display = 'none';
-                taxAmtEl.textContent = '$0.00';
-                totalAmt.textContent = '$' + sub.toFixed(2);
-            }
+            var rate = currentRate();
+            var tax = Math.round(sub * rate * 100)/100;
+            taxRow.style.display = '';
+            taxAmtEl.textContent = '$' + tax.toFixed(2);
+            if (taxLabel) taxLabel.textContent = labelText(rate);
+            totalAmt.textContent = '$' + ( (Math.round((sub + tax) * 100))/100 ).toFixed(2);
         }
-        if (taxCheckbox) {
-            taxCheckbox.addEventListener('change', update);
-            // run once on load to set initial state
-            update();
-        }
+        radios.forEach(function(r){ r.addEventListener('change', update); });
+        update();
         // After successful submission the server sets $message; hide lead when message present
         <?php if ($message): ?>
             var lead = document.getElementById('checkout-lead'); if (lead) lead.style.display = 'none';
@@ -246,8 +266,6 @@ foreach ($cart as $pid => $entry) {
             document.querySelectorAll('.checkout-table .cart-total-row').forEach(function(row){
                 var firstCell = row.querySelector('td');
                 if (firstCell) {
-                    // Desktop: 5 columns (SKU, Desc, Qty, Rate, Price) -> span 4 before Price
-                    // Mobile (<=735px): SKU hidden -> 4 columns (Desc, Qty, Rate, Price) -> span 3 before Price
                     firstCell.colSpan = mobile ? 3 : 4;
                 }
             });

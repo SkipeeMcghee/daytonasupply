@@ -406,38 +406,44 @@ include __DIR__ . '/includes/header.php';
     </section>
     <!-- Removed stray closing </main>; footer will close the single main opened in header -->
     <script>
+    // Ensure the "Same as Billing" functionality works with textarea + input elements
     document.addEventListener('DOMContentLoaded', function() {
         var checkbox = document.getElementById('signup_same_billing');
+        function byId(id){ return document.getElementById(id); }
         var billing = {
-            street: document.querySelector('input[name="billing_street"]'),
-            street2: document.querySelector('input[name="billing_street2"]'),
-            city: document.querySelector('input[name="billing_city"]'),
-            state: document.querySelector('input[name="billing_state"]'),
-            zip: document.querySelector('input[name="billing_zip"]')
+            street: byId('billing_street'),     // textarea
+            street2: byId('billing_street2'),   // input
+            city: byId('billing_city'),
+            state: byId('billing_state'),
+            zip: byId('billing_zip')
         };
         var shipping = {
-            street: document.querySelector('input[name="shipping_street"]'),
-            street2: document.querySelector('input[name="shipping_street2"]'),
-            city: document.querySelector('input[name="shipping_city"]'),
-            state: document.querySelector('input[name="shipping_state"]'),
-            zip: document.querySelector('input[name="shipping_zip"]')
+            street: byId('shipping_street'),    // textarea
+            street2: byId('shipping_street2'),  // input
+            city: byId('shipping_city'),
+            state: byId('shipping_state'),
+            zip: byId('shipping_zip')
         };
+        function fields(obj){ return Object.keys(obj).map(function(k){ return obj[k]; }).filter(Boolean); }
         function setShipping(disable) {
             if (disable) {
-                shipping.street.value = billing.street.value || '';
-                shipping.street2.value = billing.street2.value || '';
-                shipping.city.value = billing.city.value || '';
-                shipping.state.value = billing.state.value || '';
-                shipping.zip.value = billing.zip.value || '';
-                Object.values(shipping).forEach(function(f) { f.disabled = true; });
+                // Copy current billing values over
+                if (shipping.street && billing.street) shipping.street.value = billing.street.value || '';
+                if (shipping.street2 && billing.street2) shipping.street2.value = billing.street2.value || '';
+                if (shipping.city && billing.city) shipping.city.value = billing.city.value || '';
+                if (shipping.state && billing.state) shipping.state.value = billing.state.value || '';
+                if (shipping.zip && billing.zip) shipping.zip.value = billing.zip.value || '';
+                fields(shipping).forEach(function(f){ f.disabled = true; f.setAttribute('aria-disabled','true'); });
             } else {
-                Object.values(shipping).forEach(function(f) { f.disabled = false; });
+                fields(shipping).forEach(function(f){ f.disabled = false; f.removeAttribute('aria-disabled'); });
             }
         }
         if (checkbox) {
-            checkbox.addEventListener('change', function() { setShipping(checkbox.checked); });
+            checkbox.addEventListener('change', function(){ setShipping(checkbox.checked); });
         }
-        Object.values(billing).forEach(function(f) { if (f) f.addEventListener('input', function() { if (checkbox && checkbox.checked) setShipping(true); }); });
+        // If billing changes while same-as-billing is active, keep shipping in sync
+        fields(billing).forEach(function(f){ if (!f) return; f.addEventListener('input', function(){ if (checkbox && checkbox.checked) setShipping(true); }); });
+        // Initialize once
         setShipping(checkbox && checkbox.checked);
     });
     </script>

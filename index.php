@@ -67,7 +67,7 @@ require_once __DIR__ . '/includes/header.php';
 		<div class="container">
 			<ul class="message-list" aria-live="polite">
 				<li>20,000+ items in stock</li>
-				<li>Next-day local shipping</li>
+				<li>Next-day local delivery</li>
 				<li>Account reps & marketing support</li>
 			</ul>
 		</div>

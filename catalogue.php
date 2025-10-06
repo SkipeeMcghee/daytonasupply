@@ -650,11 +650,17 @@ body.theme-dark .catalogue-table tr.sale-row td { background: transparent !impor
 <?php if (empty($products)): ?>
     <p>No products found.</p>
 <?php else: ?>
+<?php $catalogueLoggedIn = !empty($_SESSION['customer']); ?>
 <table class="catalogue-table">
     <tr>
         <th>Item</th>
-        <th>Price</th>
-        <th>Actions</th>
+        <?php if ($catalogueLoggedIn): ?>
+            <th>Price</th>
+            <th>Actions</th>
+        <?php else: ?>
+            <!-- No 'Account' heading per request; second column intentionally left without a visible heading -->
+            <th></th>
+        <?php endif; ?>
     </tr>
     <?php foreach ($products as $p): ?>
         <?php $onSale = !empty($p['deal']); ?>
@@ -688,7 +694,14 @@ body.theme-dark .catalogue-table tr.sale-row td { background: transparent !impor
                     </span>
                 </a>
             </td>
-            <td>$<?= number_format($p['price'], 2) ?></td>
+            <td>
+                <?php if ($catalogueLoggedIn): ?>
+                    $<?= number_format($p['price'], 2) ?>
+                <?php else: ?>
+                    <a href="login.php?next=<?= urlencode('catalogue.php#product-' . (int)$p['id']) ?>" class="login-required" style="font-size:.85rem; font-weight:600; color:#0b5ed7; text-decoration:none;">Log in</a>
+                <?php endif; ?>
+            </td>
+            <?php if ($catalogueLoggedIn): ?>
             <td>
                 <form method="post" action="catalogue.php" class="cart-add" style="margin:0; display:inline-block;">
                     <input type="hidden" name="product_id" value="<?= (int)$p['id'] ?>">
@@ -737,6 +750,7 @@ body.theme-dark .catalogue-table tr.sale-row td { background: transparent !impor
                     </div>
                 </form>
             </td>
+            <?php endif; ?>
         </tr>
     <?php endforeach; ?>
 </table>
