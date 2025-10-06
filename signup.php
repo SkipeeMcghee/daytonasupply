@@ -241,9 +241,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $showForm) {
 }
 include __DIR__ . '/includes/header.php';
 ?>
-  <section class="login-card" aria-labelledby="signup-heading">
-    <h1 id="signup-heading">Create a Daytona Supply account</h1>
-    <p class="login-sub">Create an account to place orders, track shipments, and manage your billing.</p>
+    <section class="login-card" <?php if (empty($successMessage)): ?>aria-labelledby="signup-heading"<?php endif; ?>>
+        <?php if (empty($successMessage)): ?>
+                <h1 id="signup-heading">Create a Daytona Supply account</h1>
+                <p class="login-sub">Create an account to place orders, track shipments, and manage your billing.</p>
+        <?php endif; ?>
 
     <?php if (!empty($show_resend_top)): ?>
         <div style="margin:0.5em 0;padding:0.5em;border-radius:6px;background:#fff;box-shadow:0 6px 18px rgba(0,0,0,0.04);">
