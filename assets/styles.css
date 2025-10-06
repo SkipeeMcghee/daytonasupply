@@ -1,6 +1,6 @@
 /* Daytona Supply — modern responsive styles (mobile-first) */
 :root{
-  --brand:#004080;
+  --brand:#005EBD; /* Updated from #004080 per request */
   --accent:#0d6efd;
   --muted:#6c757d;
   --bg:#f7f8fb;
@@ -58,7 +58,7 @@ body{
   border-radius: 8px;
   font-weight: 700;
   text-decoration: none;
-  border: 2px solid rgba(0,64,128,0.08);
+  border: 2px solid rgba(0,94,189,0.18);
 }
 
 /* Account menu (shown on hover/focus for keyboard users) */
@@ -179,6 +179,27 @@ body.theme-dark .catalogue-table select.qty-preset {
 /* Footer social icon sizing */
 .f-social .social-icon { width:56px; height:56px; display:inline-block; vertical-align:middle; }
 .f-social .social-icon { filter: none; }
+/* Increase LinkedIn icon contrast in light mode (footer now brand blue) */
+html:not(.theme-dark) .site-footer .f-social .social-icon {
+  /* Make the PNG appear as a clean white glyph without extra container chrome */
+  filter: brightness(0) invert(1) contrast(1.05) saturate(1.1);
+  background: none;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+  transition: filter .25s ease;
+}
+html:not(.theme-dark) .site-footer .f-social a:hover .social-icon {
+  filter: brightness(1.2) invert(1) contrast(1.05) saturate(1.15);
+}
+/* Preserve original look in dark mode (icon likely already light) */
+html.theme-dark .site-footer .f-social .social-icon, body.theme-dark .site-footer .f-social .social-icon {
+  filter: none;
+  background: transparent;
+  box-shadow: none;
+  padding: 0; /* keep original intrinsic sizing in dark mode */
+  border-radius: 0;
+}
 /* Slightly smaller on very small screens */
 @media (max-width:480px) {
   .f-social .social-icon { width:40px; height:40px; }
@@ -969,7 +990,9 @@ html.theme-dark .sku-btn.active:hover, body.theme-dark .sku-btn.active:hover {
 .back-to-top:focus{outline:3px solid rgba(255,255,255,0.18);outline-offset:3px}
 
 /* Footer */
-.site-footer{background:#0b2238;color:#fff;padding:28px 0}
+/* Footer: light mode uses brand blue, dark mode keeps deep slate */
+.site-footer{background:var(--brand);color:#fff;padding:28px 0}
+html.theme-dark .site-footer, body.theme-dark .site-footer { background:#0b2238; }
 .footer-grid{display:grid;grid-template-columns:1fr;gap:18px;align-items:start}
 .f-links ul,.f-social ul{list-style:none;padding:0;margin:0}
 .f-links a{color:#dcebf9;text-decoration:none}
@@ -1000,7 +1023,7 @@ button:focus, a:focus, input:focus{outline: none}
 /* Use brand-colored ring for focus-visible to remain visible but not jarring */
 button:focus-visible, a:focus-visible, input:focus-visible{outline:3px solid rgba(255,255,255,0.18);outline-offset:3px}
 /* For inputs inside white containers (like the catalogue table or card), use brand blue focus */
-.search-form input:focus-visible, input[type=text]:focus-visible, input[type=search]:focus-visible{outline:3px solid rgba(0,64,128,0.18);outline-offset:3px}
+.search-form input:focus-visible, input[type=text]:focus-visible, input[type=search]:focus-visible{outline:3px solid rgba(0,94,189,0.25);outline-offset:3px}
 
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce){
@@ -1649,7 +1672,7 @@ html.theme-dark .proceed-btn.btn-catalog, body.theme-dark .proceed-btn.btn-catal
 
 /* FedEx tracking button variant: blue & orange (FedEx-inspired) */
 .proceed-btn.btn-track-fedex {
-  background: linear-gradient(90deg,#004080 0%, #ff7a00 100%);
+  background: linear-gradient(90deg,#005EBD 0%, #ff7a00 100%);
   color:#fff;
   border:0;
   position:relative;
@@ -1661,7 +1684,7 @@ html.theme-dark .proceed-btn.btn-catalog, body.theme-dark .proceed-btn.btn-catal
 html.theme-dark .proceed-btn.btn-track-fedex, body.theme-dark .proceed-btn.btn-track-fedex { box-shadow:0 6px 18px rgba(0,0,0,0.5); }
 html.theme-dark .proceed-btn.btn-track-fedex:hover, body.theme-dark .proceed-btn.btn-track-fedex:hover { box-shadow:0 10px 24px rgba(0,0,0,0.55); }
 .proceed-btn.btn-catalog:active { transform: translateY(1px); box-shadow: 0 3px 0 rgba(0,0,0,0.04); }
-.proceed-btn.btn-catalog:focus { outline: 3px solid rgba(0,64,128,0.12); outline-offset: 3px; }
+.proceed-btn.btn-catalog:focus { outline: 3px solid rgba(0,94,189,0.22); outline-offset: 3px; }
 
 /* Cart button — solid accent with stronger shadow and inverted hover */
 .proceed-btn.btn-cart {
