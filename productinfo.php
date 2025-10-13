@@ -80,39 +80,47 @@ include __DIR__ . '/includes/header.php';
             <div style="font-weight:400; opacity:0.95; font-size:1rem; margin-bottom:10px;">
                 <?= htmlspecialchars($dispName) ?>
             </div>
-            <p style="font-size:1.2rem;font-weight:800;margin:10px 0;display:flex;align-items:center;gap:8px;">
-                <span>$<?= number_format($price, 2) ?></span>
-                <?php if ($onSale): ?>
-                    <span style="display:inline-flex;align-items:center;background:#16a34a;color:#fff;border-radius:999px;padding:4px 8px;font-weight:800;font-size:12px;line-height:1;">On Sale!</span>
-                <?php endif; ?>
-            </p>
-            <div style="display:flex; flex-wrap:wrap; align-items:center; gap:10px;">
-                <form method="post" action="catalogue.php" class="cart-add" style="margin:0; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                    <input type="hidden" name="product_id" value="<?= (int)$id ?>">
-                    <input type="hidden" name="product_name" value="<?= htmlspecialchars($dispName) ?>">
-                    <input type="hidden" name="product_description" value="<?= htmlspecialchars($desc) ?>">
-                    <input type="hidden" name="product_price" value="<?= htmlspecialchars(number_format($price, 2, '.', '')) ?>">
-                    <span class="qty-wrap" style="display:inline-flex;gap:6px;align-items:center;">
-                        <label for="pi_qty_<?= (int)$id ?>" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;">Quantity</label>
-                        <input id="pi_qty_<?= (int)$id ?>" type="number" name="quantity" value="1" min="1" step="1" style="width:4.5em;">
-                        <select class="qty-preset qty-compact" aria-label="Quick quantity" style="padding:6px 8px;border:1px solid #d7e1ea;border-radius:6px;">
-                            <option value="1">1</option>
-                            <option value="5">5</option>
-                            <option value="10">10</option>
-                            <option value="25">25</option>
-                            <option value="50">50</option>
-                            <option value="75">75</option>
-                            <option value="100">100</option>
-                        </select>
-                    </span>
-                    <button type="submit" class="shop-btn" style="background:#0b5ed7;color:#fff;border:none;border-radius:8px;padding:8px 12px;font-weight:800;line-height:1;white-space:nowrap;">Add to Cart</button>
-                </form>
-                <button class="fav-toggle <?= $isFav ? 'fav-on' : '' ?>" data-product-id="<?= (int)$id ?>" aria-pressed="<?= $isFav ? 'true' : 'false' ?>" title="<?= $isFav ? 'Remove from favorites' : 'Add to favorites' ?>" style="background:transparent;border:0;padding:6px;cursor:pointer;">
-                    <svg class="fav-icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                        <path d="M12 .587l3.668 7.431 8.2 1.192-5.934 5.787 1.402 8.169L12 18.897l-7.336 3.866 1.402-8.169L.132 9.21l8.2-1.192z" />
-                    </svg>
-                </button>
-            </div>
+            <?php $detailLoggedIn = !empty($_SESSION['customer']['id']); ?>
+            <?php if ($detailLoggedIn): ?>
+                <p style="font-size:1.2rem;font-weight:800;margin:10px 0;display:flex;align-items:center;gap:8px;">
+                    <span>$<?= number_format($price, 2) ?></span>
+                    <?php if ($onSale): ?>
+                        <span style="display:inline-flex;align-items:center;background:#16a34a;color:#fff;border-radius:999px;padding:4px 8px;font-weight:800;font-size:12px;line-height:1;">On Sale!</span>
+                    <?php endif; ?>
+                </p>
+                <div style="display:flex; flex-wrap:wrap; align-items:center; gap:10px;">
+                    <form method="post" action="catalogue.php" class="cart-add" style="margin:0; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                        <input type="hidden" name="product_id" value="<?= (int)$id ?>">
+                        <input type="hidden" name="product_name" value="<?= htmlspecialchars($dispName) ?>">
+                        <input type="hidden" name="product_description" value="<?= htmlspecialchars($desc) ?>">
+                        <input type="hidden" name="product_price" value="<?= htmlspecialchars(number_format($price, 2, '.', '')) ?>">
+                        <span class="qty-wrap" style="display:inline-flex;gap:6px;align-items:center;">
+                            <label for="pi_qty_<?= (int)$id ?>" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;">Quantity</label>
+                            <input id="pi_qty_<?= (int)$id ?>" type="number" name="quantity" value="1" min="1" step="1" style="width:4.5em;">
+                            <select class="qty-preset qty-compact" aria-label="Quick quantity" style="padding:6px 8px;border:1px solid #d7e1ea;border-radius:6px;">
+                                <option value="1">1</option>
+                                <option value="5">5</option>
+                                <option value="10">10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="75">75</option>
+                                <option value="100">100</option>
+                            </select>
+                        </span>
+                        <button type="submit" class="shop-btn" style="background:#0b5ed7;color:#fff;border:none;border-radius:8px;padding:8px 12px;font-weight:800;line-height:1;white-space:nowrap;">Add to Cart</button>
+                    </form>
+                    <button class="fav-toggle <?= $isFav ? 'fav-on' : '' ?>" data-product-id="<?= (int)$id ?>" aria-pressed="<?= $isFav ? 'true' : 'false' ?>" title="<?= $isFav ? 'Remove from favorites' : 'Add to favorites' ?>" style="background:transparent;border:0;padding:6px;cursor:pointer;">
+                        <svg class="fav-icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M12 .587l3.668 7.431 8.2 1.192-5.934 5.787 1.402 8.169L12 18.897l-7.336 3.866 1.402-8.169L.132 9.21l8.2-1.192z" />
+                        </svg>
+                    </button>
+                </div>
+            <?php else: ?>
+                <p style="font-size:.95rem;font-weight:600;margin:16px 0 6px;">Price available to registered customers.</p>
+                <p style="margin:4px 0 18px;">
+                    <a href="login.php?next=<?= urlencode('productinfo.php?id=' . (int)$id) ?>" class="login-required" style="font-size:.9rem;font-weight:600;color:#0b5ed7;text-decoration:none;">Log in</a>
+                </p>
+            <?php endif; ?>
             <p style="margin-top:14px;">
                 <a href="catalogue.php" class="proceed-btn btn-catalog">Back to Catalog</a>
             </p>
