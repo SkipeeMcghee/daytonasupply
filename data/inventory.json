@@ -31,12 +31,12 @@
   },
   {
     "name": "BAT-1525",
-    "description": "Clorox® Commercial Solutions Manual Toilet Bowl Cleaner with Bleach, Fresh Scent, 24 oz., 12/Carton",
+    "description": "Clorox\u00ae Commercial Solutions Manual Toilet Bowl Cleaner with Bleach, Fresh Scent, 24 oz., 12/Carton",
     "price": 65.59
   },
   {
     "name": "BAT-1526",
-    "description": "Clorox® Commercial Solutions Manual Toilet Bowl Cleaner with Bleach, Fresh Scent, 24 oz.",
+    "description": "Clorox\u00ae Commercial Solutions Manual Toilet Bowl Cleaner with Bleach, Fresh Scent, 24 oz.",
     "price": 5.7
   },
   {
@@ -576,12 +576,12 @@
   },
   {
     "name": "DIS-6770",
-    "description": "Clorox® Disinfecting Wipes, Fresh Lavender Scent, 75 Wipes/Canister, 6 Canisters/Carton",
+    "description": "Clorox\u00ae Disinfecting Wipes, Fresh Lavender Scent, 75 Wipes/Canister, 6 Canisters/Carton",
     "price": 47.08
   },
   {
     "name": "DIS-6775",
-    "description": "Clorox® Disinfecting Wipes, Lemon Fresh Scent, 75 Wipes/Canister, 6 Canisters/Carton",
+    "description": "Clorox\u00ae Disinfecting Wipes, Lemon Fresh Scent, 75 Wipes/Canister, 6 Canisters/Carton",
     "price": 53.97
   },
   {
@@ -676,7 +676,7 @@
   },
   {
     "name": "FLO-3311",
-    "description": "Rubbermaid Super Stitch® Red Cotton Synthetic Fiber M 20 OZ Cleaning Wet Mop 5IN Headband",
+    "description": "Rubbermaid Super Stitch\u00ae Red Cotton Synthetic Fiber M 20 OZ Cleaning Wet Mop 5IN Headband",
     "price": 15.98
   },
   {
@@ -691,7 +691,7 @@
   },
   {
     "name": "FLO-3320",
-    "description": "Rubbermaid Super Stitch® Green Cotton Synthetic Fiber Cleaning Wet Mop 5IN Headband",
+    "description": "Rubbermaid Super Stitch\u00ae Green Cotton Synthetic Fiber Cleaning Wet Mop 5IN Headband",
     "price": 13.82
   },
   {
@@ -876,7 +876,7 @@
   },
   {
     "name": "FOO-6810",
-    "description": "Coffee-mate®  Original Powdered Coffee Creamer, 22 oz. Canister",
+    "description": "Coffee-mate\u00ae  Original Powdered Coffee Creamer, 22 oz. Canister",
     "price": 4.79
   },
   {
@@ -1129,17 +1129,6 @@
     "description": "White Multi-Depth Bookfolds14 1/8x8 5/8x 1 50/bundle",
     "price": 0.67
   },
-  
-  {
-    "name": "OFF-1400",
-    "description": "Copy Paper #20 White 8 1/2' x 11' 10 x 500/Case",
-    "price": 32.29
-  },
-  {
-    "name": "OFF-1470",
-    "description": "Copy Paper #20 White Legal 11' x 17' 2500/Case",
-    "price": 60.76
-  },
   {
     "name": "OFF-1715",
     "description": "Envelope Double Window #9 White 500/Box",
@@ -1197,7 +1186,7 @@
   },
   {
     "name": "PAC-2082",
-    "description": "Packing List Enclosed Panel Face Envelopes, 7” x 5-1/2”, Orange/Black ,1000/Case",
+    "description": "Packing List Enclosed Panel Face Envelopes, 7\u201d x 5-1/2\u201d, Orange/Black ,1000/Case",
     "price": 48.48
   },
   {
@@ -1208,7 +1197,7 @@
   {
     "name": "PAC-2250",
     "description": "Film Stretch 3\" 80 Gauge 1000' 18 Rolls/Case With Handle",
-    "price": 76.95
+    "price": 150.48
   },
   {
     "name": "PAC-2252",
@@ -1445,7 +1434,11 @@
     "description": "55 Gallon Fibre Barrel With Lid",
     "price": 81.89
   },
- 
+  {
+    "name": "PAC-8000",
+    "description": "King Mattress Bag",
+    "price": 6.15
+  },
   {
     "name": "PAD-2000",
     "description": "Corrugated Pad 16.5 x 56.5 32ECT Kraft",
@@ -1493,7 +1486,7 @@
   },
   {
     "name": "PAP-2200",
-    "description": "Blinding White Copy Paper, 98 Bright, 20 lb., 8 1/2 x 11, White, 5000/CT",
+    "description": "Copy Paper, 8 1/2 x 11, White, 5000/CT",
     "price": 46.34
   },
   {
@@ -1604,7 +1597,7 @@
   {
     "name": "PAP-6356",
     "description": "Universal Hand Towel Roll, Notched, 8\" x 800 ft, Natural, 6 Rolls/Carton",
-    "price": 87.29
+    "price": 93.46
   },
   {
     "name": "PAP-6365",
@@ -1638,7 +1631,7 @@
   },
   {
     "name": "PAP-6725",
-    "description": "Kimtech™ Kimwipes, Delicate Task Wipers, 4 2/5\" x 8 2/5\", 280/Box, 60 Boxes/Carton",
+    "description": "Kimtech\u2122 Kimwipes, Delicate Task Wipers, 4 2/5\" x 8 2/5\", 280/Box, 60 Boxes/Carton",
     "price": 226.07
   },
   {
@@ -1887,6 +1880,11 @@
     "price": 38.63
   },
   {
+    "name": "RAG-5105",
+    "description": "Rags Terry 25lb",
+    "price": 68.21
+  },
+  {
     "name": "REC-1051",
     "description": "Outdoor Ashtray - Gray",
     "price": 56.65
@@ -1989,7 +1987,7 @@
   {
     "name": "SBO-1220",
     "description": "RSC 6 x 6 x 3 ECT32 25/Bundle",
-    "price": 0.51
+    "price": 0.85
   },
   {
     "name": "SBO-1230",
@@ -2075,11 +2073,6 @@
     "name": "SBO-1805",
     "description": "RSC 9 x 5 x 4 32ECT 25/Bundle",
     "price": 0.73
-  },
-  {
-    "name": "SBO-1806",
-    "description": "RSC 9 x 6 x 3",
-    "price": 0.42
   },
   {
     "name": "SBO-1806",
@@ -3092,11 +3085,6 @@
     "price": 15.61
   },
   {
-    "name": "Services",
-    "description": "",
-    "price": 0.0
-  },
-  {
     "name": "SFC-1025",
     "description": "Corrugated Roll Single Faced 6\" x 250LF",
     "price": 18.8
@@ -3423,7 +3411,7 @@
   },
   {
     "name": "TAP-3180",
-    "description": "Tape Carton Sealing OPP 3'' x 72yd 3.2mil 24 Rolls/Case",
+    "description": "Tape Carton Sealing OPP 3'' x 72yd 3.2mi 24 rolls/case",
     "price": 140.24
   },
   {
@@ -3483,8 +3471,8 @@
   },
   {
     "name": "TAP-6205",
-    "description": "Tape Masking 2\" x 60yd 4.7 Mil 24 Rolls/Case",
-    "price": 118.36
+    "description": "Tape Masking 2\" x 60yd 5.1 Mil 3 Rolls/Pack",
+    "price": 14.75
   },
   {
     "name": "TEQ-4765",
