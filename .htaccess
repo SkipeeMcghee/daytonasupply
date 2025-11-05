@@ -16,10 +16,16 @@ SetEnv DB_NAME daytona_supply
 SetEnv DB_USER brian
 SetEnv DB_PASS 273h4ui^N
 
-# Gmail SMTP for automated emails
-SetEnv COMPANY_EMAIL packinggenerals@gmail.com
-SetEnv SMTP_HOST smtp.gmail.com
+# SMTP for automated emails (Plesk)
+# Sender (From) should be the official company address
+SetEnv COMPANY_EMAIL info@daytona-supply.com
+# Internal notifications (order alerts, contact form) go here
+SetEnv NOTIFY_EMAIL packinggenerals@gmail.com
+# SMTP server settings (STARTTLS on 587)
+SetEnv SMTP_HOST mail.daytona-supply.com
 SetEnv SMTP_PORT 587
-SetEnv SMTP_USER packinggenerals@gmail.com
-SetEnv SMTP_PASS bwodqxwxempzstzl
+SetEnv SMTP_USER info@daytona-supply.com
+# IMPORTANT: Replace the placeholder below with the actual mailbox password in production
+SetEnv SMTP_PASS b1An707j~
+SetEnv SMTP_SECURE tls
 SetEnv SMTP_AUTH true

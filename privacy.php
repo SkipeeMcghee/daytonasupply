@@ -60,7 +60,7 @@ include __DIR__ . '/includes/header.php';
     <p>We may transfer personal information to servers or service providers located outside your country. Where required by applicable law, we will take steps to ensure that appropriate safeguards are in place for such transfers.</p>
 
         <h2>Contact</h2>
-        <p>If you have questions about this Privacy Policy, email <a href="mailto:packinggenerals@gmail.com">packinggenerals@gmail.com</a> or write to:</p>
+    <p>If you have questions about this Privacy Policy, email <a href="mailto:info@daytona-supply.com">info@daytona-supply.com</a> or write to:</p>
         <address>
             Daytona Supply<br>
             1022 Reed Canal Rd<br>

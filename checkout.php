@@ -96,8 +96,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             "Please review and approve this order in the manager portal.";
     // Only send email and clear cart if order creation succeeded
     if (!empty($orderId)) {
-        // Send email to company
-        $companyEmail = getenv('COMPANY_EMAIL') ?: 'packinggenerals@gmail.com';
+        // Send email to company (use NOTIFY_EMAIL when set, fallback to COMPANY_EMAIL)
+        $companyEmail = getenv('NOTIFY_EMAIL') ?: (getenv('COMPANY_EMAIL') ?: 'packinggenerals@gmail.com');
         if ($companyEmail) {
             $subject = 'New Purchase Order #' . $orderId;
             if (!empty($poNumber)) $subject .= ' (PO: ' . $poNumber . ')';

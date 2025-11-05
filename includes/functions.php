@@ -57,6 +57,12 @@ if (!getenv('COMPANY_EMAIL')) {
     putenv('COMPANY_EMAIL=packinggenerals@gmail.com');
 }
 
+// Ensure NOTIFY_EMAIL defaults to COMPANY_EMAIL (used for internal notifications)
+if (!getenv('NOTIFY_EMAIL')) {
+    $defaultFrom = getenv('COMPANY_EMAIL') ?: 'packinggenerals@gmail.com';
+    putenv('NOTIFY_EMAIL=' . $defaultFrom);
+}
+
 // Attempt to load Composer autoloader if PHPMailer and other vendor
 // packages were installed via composer.  This will register the
 // PHPMailer classes automatically.  If the autoloader file does not

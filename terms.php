@@ -62,7 +62,7 @@ include __DIR__ . '/includes/header.php';
     <p>We may revise these Terms from time to time. Material changes will be posted with a new effective date on this page and, where required by law or when reasonably practical, notified to you by email to the address associated with your account. Continued use of the site after changes are posted constitutes acceptance of the updated Terms.</p>
 
     <h2>Contact</h2>
-    <p>Questions regarding these Terms may be directed to <a href="mailto:packinggenerals@gmail.com">packinggenerals@gmail.com</a>.</p>
+    <p>Questions regarding these Terms may be directed to <a href="mailto:info@daytona-supply.com">info@daytona-supply.com</a>.</p>
     </article>
 </div>
 

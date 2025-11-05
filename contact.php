@@ -39,7 +39,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($message === '') $errors[] = 'Please provide a message.';
 
     if (empty($errors)) {
-        $company = getenv('COMPANY_EMAIL') ?: 'webmaster@localhost';
+    // Internal contact messages should go to NOTIFY_EMAIL when set
+    $company = getenv('NOTIFY_EMAIL') ?: (getenv('COMPANY_EMAIL') ?: 'webmaster@localhost');
         $from = $cust['email'] ?? ($customer['email'] ?? '');
         $body = "Contact form submission from: " . ($cust['name'] ?? ($customer['name'] ?? 'Unknown')) . "\n";
         $body .= "Email: " . $from . "\n\n";
