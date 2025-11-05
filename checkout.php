@@ -46,25 +46,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (is_array($entry) && isset($entry['quantity'])) {
             $qty = (int)$entry['quantity'];
             $name = $entry['product_name'] ?? '';
+            $desc = $entry['product_description'] ?? '';
             $price = isset($entry['product_price']) ? (float)$entry['product_price'] : null;
             // If snapshot fields are missing, resolve current product data
-            if ($name === '' || $price === null || $price === 0.0) {
+            if ($name === '' || $price === null || $price === 0.0 || $desc === '') {
                 $prod = getProductById((int)$pid);
                 if ($prod) {
                     if ($name === '') $name = $prod['name'] ?? 'Product #' . (int)$pid;
+                    if ($desc === '') $desc = $prod['description'] ?? '';
                     if ($price === null || $price === 0.0) $price = (float)($prod['price'] ?? 0.0);
                 } else {
                     if ($name === '') $name = 'Product #' . (int)$pid;
                     if ($price === null) $price = 0.0;
                 }
             }
-            $itemsDesc[] = $name . ' x' . $qty . ' ($' . number_format($price * $qty, 2) . ')';
+            $line = $name;
+            if ($desc !== '') { $line .= ' — ' . $desc; }
+            $line .= ' x' . $qty . ' ($' . number_format($price * $qty, 2) . ')';
+            $itemsDesc[] = $line;
             $cartTotal += $price * $qty;
         } else {
             $qty = (int)$entry;
             $prod = getProductById((int)$pid);
             if ($prod) {
-                $itemsDesc[] = $prod['name'] . ' x' . $qty . ' ($' . number_format($prod['price'] * $qty, 2) . ')';
+                $line = ($prod['name'] ?? ('Product #' . (int)$pid));
+                $pdesc = $prod['description'] ?? '';
+                if (!empty($pdesc)) { $line .= ' — ' . $pdesc; }
+                $line .= ' x' . $qty . ' ($' . number_format(($prod['price'] ?? 0) * $qty, 2) . ')';
+                $itemsDesc[] = $line;
                 $cartTotal += $prod['price'] * $qty;
             } else {
                 $itemsDesc[] = 'Product #' . (int)$pid . ' x' . $qty . ' ($0.00)';
