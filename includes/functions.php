@@ -632,6 +632,8 @@ function sendEmail(string $to, string $subject, string $message, ?string $replyT
                     $mailer->SMTPSecure = $secure;
                 }
             }
+            $mailer->CharSet = 'UTF-8';
+            $mailer->Encoding = '8bit';
             $mailer->setFrom($from, 'Daytona Supply');
             $mailer->addAddress($to);
             // If a valid reply-to address was supplied, add it so replies go to the user
@@ -653,6 +655,9 @@ function sendEmail(string $to, string $subject, string $message, ?string $replyT
     $effectiveReply = (!empty($replyTo) && filter_var($replyTo, FILTER_VALIDATE_EMAIL)) ? $replyTo : $from;
     $headers = 'From: ' . $from . "\r\n"
              . 'Reply-To: ' . $effectiveReply . "\r\n"
+             . 'MIME-Version: 1.0' . "\r\n"
+             . 'Content-Type: text/plain; charset=UTF-8' . "\r\n"
+             . 'Content-Transfer-Encoding: 8bit' . "\r\n"
              . 'X-Mailer: PHP/' . phpversion();
     $success = @mail($to, $subject, $message, $headers);
     if (!$success) {
@@ -1213,8 +1218,9 @@ function updateOrderStatus(int $orderId, string $status, ?string $managerNote = 
             $poText = (!empty($order['po_number'])) ? ' (PO: ' . $order['po_number'] . ')' : '';
             $subj = 'Your Order #' . $order['id'] . ' has been updated' . $poText;
 
-            $msg = "Hello " . $order['customer_name'] . ",\n\n" .
-                   "Your order #" . $order['id'] . (!empty($poText) ? ' — PO: ' . $order['po_number'] : '') . " has been " . strtolower($status) . ".\n";
+                 // Use simple ASCII dash to avoid mojibake if a client mishandles UTF-8
+                 $msg = "Hello " . $order['customer_name'] . ",\n\n" .
+                     "Your order #" . $order['id'] . (!empty($poText) ? ' - PO: ' . $order['po_number'] : '') . " has been " . strtolower($status) . ".\n";
 
             // If the manager left a note, place it directly under the status line
             if ($managerNote && trim($managerNote) !== '') {
