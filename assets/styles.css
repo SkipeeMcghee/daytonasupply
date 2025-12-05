@@ -204,6 +204,21 @@ html.theme-dark .site-footer .f-social .social-icon, body.theme-dark .site-foote
 @media (max-width:480px) {
   .f-social .social-icon { width:40px; height:40px; }
 }
+/* Compact landscape mode: when device height is small (landscape phone) shrink header and remove sticky to free vertical space */
+@media (orientation: landscape) and (max-height:520px) {
+  /* Remove sticky to free space, but keep everything visible */
+  .site-header { position:static; }
+  .header-inner { padding:6px 0; flex-wrap:wrap; }
+  .brand .logo { height:34px; }
+  /* Keep search & phone visible but compact */
+  .search-wrap { display:block !important; width:100% !important; margin-top:6px; }
+  .search-form input[type=search] { padding:6px 10px; font-size:14px; }
+  .search-btn { padding:6px 10px; font-size:14px; }
+  .header-actions { gap:6px; }
+  .account-toggle { padding:4px 6px; }
+  /* Let cart flow inline instead of absolute pinning */
+  .nav-cart { position: static !important; top:auto; right:auto; }
+}
   .catalogue-table td:nth-child(3),
   .catalogue-table td:nth-child(3) form.cart-add { display: flex !important; flex-direction: column !important; align-items: stretch; gap: 6px; }
   .catalogue-table td:nth-child(3) { overflow: visible !important; height: auto !important; }

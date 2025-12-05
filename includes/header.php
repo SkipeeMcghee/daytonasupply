@@ -83,6 +83,31 @@ if ($loggedIn) {
     }
     if ($pref) $serverThemeClass = 'theme-dark';
 }
+// Determine if current logged-in customer should see Manager Portal link
+$showManagerPortal = false;
+if ($loggedIn) {
+    // Session-provided flag if available
+    if (!empty($_SESSION['customer']['isadmin'])) {
+        $showManagerPortal = ((int)$_SESSION['customer']['isadmin'] === 1);
+    }
+    // If not set via session, try to read from DB (and ignore if column missing)
+    if (!$showManagerPortal && !empty($_SESSION['customer']['id'])) {
+        try {
+            if (!function_exists('getDb')) { @include_once __DIR__ . '/db.php'; }
+            if (function_exists('getDb')) {
+                $db = getDb();
+                try {
+                    $stmt = $db->prepare('SELECT isadmin FROM customers WHERE id = :id LIMIT 1');
+                    $stmt->execute([':id' => $_SESSION['customer']['id']]);
+                    $val = $stmt->fetchColumn();
+                    if ($val !== false && (int)$val === 1) { $showManagerPortal = true; }
+                } catch (Exception $_) { /* likely column missing; ignore */ }
+            }
+        } catch (Exception $_) { /* ignore */ }
+    }
+    // Also show when an admin session is active
+    if ($adminLoggedIn) { $showManagerPortal = true; }
+}
 ?>
 <!doctype html>
 <html lang="en">
@@ -98,24 +123,41 @@ if ($loggedIn) {
     <?php $cssPath = __DIR__ . '/../assets/styles.css'; ?>
     <link rel="stylesheet" href="assets/styles.css?v=<?php echo file_exists($cssPath) ? filemtime($cssPath) : time(); ?>">
     <?php 
-        // Favicon / app icon tags so mobile browsers use the DS logo.
+        // Icon versioning for cache-busting
+        $boxeyPng = __DIR__ . '/../assets/images/boxey with smartphone.png';
+        $boxeyJpg = __DIR__ . '/../assets/images/boxey with smartphone.jpg';
         $dsLogoFile = __DIR__ . '/../assets/images/DaytonaSupplyDSlogo.png';
+        $iconVer = file_exists($boxeyPng) ? filemtime($boxeyPng) : (file_exists($boxeyJpg) ? filemtime($boxeyJpg) : (file_exists($dsLogoFile) ? filemtime($dsLogoFile) : time()));
         $dsLogoVer = file_exists($dsLogoFile) ? filemtime($dsLogoFile) : time();
-        // Use the same source image for multiple rels; browsers will downscale.
+        // Detect iOS Chrome (UA contains 'CriOS'); only Safari should receive apple-touch icons
+        $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
+        $isIOSChrome = stripos($ua, 'CriOS') !== false;
+        // Favicons (browser tabs) should use the classic DS logo image.
+        // Apple/manifest icons use the generated Boxey-on-blue icon.
     ?>
-    <!-- Favicon matrix (currently all point to same base image; replace with real resized exports for crispness) -->
-    <link rel="icon" type="image/png" sizes="16x16" href="assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $dsLogoVer; ?>">
-    <link rel="icon" type="image/png" sizes="32x32" href="assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $dsLogoVer; ?>">
-    <link rel="icon" type="image/png" sizes="48x48" href="assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $dsLogoVer; ?>">
-    <link rel="icon" type="image/png" sizes="96x96" href="assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $dsLogoVer; ?>">
-    <link rel="icon" type="image/png" sizes="192x192" href="assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $dsLogoVer; ?>">
-    <link rel="icon" type="image/png" sizes="512x512" href="assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $dsLogoVer; ?>">
-    <link rel="apple-touch-icon" sizes="167x167" href="assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $dsLogoVer; ?>">
-    <link rel="apple-touch-icon" sizes="180x180" href="assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $dsLogoVer; ?>">
-    <link rel="apple-touch-icon-precomposed" href="assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $dsLogoVer; ?>">
-    <link rel="shortcut icon" href="assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $dsLogoVer; ?>">
-    <link rel="manifest" href="/site.webmanifest?v=<?php echo $dsLogoVer; ?>">
-    <meta name="theme-color" content="#0b5ed7">
+    <!-- Favicon matrix (generated with blue background for contrast on home screens) -->
+    <!-- Favicons for browser tabs (classic DS logo) -->
+    <?php $favq = $dsLogoVer . '-tab-20251119-3'; $touchq = $iconVer . '-touch-20251119-2'; ?>
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $favq; ?>">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $favq; ?>">
+    <link rel="icon" type="image/png" sizes="48x48" href="/assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $favq; ?>">
+    <link rel="icon" type="image/png" sizes="96x96" href="/assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $favq; ?>">
+    <!-- iOS Add-to-Home icons (Boxey-on-blue) — suppressed for iOS Chrome -->
+    <?php if (!$isIOSChrome): ?>
+    <link rel="apple-touch-icon" sizes="167x167" href="/assets/icon.php?size=167&v=<?php echo $touchq; ?>">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/icon.php?size=180&v=<?php echo $touchq; ?>">
+    <link rel="apple-touch-icon-precomposed" href="/assets/icon.php?size=180&v=<?php echo $touchq; ?>">
+    <?php endif; ?>
+    <link rel="shortcut icon" href="/assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $favq; ?>">
+    <link rel="manifest" href="/site.webmanifest?v=<?php echo $iconVer; ?>">
+    <!-- Theme-color for browser UI; match page background in light/dark -->
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f7f8fb">
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#121212">
+    <meta name="theme-color" id="theme-color-dynamic" content="#f7f8fb">
+    <!-- iOS PWA hints -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Daytona Supply">
 </head>
 <?php 
     $authClass = $loggedIn ? 'is-authenticated' : 'guest';
@@ -154,6 +196,9 @@ if ($loggedIn) {
                             </button>
                             <a class="account-link" href="account.php">My Account</a>
                             <div class="account-menu" id="account-menu" role="menu" aria-label="Account menu">
+                                <?php if (!empty($showManagerPortal)): ?>
+                                    <a role="menuitem" href="managerportal.php">Manager Portal</a>
+                                <?php endif; ?>
                                 <a role="menuitem" href="account.php#account-details">Account Details</a>
                                 <a role="menuitem" href="account.php#change-password">Change Your Password</a>
                                 <a role="menuitem" href="account.php#your-orders">Orders</a>

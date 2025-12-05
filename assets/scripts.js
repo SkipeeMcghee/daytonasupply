@@ -547,9 +547,20 @@ document.addEventListener('DOMContentLoaded', function () {
 */
 (function darkMode(){
 	var storageKey = 'dg_theme';
+	function updateThemeMeta(){
+		try {
+			var meta = document.querySelector('meta#theme-color-dynamic[name="theme-color"]');
+			if (!meta) return;
+			var cs = getComputedStyle(document.documentElement);
+			var bg = cs.getPropertyValue('--bg') || '#ffffff';
+			bg = String(bg).trim();
+			if (bg) meta.setAttribute('content', bg);
+		} catch(e){}
+	}
 	function apply(isDark){
 		try { if (isDark) document.documentElement.classList.add('theme-dark'), document.body.classList.add('theme-dark'); else document.documentElement.classList.remove('theme-dark'), document.body.classList.remove('theme-dark'); } catch(e) {}
 		var cb = document.getElementById('darkmode_toggle'); if (cb) cb.checked = !!isDark;
+		updateThemeMeta();
 	}
 
 	// Apply from localStorage immediately for fast UX
@@ -574,5 +585,8 @@ document.addEventListener('DOMContentLoaded', function () {
 				fetch('/ajax/update_darkmode.php', { method: 'POST', credentials: 'same-origin', body: fd });
 			} catch(e){ }
 		}, { passive: true });
+
+		// On first load, ensure theme meta matches computed theme
+		try { updateThemeMeta(); } catch(e){}
 	});
 })();
