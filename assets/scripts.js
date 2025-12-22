@@ -411,7 +411,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 		var selIndex = -1; // keyboard selection index
 		var items = []; // current suggestion items [{el,data}]
-		var lastQuery = '';
+		var lastQuery = null;
 		var pending = null;
 		var debounceTimer = null;
 
@@ -453,23 +453,41 @@ document.addEventListener('DOMContentLoaded', function () {
 		function fetchSuggestions(q){
 			if (pending) { try { pending.abort(); } catch(e){} pending = null; }
 			var xhr = new XMLHttpRequest(); pending = xhr;
-			xhr.open('GET', '/ajax/search_suggestions.php?q=' + encodeURIComponent(q));
+			var suggestUrl = input.getAttribute('data-suggest-url');
+			if (!suggestUrl || suggestUrl === '') {
+				// Fallback: build relative to current page directory
+				try {
+					var base = window.location.pathname.replace(/\/[^\/]*$/, '');
+					suggestUrl = base + '/ajax/search_suggestions.php';
+				} catch(e){ suggestUrl = '/ajax/search_suggestions.php'; }
+			}
+			xhr.open('GET', suggestUrl + '?q=' + encodeURIComponent(q));
+			xhr.timeout = 6000; // 6s safety timeout for slow environments
 			xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
 			xhr.onreadystatechange = function(){ if (xhr.readyState === 4){ pending = null; try {
 				var json = JSON.parse(xhr.responseText||'{}');
 				if (json && json.success) { render(json.suggestions || []); }
 				else { clearList(); }
 			} catch(e){ clearList(); } } };
+			xhr.ontimeout = function(){ pending = null; /* keep UI responsive */ };
 			xhr.send();
 		}
 		input.setAttribute('autocomplete', 'off');
 		input.addEventListener('input', function(){
 			var q = input.value || '';
-			if (q.trim() === '') { clearList(); return; }
-			if (q === lastQuery) return;
+			if (q.trim().length < 2) { clearList(); lastQuery = null; return; }
+			// Always allow re-fetch even for same text; rely on debounce and abort
 			lastQuery = q;
 			clearTimeout(debounceTimer);
-			debounceTimer = setTimeout(function(){ fetchSuggestions(q); }, 160);
+			debounceTimer = setTimeout(function(){ fetchSuggestions(q); }, 120);
+		});
+		// If input regains focus with existing text, trigger suggestions immediately
+		input.addEventListener('focus', function(){
+			var q = (input.value || '').trim();
+			if (q.length >= 2) {
+				clearTimeout(debounceTimer);
+				debounceTimer = setTimeout(function(){ fetchSuggestions(q); }, 60);
+			}
 		});
 		input.addEventListener('keydown', function(e){
 			if (list.hidden) return;

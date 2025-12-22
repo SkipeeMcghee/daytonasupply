@@ -1249,7 +1249,7 @@ function getProductSuggestions(string $term, int $limit = 8): array
     $db = getDb();
     $term = normalizeScalar($term, 150, '');
     if ($term === '') return [];
-    $rows = getProductsBySearch($term, $db);
+    $rows = getProductSuggestionsLimited($term, $limit, $db);
     if (!$rows) return [];
     $out = [];
     foreach ($rows as $r) {
@@ -1276,6 +1276,123 @@ function normalizeSearchKey(string $s): string
     // Remove any remaining non-alphanumeric characters
     $u = preg_replace('/[^A-Z0-9]/', '', $u);
     return $u;
+}
+
+/**
+ * Return products from cache only (APCu or file) without touching the DB.
+ * Useful for fast suggestions when DB connectivity is slow.
+ */
+function getAllProductsCachedOnly(): array
+{
+    // APCu cache
+    $cacheKey = 'daytona_all_products_v1';
+    if (function_exists('apcu_fetch')) {
+        $cached = @apcu_fetch($cacheKey, $ok);
+        if ($ok && is_array($cached)) return $cached;
+    }
+    // File cache
+    $cacheFile = __DIR__ . '/../data/cache_products.json';
+    if (is_readable($cacheFile)) {
+        $json = @file_get_contents($cacheFile);
+        $arr = json_decode($json, true);
+        if (is_array($arr)) return $arr;
+    }
+    return [];
+}
+
+/**
+ * Compute suggestions from a provided product list using fuzzy scoring.
+ */
+function buildSuggestionsFromList(string $term, array $list, int $limit = 8): array
+{
+    $term = normalizeScalar($term, 150, '');
+    if ($term === '') return [];
+    $norm = normalizeSearchKey($term);
+    $upper = strtoupper($term);
+    $out = [];
+    foreach ($list as $p) {
+        $name = (string)($p['name'] ?? '');
+        $desc = (string)($p['description'] ?? '');
+        $price = getProductPrice($p);
+        $score = 0;
+        if ($name !== '') {
+            if (stripos($name, $term) === 0) $score += 120;
+            if (stripos($name, $term) !== false) $score += 20;
+            $nName = normalizeSearchKey($name);
+            if ($norm !== '' && strpos($nName, $norm) === 0) $score += 100;
+            if ($norm !== '' && strpos($nName, $norm) !== false) $score += 10;
+        }
+        if ($desc !== '') {
+            if (stripos($desc, $term) === 0) $score += 60;
+            if (stripos($desc, $term) !== false) $score += 20;
+            $nDesc = normalizeSearchKey($desc);
+            if ($norm !== '' && strpos($nDesc, $norm) === 0) $score += 50;
+            if ($norm !== '' && strpos($nDesc, $norm) !== false) $score += 10;
+        }
+        if ($score > 0) {
+            $out[] = [
+                'id' => (int)($p['id'] ?? 0),
+                'name' => getProductDisplayName($p),
+                'description' => getProductDescription($p),
+                'price' => $price,
+                'score' => $score
+            ];
+        }
+    }
+    if (!$out) return [];
+    usort($out, function($a, $b){ $d = ($b['score'] ?? 0) - ($a['score'] ?? 0); if ($d !== 0) return $d; return strcmp((string)$a['name'], (string)$b['name']); });
+    // Trim to limit and drop score
+    $res = [];
+    foreach ($out as $row) {
+        $res[] = [ 'id'=>$row['id'], 'name'=>$row['name'], 'description'=>$row['description'], 'price'=>$row['price'] ];
+        if (count($res) >= $limit) break;
+    }
+    return $res;
+}
+
+/**
+ * Optimized limited suggestions query: select only fields needed and apply a LIMIT.
+ * Uses same fuzzy scoring approach but constrains output size for responsiveness.
+ */
+function getProductSuggestionsLimited(string $term, int $limit = 8, ?PDO $db = null): array
+{
+    $db = $db ?? getDb();
+    $limit = max(1, min(50, (int)$limit));
+    $term = normalizeScalar($term, 150, '');
+    if ($term === '') return [];
+
+    $escapeChar = "\\";
+    $like = likeTerm($term);
+    $nTerm = strtoupper(preg_replace('/[^A-Z0-9]/i', '', (string)$term));
+    $nLike = '%' . $nTerm . '%';
+    $nPrefix = $nTerm . '%';
+    $prefix = strtoupper($term) . '%';
+
+    $nName = "REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(UPPER(name),' ','') ,'x','') ,'X','') ,'-','') ,'/', '') ,'.','') ,',','')";
+    $nDesc = "REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(UPPER(description),' ','') ,'x','') ,'X','') ,'-','') ,'/', '') ,'.','') ,',','')";
+    // Build SQL; interpolate LIMIT safely after validation to avoid driver quirks
+    $sql = "SELECT id, name, description, price, ".
+           "(CASE WHEN UPPER(name) LIKE :prefix THEN 120 ELSE 0 END) + ".
+           "(CASE WHEN $nName LIKE :nprefix THEN 100 ELSE 0 END) + ".
+           "(CASE WHEN UPPER(description) LIKE :prefix THEN 60 ELSE 0 END) + ".
+           "(CASE WHEN $nDesc LIKE :nprefix THEN 50 ELSE 0 END) + ".
+           "(CASE WHEN name LIKE :like ESCAPE '$escapeChar' OR description LIKE :like ESCAPE '$escapeChar' THEN 20 ELSE 0 END) + ".
+           "(CASE WHEN $nName LIKE :nlike OR $nDesc LIKE :nlike THEN 10 ELSE 0 END) AS score ".
+           "FROM products ".
+           "WHERE name LIKE :like ESCAPE '$escapeChar' ".
+           "   OR description LIKE :like ESCAPE '$escapeChar' ".
+           "   OR $nName LIKE :nlike ".
+           "   OR $nDesc LIKE :nlike ".
+           "ORDER BY score DESC, name ASC ".
+           "LIMIT $limit";
+    $stmt = $db->prepare($sql);
+    $stmt->execute([
+        ':like' => $like,
+        ':nlike' => $nLike,
+        ':prefix' => $prefix,
+        ':nprefix' => $nPrefix,
+    ]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 }
 
 /**

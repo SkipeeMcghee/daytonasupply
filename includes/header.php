@@ -164,6 +164,9 @@ if ($loggedIn) {
     // Add a page identifier class like page-products, page-catalogue, etc.
     $script = basename($_SERVER['SCRIPT_NAME'] ?? '');
     $pageId = $script ? 'page-' . strtolower(preg_replace('/\.[^.]+$/', '', $script)) : '';
+    // Compute site base path (handles subdirectory deployments)
+    $siteBase = rtrim(dirname($_SERVER['SCRIPT_NAME'] ?? ''), '/\\');
+    if ($siteBase === '' || $siteBase === '.') { $siteBase = '/'; }
 ?>
 <body class="<?php echo trim($serverThemeClass . ' ' . $authClass . ' ' . $pageId); ?>">
     <?php if (!empty($_SESSION['admin']) && !empty($GLOBALS['DB_FALLBACK_REASON'])): ?>
@@ -182,7 +185,7 @@ if ($loggedIn) {
                 <form role="search" action="catalogue.php" method="get" class="search-form" autocomplete="off">
                     <label for="search-input" class="sr-only">Search products</label>
                     <!-- use `search` param to match catalogue.php's parameter name -->
-                    <input id="search-input" name="search" type="search" placeholder="Search SKUs, items, categories" aria-label="Search products" autocomplete="off" aria-autocomplete="list" aria-haspopup="listbox">
+                    <input id="search-input" name="search" type="search" placeholder="Search SKUs, items, categories" aria-label="Search products" autocomplete="off" aria-autocomplete="list" aria-haspopup="listbox" data-suggest-url="<?php echo htmlspecialchars(($siteBase === '/' ? '' : $siteBase) . '/ajax/search_suggestions.php'); ?>">
                     <button class="search-btn" aria-label="Search">Search</button>
                 </form>
             </div>

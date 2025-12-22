@@ -11,11 +11,30 @@ header('Content-Type: application/json');
 try {
     $q = isset($_GET['q']) ? (string)$_GET['q'] : '';
     $q = normalizeScalar($q, 150, '');
-    if ($q === '') {
+    if ($q === '' || mb_strlen($q) < 2) {
         echo json_encode(['success' => true, 'suggestions' => []]);
         exit;
     }
-    $sugs = getProductSuggestions($q, 8);
+    // APCu cache for snappy results on repeated prefixes
+    $cacheKey = 'sugg_' . md5($q);
+    $useApc = function_exists('apcu_fetch');
+    $sugs = null;
+    if ($useApc) {
+        $sugs = @apcu_fetch($cacheKey, $ok);
+        if (!$ok) $sugs = null;
+    }
+    if (!is_array($sugs)) {
+        // Prefer cache-only products when DB fallback is active or to accelerate first hits
+        $list = getAllProductsCachedOnly();
+        if (is_array($list) && count($list) > 0) {
+            $sugs = buildSuggestionsFromList($q, $list, 8);
+        }
+        // If cache is empty (cold start), fall back to DB-limited query
+        if (!is_array($sugs) || count($sugs) === 0) {
+            $sugs = getProductSuggestions($q, 8);
+        }
+        if ($useApc) { @apcu_store($cacheKey, $sugs, 60); }
+    }
     $out = [];
     $loggedIn = !empty($_SESSION['customer']['id']);
     foreach ($sugs as $s) {
@@ -27,6 +46,9 @@ try {
             'url' => 'productinfo.php?id=' . (int)$s['id']
         ];
     }
+    // Prevent caching by intermediaries; suggestions are transient
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    header('Pragma: no-cache');
     echo json_encode(['success' => true, 'suggestions' => $out]);
 } catch (Exception $e) {
     http_response_code(500);
