@@ -284,12 +284,22 @@ try {
     $products = getAllProducts();
     // If a search term was provided, filter the loaded products in PHP.
     if ($search !== '') {
-        $term = $search; // already normalized by normalizeScalar
-        $products = array_values(array_filter($products, function($p) use ($term) {
-            $name = $p['name'] ?? '';
-            $desc = $p['description'] ?? '';
-            // Case-insensitive substring match against name or description
-            return (stripos($name, $term) !== false) || (stripos($desc, $term) !== false);
+        $term = $search; // already normalized (trim/length) by normalizeScalar
+        $normTerm = normalizeSearchKey($term);
+        $products = array_values(array_filter($products, function($p) use ($term, $normTerm) {
+            $name = (string)($p['name'] ?? '');
+            $desc = (string)($p['description'] ?? '');
+            if ($term !== '' && (stripos($name, $term) !== false || stripos($desc, $term) !== false)) {
+                return true;
+            }
+            // Fuzzy: compare normalized keys with separators/X removed
+            if ($normTerm !== '') {
+                $nName = normalizeSearchKey($name);
+                $nDesc = normalizeSearchKey($desc);
+                if ($nName !== '' && strpos($nName, $normTerm) !== false) return true;
+                if ($nDesc !== '' && strpos($nDesc, $normTerm) !== false) return true;
+            }
+            return false;
         }));
     }
 } catch (Exception $e) {

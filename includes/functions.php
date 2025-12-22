@@ -1180,19 +1180,102 @@ function getProductsBySearch(string $term, ?PDO $db = null): array
     $term = normalizeScalar($term, 150, '');
     if ($term === '') return [];
 
-    // Escape wildcard chars and use a parameterized query. Use the
-    // same ESCAPE character for portability across drivers.
+    // Fuzzy matching: compare both raw text and a normalized variant
+    // where we remove spaces, common separators, and the letter 'x'.
+    // This lets queries like "444" match "4 x 4 x 4" or "4x4x4".
+    $driver = 'generic';
+    try { $driver = $db->getAttribute(PDO::ATTR_DRIVER_NAME) ?: 'generic'; } catch (Exception $_) {}
+
+    // Build a portable normalized expression: UPPER(), REPLACE() chaining
+    // to remove spaces, '-', '/', '.', ',', and both 'x'/'X'.
+    $norm = function(string $col) use ($driver): string {
+        $expr = "UPPER(" . $col . ")";
+        foreach ([' ', 'x', 'X', '-', '/', '.', ',', '\\t'] as $rm) {
+            // In SQL string literals, backslash isn't special for SQLite/MySQL with standard settings.
+            $lit = $rm === "\\t" ? "\t" : $rm;
+            $expr = "REPLACE(" . $expr . ", '" . str_replace("'", "''", $lit) . "', '')";
+        }
+        return $expr;
+    };
+
     $escapeChar = "\\";
-    $sql = 'SELECT * FROM products WHERE name LIKE :term ESCAPE ' . "'" . $escapeChar . "'" . ' OR description LIKE :term ESCAPE ' . "'" . $escapeChar . "'" . ' ORDER BY id ASC';
+    $like = likeTerm($term);
+    $nTerm = strtoupper(preg_replace('/[^A-Z0-9]/i', '', (string)$term));
+    $nLike = '%' . $nTerm . '%';
+    $nPrefix = $nTerm . '%';
+    $prefix = strtoupper($term) . '%';
+
+    // Build SQL with a relevance score for better ordering
+    $nName = $norm('name');
+    $nDesc = $norm('description');
+    $sql = "SELECT *, ".
+           "(CASE WHEN UPPER(name) LIKE :prefix THEN 120 ELSE 0 END) + ".
+           "(CASE WHEN $nName LIKE :nprefix THEN 100 ELSE 0 END) + ".
+           "(CASE WHEN UPPER(description) LIKE :prefix THEN 60 ELSE 0 END) + ".
+           "(CASE WHEN $nDesc LIKE :nprefix THEN 50 ELSE 0 END) + ".
+           "(CASE WHEN name LIKE :like ESCAPE '$escapeChar' OR description LIKE :like ESCAPE '$escapeChar' THEN 20 ELSE 0 END) + ".
+           "(CASE WHEN $nName LIKE :nlike OR $nDesc LIKE :nlike THEN 10 ELSE 0 END) AS score ".
+           "FROM products ".
+           "WHERE name LIKE :like ESCAPE '$escapeChar' ".
+           "   OR description LIKE :like ESCAPE '$escapeChar' ".
+           "   OR $nName LIKE :nlike ".
+           "   OR $nDesc LIKE :nlike ".
+           "ORDER BY score DESC, name ASC";
     $stmt = $db->prepare($sql);
-    $stmt->execute([':term' => likeTerm($term)]);
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $stmt->execute([
+        ':like' => $like,
+        ':nlike' => $nLike,
+        ':prefix' => $prefix,
+        ':nprefix' => $nPrefix,
+    ]);
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    return $rows;
 }
 
 // Keep the old name for backward compatibility
 function searchProducts(string $term): array
 {
     return getProductsBySearch($term);
+}
+
+/**
+ * Return compact suggestions for typeahead dropdown.
+ * @param string $term
+ * @param int $limit
+ * @return array[] {id,name,description,price}
+ */
+function getProductSuggestions(string $term, int $limit = 8): array
+{
+    $db = getDb();
+    $term = normalizeScalar($term, 150, '');
+    if ($term === '') return [];
+    $rows = getProductsBySearch($term, $db);
+    if (!$rows) return [];
+    $out = [];
+    foreach ($rows as $r) {
+        $out[] = [
+            'id' => (int)($r['id'] ?? 0),
+            'name' => getProductDisplayName($r),
+            'description' => getProductDescription($r),
+            'price' => getProductPrice($r)
+        ];
+        if (count($out) >= $limit) break;
+    }
+    return $out;
+}
+
+/**
+ * Build a normalized search key removing spaces, common separators, and 'x'/'X', uppercased.
+ * Useful for fuzzy comparisons like 444 vs 4x4x4 vs 4 x 4 x 4.
+ */
+function normalizeSearchKey(string $s): string
+{
+    $u = strtoupper($s);
+    // Remove spaces, tabs, dashes, slashes, dots, commas, and the letter X
+    $u = str_replace(["\t", ' ', '-', '/', '.', ',', 'X'], '', $u);
+    // Remove any remaining non-alphanumeric characters
+    $u = preg_replace('/[^A-Z0-9]/', '', $u);
+    return $u;
 }
 
 /**

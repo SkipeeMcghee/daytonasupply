@@ -397,6 +397,92 @@ document.addEventListener('DOMContentLoaded', function () {
 		backBtn.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
 	}
 
+	// --- Header search suggestions / typeahead ---
+	(function initSearchSuggestions(){
+		var input = document.getElementById('search-input');
+		if (!input) return;
+		var form = input.closest('.search-form');
+		var wrap = input.parentElement;
+		var list = document.createElement('div');
+		list.className = 'search-suggestions';
+		list.setAttribute('role','listbox');
+		list.hidden = true;
+		(wrap || form || document.body).appendChild(list);
+
+		var selIndex = -1; // keyboard selection index
+		var items = []; // current suggestion items [{el,data}]
+		var lastQuery = '';
+		var pending = null;
+		var debounceTimer = null;
+
+		function clearList(){
+			list.innerHTML=''; items=[]; selIndex=-1; list.hidden = true;
+		}
+		function render(itemsData){
+			list.innerHTML = '';
+			items = [];
+			itemsData.forEach(function(it, idx){
+				var row = document.createElement('div');
+				row.className = 'search-suggestion';
+				row.setAttribute('role','option');
+				row.setAttribute('data-index', String(idx));
+				var priceHtml = (it.price !== null && it.price !== undefined) ? (' · $' + escapeHtml(it.price)) : '';
+				row.innerHTML = '<div class="ss-title">' + escapeHtml(it.description || it.name || '') + '</div>' +
+					'<div class="ss-sub">' + escapeHtml(it.name || '') + priceHtml + '</div>';
+				row.addEventListener('mousedown', function(e){
+					// Use mousedown to navigate before input blurs
+					e.preventDefault();
+					window.location.href = it.url;
+				});
+				list.appendChild(row);
+				items.push({ el: row, data: it });
+			});
+			list.hidden = items.length === 0;
+		}
+		function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]); }); }
+		function highlight(idx){
+			for (var i=0;i<items.length;i++){ items[i].el.classList.toggle('active', i===idx); }
+			selIndex = idx;
+			if (idx>=0 && items[idx]) {
+				var r = items[idx].el.getBoundingClientRect();
+				var lr = list.getBoundingClientRect();
+				if (r.bottom > lr.bottom) list.scrollTop += (r.bottom - lr.bottom);
+				if (r.top < lr.top) list.scrollTop -= (lr.top - r.top);
+			}
+		}
+		function fetchSuggestions(q){
+			if (pending) { try { pending.abort(); } catch(e){} pending = null; }
+			var xhr = new XMLHttpRequest(); pending = xhr;
+			xhr.open('GET', '/ajax/search_suggestions.php?q=' + encodeURIComponent(q));
+			xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+			xhr.onreadystatechange = function(){ if (xhr.readyState === 4){ pending = null; try {
+				var json = JSON.parse(xhr.responseText||'{}');
+				if (json && json.success) { render(json.suggestions || []); }
+				else { clearList(); }
+			} catch(e){ clearList(); } } };
+			xhr.send();
+		}
+		input.setAttribute('autocomplete', 'off');
+		input.addEventListener('input', function(){
+			var q = input.value || '';
+			if (q.trim() === '') { clearList(); return; }
+			if (q === lastQuery) return;
+			lastQuery = q;
+			clearTimeout(debounceTimer);
+			debounceTimer = setTimeout(function(){ fetchSuggestions(q); }, 160);
+		});
+		input.addEventListener('keydown', function(e){
+			if (list.hidden) return;
+			if (e.key === 'ArrowDown') { e.preventDefault(); highlight(Math.min(items.length-1, selIndex+1)); }
+			else if (e.key === 'ArrowUp') { e.preventDefault(); highlight(Math.max(0, selIndex-1)); }
+			else if (e.key === 'Enter') {
+				if (selIndex >= 0 && items[selIndex]) { e.preventDefault(); window.location.href = items[selIndex].data.url; clearList(); }
+			}
+			else if (e.key === 'Escape') { clearList(); }
+		});
+		document.addEventListener('click', function(e){ if (!list.hidden && !list.contains(e.target) && e.target !== input) clearList(); });
+	})();
+
 	// --- Order collapse/expand toggles on account page ---
 	(function orderToggles() {
 		var toggles = document.querySelectorAll('.order-toggle');

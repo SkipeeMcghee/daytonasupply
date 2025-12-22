@@ -179,10 +179,10 @@ if ($loggedIn) {
                 </a>
             </div>
             <div class="search-wrap">
-                <form role="search" action="catalogue.php" method="get" class="search-form">
+                <form role="search" action="catalogue.php" method="get" class="search-form" autocomplete="off">
                     <label for="search-input" class="sr-only">Search products</label>
                     <!-- use `search` param to match catalogue.php's parameter name -->
-                    <input id="search-input" name="search" type="search" placeholder="Search SKUs, items, categories" aria-label="Search products">
+                    <input id="search-input" name="search" type="search" placeholder="Search SKUs, items, categories" aria-label="Search products" autocomplete="off" aria-autocomplete="list" aria-haspopup="listbox">
                     <button class="search-btn" aria-label="Search">Search</button>
                 </form>
             </div>
