@@ -363,6 +363,12 @@ function getProductDescription(array $prod): string
 function getProductPrice(array $prod): float
 {
     if (empty($prod)) return 0.0;
+    // Prefer deal_price when deal is active and a deal price exists
+    if (!empty($prod['deal'])) {
+        if (isset($prod['deal_price']) && $prod['deal_price'] !== '' && $prod['deal_price'] !== null) {
+            return (float)$prod['deal_price'];
+        }
+    }
     foreach (['price', 'unit_price', 'list_price', 'cost'] as $c) {
         if (isset($prod[$c]) && $prod[$c] !== '') {
             return (float)$prod[$c];

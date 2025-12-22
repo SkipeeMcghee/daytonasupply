@@ -173,8 +173,14 @@ if (isset($_GET['toggle_deal'])) {
         $row = getProductById($prodId);
         if ($row) {
             $newVal = (!empty($row['deal']) && (int)$row['deal'] === 1) ? 0 : 1;
-            $stmt = $db->prepare('UPDATE products SET deal = :deal WHERE id = :id');
-            $stmt->execute([':deal' => $newVal, ':id' => $prodId]);
+            if ($newVal === 0) {
+                // Clearing a deal also clears any temporary deal_price
+                $stmt = $db->prepare('UPDATE products SET deal = 0, deal_price = NULL WHERE id = :id');
+                $stmt->execute([':id' => $prodId]);
+            } else {
+                $stmt = $db->prepare('UPDATE products SET deal = 1 WHERE id = :id');
+                $stmt->execute([':id' => $prodId]);
+            }
         }
     } catch (Exception $e) {
         error_log('toggle_deal error: ' . $e->getMessage());
@@ -316,6 +322,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
         header('Location: managerportal.php');
+        exit;
+    }
+    // Save deal prices for active deals
+    if (isset($_POST['save_deal_prices'])) {
+        $db = getDb();
+        $updates = [];
+        foreach ($_POST as $key => $val) {
+            if (!is_string($key)) continue;
+            if (preg_match('/^deal_price_(\d+)$/', $key, $m)) {
+                $id = (int)$m[1];
+                $num = (string)$val;
+                $num = str_replace([',', ' '], '', $num);
+                if (!preg_match('/^-?\d*(?:\.\d+)?$/', $num)) { $num = ''; }
+                $price = $num !== '' ? number_format((float)$num, 2, '.', '') : null;
+                $updates[$id] = $price;
+            }
+        }
+        if (!empty($updates)) {
+            $stmt = $db->prepare('UPDATE products SET deal_price = :dp WHERE id = :id');
+            foreach ($updates as $id => $dp) {
+                $stmt->bindValue(':id', (int)$id, PDO::PARAM_INT);
+                if ($dp === null) { $stmt->bindValue(':dp', null, PDO::PARAM_NULL); }
+                else { $stmt->bindValue(':dp', (string)$dp, PDO::PARAM_STR); }
+                $stmt->execute();
+            }
+            invalidateProductsCache();
+        }
+        header('Location: managerportal.php?updated=' . time() . '#products');
         exit;
     }
 }
@@ -734,21 +768,32 @@ require_once __DIR__ . '/includes/header.php';
         $activeDeals = array_values(array_filter($products, function($p){ return !empty($p['deal']); }));
     ?>
     <h4>Active Deals</h4>
-    <table class="admin-table">
-        <tr><th>ID</th><th>Name</th><th>Description</th><th>Price</th><th>Actions</th></tr>
-        <?php foreach ($activeDeals as $d): ?>
-            <tr>
-                <td><?= (int)$d['id'] ?></td>
-                <td><?= htmlspecialchars($d['name']) ?></td>
-                <td><?= htmlspecialchars($d['description']) ?></td>
-                <td>$<?= number_format((float)$d['price'], 2) ?></td>
-                <td><a class="mgr-btn" href="?toggle_deal=<?= (int)$d['id'] ?>" style="background:#dc3545;color:#fff;" onclick="return confirm('Remove this item from Deals?');">Unset Deal</a></td>
-            </tr>
-        <?php endforeach; ?>
-        <?php if (empty($activeDeals)): ?>
-            <tr><td colspan="5">No active deals.</td></tr>
-        <?php endif; ?>
-    </table>
+        <form method="post" action="" id="dealsForm">
+            <input type="hidden" name="save_deal_prices" value="1">
+            <table class="admin-table">
+                <tr><th>ID</th><th>Name</th><th>Description</th><th>Base Price</th><th>Deal Price (override)</th><th>Actions</th></tr>
+                <?php foreach ($activeDeals as $d): ?>
+                    <tr>
+                        <td><?= (int)$d['id'] ?></td>
+                        <td><?= htmlspecialchars($d['name']) ?></td>
+                        <td><?= htmlspecialchars($d['description']) ?></td>
+                        <td>$<?= number_format((float)$d['price'], 2) ?></td>
+                        <td>
+                            <input type="number" step="0.01" name="deal_price_<?= (int)$d['id'] ?>" value="<?= htmlspecialchars(isset($d['deal_price']) && $d['deal_price'] !== '' ? (string)$d['deal_price'] : '') ?>" placeholder="e.g. 9.99">
+                        </td>
+                        <td>
+                            <a class="mgr-btn" href="?toggle_deal=<?= (int)$d['id'] ?>" style="background:#dc3545;color:#fff;" onclick="return confirm('Remove this item from Deals? This will clear the deal price.');">Unset Deal</a>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                <?php if (empty($activeDeals)): ?>
+                    <tr><td colspan="6">No active deals.</td></tr>
+                <?php endif; ?>
+            </table>
+            <?php if (!empty($activeDeals)): ?>
+                <p><button type="submit" class="proceed-btn">Save Deal Prices</button></p>
+            <?php endif; ?>
+        </form>
     <!-- Update Inventory button moved below the products table to sit beside Save Product Changes -->
     <form method="post" action="" id="productsForm">
         <input type="hidden" name="save_products" value="1">

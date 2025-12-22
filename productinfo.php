@@ -63,7 +63,7 @@ include __DIR__ . '/includes/header.php';
             <?php
                 $desc = (string)($prod['description'] ?? $prod['name']);
                 $dispName = getProductDisplayName($prod);
-                $price = (float)($prod['price'] ?? 0);
+                $price = getProductPrice($prod);
                 $skuName = $dispName; // favorites keyed by display name
                 $isFav = false;
                 $onSale = !empty($prod['deal']);

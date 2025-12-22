@@ -284,13 +284,21 @@ function ensureSQLiteDealsSchema(PDO $db): void
 {
     $driver = $db->getAttribute(PDO::ATTR_DRIVER_NAME);
     if (strcasecmp($driver, 'sqlite') !== 0) return;
-    $has = false;
+    $hasDeal = false;
+    $hasDealPrice = false;
     try {
         $stmt = $db->query('PRAGMA table_info(products)');
-        while ($r = $stmt->fetch(PDO::FETCH_ASSOC)) { if (strcasecmp($r['name'] ?? '', 'deal') === 0) { $has = true; break; } }
+        while ($r = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $col = strtolower($r['name'] ?? '');
+            if ($col === 'deal') { $hasDeal = true; }
+            if ($col === 'deal_price') { $hasDealPrice = true; }
+        }
     } catch (Exception $e) { error_log('ensureSQLiteDealsSchema error: ' . $e->getMessage()); }
-    if (!$has) {
+    if (!$hasDeal) {
         try { $db->exec('ALTER TABLE products ADD COLUMN deal INTEGER DEFAULT 0'); } catch (Exception $e) { error_log('ensureSQLiteDealsSchema ALTER failed: ' . $e->getMessage()); }
+    }
+    if (!$hasDealPrice) {
+        try { $db->exec('ALTER TABLE products ADD COLUMN deal_price REAL NULL'); } catch (Exception $e) { error_log('ensureSQLiteDealsSchema add deal_price failed: ' . $e->getMessage()); }
     }
 }
 
@@ -403,6 +411,10 @@ function ensureMySQLDealsSchema(PDO $db): void
         try { $db->exec('ALTER TABLE products ADD COLUMN deal TINYINT(1) DEFAULT 0'); }
         catch (Exception $e) { error_log('ensureMySQLDealsSchema ALTER failed: ' . $e->getMessage()); }
     }
+    if (!in_array('deal_price', $cols, true)) {
+        try { $db->exec('ALTER TABLE products ADD COLUMN deal_price DECIMAL(12,2) NULL'); }
+        catch (Exception $e) { error_log('ensureMySQLDealsSchema add deal_price failed: ' . $e->getMessage()); }
+    }
 }
 
 
@@ -437,7 +449,8 @@ function initDatabase(PDO $db): void
         name TEXT NOT NULL,
         description TEXT,
         price REAL NOT NULL,
-        deal INTEGER DEFAULT 0
+        deal INTEGER DEFAULT 0,
+        deal_price REAL NULL
     )');
     $db->exec('CREATE TABLE IF NOT EXISTS orders (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
