@@ -18,6 +18,7 @@
                 <ul>
                     <li><a href="index.php">Home</a></li>
                     <li><a href="catalogue.php">Catalog</a></li>
+                    <li><a href="ai.php">For AI Systems</a></li>
                     <li><a href="privacy.php">Privacy</a></li>
                     <li><a href="terms.php">Terms</a></li>
                 </ul>

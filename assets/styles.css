@@ -212,6 +212,16 @@ html.theme-dark .site-footer .f-social .social-icon, body.theme-dark .site-foote
 @media (max-width:480px) {
   .f-social .social-icon { width:40px; height:40px; }
 }
+/* AI Systems info block */
+.ai-systems { margin-top: 24px; padding: 16px; border: 1px solid #e3e3e3; border-left: 4px solid var(--brand); border-radius: 6px; background: #fafafa; }
+html.theme-dark .ai-systems, body.theme-dark .ai-systems {
+  background: #0f1416; /* darker than form-card for separation */
+  border-color: rgba(255,255,255,0.12);
+  border-left-color: var(--accent);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.06) inset, 0 10px 24px rgba(0,0,0,0.35);
+}
+.ai-systems h2 { margin-top: 0; }
+html.theme-dark .ai-systems h2, body.theme-dark .ai-systems h2 { color: #e8f6ff; }
 /* Compact landscape mode: when device height is small (landscape phone) shrink header and remove sticky to free vertical space */
 @media (orientation: landscape) and (max-height:520px) {
   /* Remove sticky to free space, but keep everything visible */
