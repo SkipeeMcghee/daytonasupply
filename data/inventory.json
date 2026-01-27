@@ -235,11 +235,6 @@
     "price": 79.99
   },
   {
-    "name": "BPA-5155",
-    "description": "Bubble 5/16' x 188LF x 48' Perf 12'",
-    "price": 39.99
-  },
-  {
     "name": "BPA-5180",
     "description": "Bubble 5/16' x 188LF x 48' NS Perf 12' 1 roll/Bundle Industrial",
     "price": 79.99
@@ -915,6 +910,16 @@
     "price": 0.54
   },
   {
+    "name": "MDC-3010",
+    "description": "Mailer DC 6 x 6 x 3 White 50/Bundle",
+    "price": 2.4
+  },
+  {
+    "name": "MDC-3020",
+    "description": "Mailer DC 6 x 6 x 3 Kraft 50/Bundle",
+    "price": 2.28
+  },
+  {
     "name": "MDC-4000",
     "description": "Mailer DC 7 x 4 x 2 White 50/Bundle",
     "price": 0.59
@@ -938,6 +943,11 @@
     "name": "MDC-7520",
     "description": "White Multi-Depth Bookfolds14 1/8x8 5/8x 1 50/bundle",
     "price": 0.67
+  },
+  {
+    "name": "NONSTOCK",
+    "description": "",
+    "price": 0.01
   },
   {
     "name": "OFF-1715",
@@ -1111,7 +1121,7 @@
   },
   {
     "name": "PAC-4016",
-    "description": "Mailing Tubes 3\" x 36\" White With End Caps singles",
+    "description": "Mailing Tubes 3\" x 36\" singles",
     "price": 4.48
   },
   {
@@ -1286,12 +1296,12 @@
   },
   {
     "name": "PAP-5950",
-    "description": "Toilet Paper Marcal PRO 100% Recycled, 2-Ply, White, 500 Sheets/Roll, 96 Rolls/Carton",
+    "description": "Toilet Paper 100% Recycled, 4\"x3\", 2-Ply, White, 500 Sheets/Roll, 96 Rolls/Carton",
     "price": 82.3
   },
   {
     "name": "PAP-5971",
-    "description": "Toilet Paper Heavenly Soft & Tissue Roll 3.5in x117ft 2ply Embossed 1.61in Core Diameter 400 sheets/roll 96 rolls/case",
+    "description": "Toilet Paper Heavenly Soft 3.5in x117ft 2ply Embossed 1.61in Core Diameter 400 sheets/roll 96 rolls/case",
     "price": 63.95
   },
   {
@@ -1341,7 +1351,7 @@
   },
   {
     "name": "PAP-6226",
-    "description": "Towels Roll 714 7.5\" x 800' White 6 Rolls/Case",
+    "description": "Paper Towels Tork H71 7.5\" x 800' White 6 Rolls/Case",
     "price": 95.99
   },
   {
@@ -1847,7 +1857,7 @@
   {
     "name": "SBO-1805",
     "description": "RSC 9 x 5 x 4 32ECT 25/Bundle",
-    "price": 0.73
+    "price": 0.66
   },
   {
     "name": "SBO-1806",
@@ -2280,6 +2290,11 @@
     "price": 2.61
   },
   {
+    "name": "SBO-4247",
+    "description": "RSC 16 x 16 x 10 32ECT",
+    "price": 2.64
+  },
+  {
     "name": "SBO-4250",
     "description": "RSC 16 x 16 x 12 32ECT 25/Bundle",
     "price": 2.67
@@ -2507,7 +2522,7 @@
   {
     "name": "SBO-5860",
     "description": "RSC 22 x 14 x 6 32ECT 20/Bundle",
-    "price": 2.97
+    "price": 2.29
   },
   {
     "name": "SBO-5865",
@@ -2691,7 +2706,7 @@
   },
   {
     "name": "SBO-7100",
-    "description": "RSC 28 x 28x 12  32ECT 10/Bundle",
+    "description": "RSC 28 x 28 x 12 32ECT 10/Bundle",
     "price": 7.92
   },
   {
@@ -3133,11 +3148,6 @@
     "name": "TAP-2118",
     "description": "Carton Tape 3IN Clear 2.1 Mil",
     "price": 89.99
-  },
-  {
-    "name": "TAP-2120",
-    "description": "Primetac Tape Carton Sealing 3\" x 110yd 1.9mil 24 Rolls/Case",
-    "price": 76.05
   },
   {
     "name": "TAP-2325",
