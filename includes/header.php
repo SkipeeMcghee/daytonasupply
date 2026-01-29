@@ -26,7 +26,7 @@ if (session_status() === PHP_SESSION_NONE) {
 // This must run before any output so headers can be sent safely.
 $host = strtolower($_SERVER['HTTP_HOST'] ?? '');
 $host = preg_replace('/:\\d+$/', '', $host); // strip port if present
-if ($host === 'www.daytona.com' || $host === 'www.daytona-supply.com' || $host === 'daytona-supply.com') {
+if (in_array($host, ['www.daytona.com', 'www.daytona-supply.com', 'daytona-supply.com'], true)) {
     // Permanent redirect to the canonical homepage. Update the target if your canonical
     // domain changes. We explicitly use https here since the request the user mentioned
     // is over HTTPS.
