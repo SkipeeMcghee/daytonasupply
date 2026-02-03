@@ -25,6 +25,9 @@ include __DIR__ . '/includes/header.php';
             <li>We may suspend, restrict, or terminate accounts and refuse access to the site at our sole discretion for violations of these Terms, suspected fraud, or other conduct that may harm the site or others.</li>
         </ul>
 
+    <h2 id="service-refusal-policy">Service Refusal Policy</h2>
+    <p>Daytona Supply reserves the right to refuse, suspend, or discontinue service to any individual or business, in its sole discretion, including but not limited to circumstances involving outstanding account balances, accounts receivable aging status, or other administrative or risk considerations.</p>
+
     <h2>Orders & Pricing</h2>
     <p>All product listings are invitations to offer. After you place an order, we will provide an order acknowledgement. We may accept or reject your order in our sole discretion. Orders may be cancelled for reasons including pricing errors, stock unavailability, suspected fraud, or other operational reasons; if cancelled after payment, we will issue a refund in accordance with the Payments & Refunds section.</p>
 
