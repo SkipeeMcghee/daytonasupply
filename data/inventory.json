@@ -2,12 +2,12 @@
   {
     "name": "BAR-1000",
     "description": "Wardrobe Box Bar 18'",
-    "price": 2.25
+    "price": 1.76
   },
   {
     "name": "BAR-2000",
     "description": "Wardrobe Box Bar 24'",
-    "price": 2.5
+    "price": 1.8
   },
   {
     "name": "BAT-2000",
@@ -997,7 +997,7 @@
   {
     "name": "PAC-2005",
     "description": "Envelopes Invoice Enclosed 4.5 x 5.5 1000/Case",
-    "price": 36.05
+    "price": 39.99
   },
   {
     "name": "PAC-2055",
@@ -1121,28 +1121,28 @@
   },
   {
     "name": "PAC-4016",
-    "description": "Mailing Tubes 3\" x 36\" singles",
+    "description": "Mailing Tubes 3\" x 36\" White With End Caps singles",
     "price": 4.48
   },
   {
     "name": "PAC-4260",
     "description": "Newsprint 10lb",
-    "price": 27.5
+    "price": 21.7
   },
   {
     "name": "PAC-4261",
     "description": "Newsprint 25lb",
-    "price": 37.39
+    "price": 30
   },
   {
     "name": "PAC-4760",
     "description": "Pads Paper 3 Ply 48x72 25/Pack",
-    "price": 1.55
+    "price": 34
   },
   {
     "name": "PAC-4765",
     "description": "Pads Paper 3 Ply 60x72 25/Pack",
-    "price": 3
+    "price": 38
   },
   {
     "name": "PAC-4785",
@@ -1228,6 +1228,11 @@
     "name": "PAC-8000",
     "description": "King Mattress Bag",
     "price": 6.15
+  },
+  {
+    "name": "Pack and Ship",
+    "description": "",
+    "price": 0
   },
   {
     "name": "PAD-2000",
@@ -1423,6 +1428,21 @@
     "name": "PCO-7355",
     "description": "Spray Wasp & Hornet 15oz Can",
     "price": 6.13
+  },
+  {
+    "name": "Pickup Mileage",
+    "description": "Mileage",
+    "price": 0.725
+  },
+  {
+    "name": "Pick up Residential",
+    "description": "Pick up: Residential",
+    "price": 35.5
+  },
+  {
+    "name": "Pickup Weight exceeds 50lb",
+    "description": "Weight exceeds 50lb",
+    "price": 9.05
   },
   {
     "name": "PMA-1750",
@@ -1670,11 +1690,6 @@
     "price": 71.31
   },
   {
-    "name": "REC-1051",
-    "description": "Outdoor Ashtray - Gray",
-    "price": 56.65
-  },
-  {
     "name": "ROL-1000",
     "description": "10\" Fiber Cradles 240/PA 480/EA",
     "price": 2.96
@@ -1706,7 +1721,7 @@
   },
   {
     "name": "SAF-4000",
-    "description": "Hair Bonnets Bouffant 100/Box 10 Boxes/Case....IMP 7387W21     / LG 3.26",
+    "description": "Hair Bonnets Bouffant 100/Box, Case of 10 Boxes",
     "price": 83.29
   },
   {
@@ -1737,92 +1752,82 @@
   {
     "name": "SBO-1015",
     "description": "RSC 4 x 4 x 4 32ECT",
-    "price": 0.47
+    "price": 0.35
   },
   {
     "name": "SBO-1025",
-    "description": "RSC 4 x 4 x 12 32ECT 25/Bundle",
-    "price": 1.5
+    "description": "RSC 4 x 4 x 12 32ECT",
+    "price": 1.43
   },
   {
     "name": "SBO-1070",
-    "description": "RSC 4 x 4 x 36 32ECT 25/Bundle",
-    "price": 2.35
+    "description": "RSC 4 x 4 x 36 32ECT",
+    "price": 1.83
   },
   {
     "name": "SBO-1075",
-    "description": "RSC 4 x 4 x 48 32ECT 25/Bundle",
-    "price": 2.8
+    "description": "RSC 4 x 4 x 48 32ECT",
+    "price": 2.42
   },
   {
     "name": "SBO-1125",
-    "description": "RSC 5 x 5 x 5 32ECT 25/Bundle",
-    "price": 0.52
+    "description": "RSC 5 x 5 x 5 32ECT",
+    "price": 0.48
   },
   {
     "name": "SBO-1190",
-    "description": "RSC 6 x 4 x 3",
+    "description": "RSC 6 x 4 x 3 32ECT",
     "price": 0.72
   },
   {
     "name": "SBO-1200",
     "description": "RSC 6 x 4 x 4 32ECT",
-    "price": 0.53
+    "price": 0.47
   },
   {
     "name": "SBO-1220",
-    "description": "RSC 6 x 6 x 3 ECT32 25/Bundle",
+    "description": "RSC 6 x 6 x 3 32ECT",
     "price": 0.85
   },
   {
     "name": "SBO-1230",
     "description": "RSC 6 x 6 x 4 32ECT",
-    "price": 0.61
+    "price": 0.51
   },
   {
     "name": "SBO-1245",
     "description": "RSC 6 x 6 x 6 32ECT",
-    "price": 0.69
+    "price": 0.58
   },
   {
     "name": "SBO-1325",
-    "description": "RSC 6 x 6 x 24 32ECT 25/Bundle",
-    "price": 1.34
+    "description": "RSC 6 x 6 x 24 32ECT",
+    "price": 2.4
   },
   {
     "name": "SBO-1335",
-    "description": "RSC 6 x 6 x 48 32ECT Golf Club Box 25/Bundle",
+    "description": "RSC 6 x 6 x 48 32ECT",
     "price": 3.2
   },
   {
-    "name": "SBO-1336",
-    "description": "RSC 6 x 6 x 48 32ECT Inner Box 25/Bundle",
-    "price": 3.06
-  },
-  {
-    "name": "SBO-1337",
-    "description": "RSC 6 x 6 x 48 32ECT Outer Box 25/Bundle",
-    "price": 3.3
-  },
-  {
     "name": "SBO-1400",
-    "description": "RSC 7 x 5 x 4 32ECT  25/Bundle",
-    "price": 0.64
+    "description": "RSC 7 x 5 x 4 32ECT",
+    "price": 0.55
   },
   {
     "name": "SBO-1510",
     "description": "RSC 8 x 6 x 4 32ECT",
-    "price": 0.82
+    "price": 0.6
   },
   {
     "name": "SBO-1515",
-    "description": "RSC 8 x 6 x 5 32ECT 25/Bundle 1200/ Pallet",
+    "description": "RSC 8 x 6 x 5 32ECT",
     "price": 0.67
   },
   {
     "name": "SBO-1530",
     "description": "RSC 8 x 6 x 6 32ECT",
-    "price": 0.87
+    "price": 0.73
   },
   {
     "name": "SBO-1560",
@@ -1831,43 +1836,43 @@
   },
   {
     "name": "SBO-1575",
-    "description": "RSC 8 x 8 x 6 32ECT 25/Bundle",
-    "price": 0.92
+    "description": "RSC 8 x 8 x 6 32ECT",
+    "price": 0.98
   },
   {
     "name": "SBO-1595",
-    "description": "RSC 8 x 8 x 8 32ECT 25/Bundle",
-    "price": 1.01
+    "description": "RSC 8 x 8 x 8 32ECT",
+    "price": 0.85
   },
   {
     "name": "SBO-1610",
-    "description": "RSC 8 x 8 x 14 32ECT 25/Bundle",
-    "price": 1.67
+    "description": "RSC 8 x 8 x 14 32ECT",
+    "price": 1.93
   },
   {
     "name": "SBO-1645",
-    "description": "RSC 8 x 8 x 24 32ECT 25/Bundle",
+    "description": "RSC 8 x 8 x 24 32ECT",
     "price": 2.75
   },
   {
     "name": "SBO-1655",
-    "description": "RSC 8 x 8 x 30 32ECT 25/Bundle",
-    "price": 3.15
+    "description": "RSC 8 x 8 x 30 32ECT",
+    "price": 3.3
   },
   {
     "name": "SBO-1805",
-    "description": "RSC 9 x 5 x 4 32ECT 25/Bundle",
+    "description": "RSC 9 x 5 x 4 32ECT",
     "price": 0.66
   },
   {
     "name": "SBO-1806",
-    "description": "RSC 9 x 6 x 3 32ECT 25/Bundle",
-    "price": 0.84
+    "description": "RSC 9 x 6 x 3 32ECT",
+    "price": 0.72
   },
   {
     "name": "SBO-1807",
-    "description": "RSC 9 x 6 x 6 32ECT 25/Bundle",
-    "price": 0.77
+    "description": "RSC 9 x 6 x 6 32ECT",
+    "price": 0.72
   },
   {
     "name": "SBO-1810",
@@ -1876,13 +1881,13 @@
   },
   {
     "name": "SBO-1864",
-    "description": "RSC 9 x 9 x 6 32ECT 25/Bundle",
+    "description": "RSC 9 x 9 x 6 32ECT",
     "price": 1.2
   },
   {
     "name": "SBO-1870",
-    "description": "RSC 9 x 9 x 9 32ECT 25/Bundle",
-    "price": 0.98
+    "description": "RSC 9 x 9 x 9 32ECT",
+    "price": 0.92
   },
   {
     "name": "SBO-1940",
@@ -1891,18 +1896,18 @@
   },
   {
     "name": "SBO-1950",
-    "description": "RSC 10 x 6 x 4 32ECT 25/Bundle",
+    "description": "RSC 10 x 6 x 4 32ECT",
     "price": 0.72
   },
   {
     "name": "SBO-2000",
-    "description": "RSC 10 x 8 x 3 32ECT 25/Bundle",
-    "price": 0.87
+    "description": "RSC 10 x 8 x 3 32ECT (Special Order)",
+    "price": 0.93
   },
   {
     "name": "SBO-2010",
-    "description": "RSC 10 x 8 x 4 32ECT 25/Bundle",
-    "price": 0.76
+    "description": "RSC 10 x 8 x 4 32ECT",
+    "price": 0.78
   },
   {
     "name": "SBO-2020",
@@ -1911,113 +1916,93 @@
   },
   {
     "name": "SBO-2120",
-    "description": "RSC 10 x 10 x 4 32ECT 25/Bundle",
-    "price": 0.99
+    "description": "RSC 10 x 10 x 4 32ECT",
+    "price": 0.86
   },
   {
     "name": "SBO-2122",
-    "description": "RSC 10 x 10 x 6 32ECT 25/Bundle",
+    "description": "RSC 10 x 10 x 6 32ECT",
     "price": 0.95
   },
   {
     "name": "SBO-2125",
-    "description": "RSC 10 x 10 x 5 32ECT 25/Bundle",
+    "description": "RSC 10 x 10 x 5 32ECT",
     "price": 1.17
   },
   {
     "name": "SBO-2130",
-    "description": "RSC 10 x 10 x 14 32ECT 25/Bundle",
+    "description": "RSC 10 x 10 x 14 32ECT",
     "price": 2.18
   },
   {
     "name": "SBO-2140",
-    "description": "RSC 10 x 10 x 8 32ECT 25/Bundle",
+    "description": "RSC 10 x 10 x 8 32ECT",
     "price": 1.29
   },
   {
     "name": "SBO-2145",
-    "description": "RSC 10 x 10 x 10 25/Bundle",
-    "price": 1.2
+    "description": "RSC 10 x 10 x 10 32ECT",
+    "price": 0.96
   },
   {
     "name": "SBO-2150",
-    "description": "RSC 10 x 10 x 10 32ECT Scored @ 8, 6 25/Bundle",
+    "description": "RSC 10 x 10 x 10 32ECT Multi Depth (Scored @ 8, 6)",
     "price": 2.27
   },
   {
-    "name": "SBO-2405",
-    "description": "RSC 11.25 x 8.75 x 6 32ECT White 25/Bundle",
-    "price": 1.52
-  },
-  {
-    "name": "SBO-2425",
-    "description": "RSC 11.25 x 8.75 x 10 32ECT 25/Bundle",
-    "price": 1.31
-  },
-  {
-    "name": "SBO-2426",
-    "description": "RSC 11 x 11 x 9 32ECT 25/Bundle",
-    "price": 1.51
-  },
-  {
-    "name": "SBO-2427",
-    "description": "RSC  11 1/2 x 11 1/2 x 15 3/8\"48ECT 15/Bundle",
-    "price": 2.65
-  },
-  {
     "name": "SBO-2428",
-    "description": "RSC12 x 4 x 4 32 ECT 25/Bundle",
+    "description": "RSC 12 x 4 x 4 32 ECT",
     "price": 0.72
   },
   {
     "name": "SBO-2535",
     "description": "RSC 12 x 6 x 6 32ECT",
-    "price": 0.87
+    "price": 0.79
   },
   {
     "name": "SBO-2565",
-    "description": "RSC 12 x 8 x 4 32ECT 25/Bundle",
+    "description": "RSC 12 x 8 x 4 32ECT",
     "price": 1.15
   },
   {
     "name": "SBO-2570",
-    "description": "RSC 12 x 8 x 5 32ECT 25/Bundle",
+    "description": "RSC 12 x 8 x 5 32ECT",
     "price": 1.4
   },
   {
     "name": "SBO-2575",
-    "description": "RSC 12 x 8 x 6 32ECT 15/Bundle",
-    "price": 1.1
+    "description": "RSC 12 x 8 x 6 32ECT",
+    "price": 0.93
   },
   {
     "name": "SBO-2580",
-    "description": "RSC 12 x 8 x 8 32ECT 25/Bundle",
-    "price": 1.12
+    "description": "RSC 12 x 8 x 8 32ECT",
+    "price": 0.95
   },
   {
     "name": "SBO-2625",
-    "description": "RSC 12 x 9 x 2 32ECT 25/Bundle",
+    "description": "RSC 12 x 9 x 2 32ECT",
     "price": 1.32
   },
   {
     "name": "SBO-2630",
-    "description": "RSC 12 x 9 x 4 32ECT 25/Bundle",
-    "price": 1.11
+    "description": "RSC 12 x 9 x 4 32ECT",
+    "price": 0.96
   },
   {
     "name": "SBO-2640",
-    "description": "RSC 12 x 9 x 6 32ECT 25/Bundle",
-    "price": 1.11
+    "description": "RSC 12 x 9 x 6 32ECT",
+    "price": 1.05
   },
   {
     "name": "SBO-2675",
-    "description": "RSC 12 x 9 x 9 32ECT 25/Bundle",
-    "price": 1.35
+    "description": "RSC 12 x 9 x 9 32ECT",
+    "price": 1.24
   },
   {
     "name": "SBO-2680",
     "description": "RSC 12 x 9 x 10 32ECT",
-    "price": 2.12
+    "price": 1.96
   },
   {
     "name": "SBO-2745",
@@ -2026,23 +2011,23 @@
   },
   {
     "name": "SBO-2795",
-    "description": "RSC 12 x 12 x 2 32ECT 25/Bundle",
-    "price": 2.12
+    "description": "RSC 12 x 12 x 2 32ECT",
+    "price": 2
   },
   {
     "name": "SBO-2805",
-    "description": "RSC 12 x 12 x 4 32ECT 25/Bundle",
-    "price": 1.32
+    "description": "RSC 12 x 12 x 4 32ECT",
+    "price": 1.18
   },
   {
     "name": "SBO-2825",
-    "description": "RSC 12 x 12 x 6 32ECT 25/Bundle",
-    "price": 1.56
+    "description": "RSC 12 x 12 x 6 32ECT",
+    "price": 1.2
   },
   {
     "name": "SBO-2860",
     "description": "RSC 12 x 12 x 8 32ECT",
-    "price": 1.54
+    "price": 1.34
   },
   {
     "name": "SBO-2880",
@@ -2052,102 +2037,102 @@
   {
     "name": "SBO-2885",
     "description": "RSC 12 x 12 x 10 32ECT",
-    "price": 1.61
+    "price": 1.39
   },
   {
     "name": "SBO-2886",
-    "description": "RSC 12 x 12 x 10 48ECT 15/Bundle",
+    "description": "RSC 12 x 12 x 10 48ECT (Special Order)",
     "price": 4.25
   },
   {
     "name": "SBO-2910",
     "description": "RSC 12 x 12 x 12 32ECT",
-    "price": 1.88
+    "price": 1.4
   },
   {
     "name": "SBO-2975",
-    "description": "RSC 12 x 12 x 30 32ECT 15/Bundle",
-    "price": 3.14
+    "description": "RSC 12 x 12 x 30 32ECT",
+    "price": 2.87
   },
   {
     "name": "SBO-3010",
-    "description": "RSC 12 x 12 x 40 32ECT Lamp Carton 15/Bundle",
-    "price": 5.87
+    "description": "RSC 12 x 12 x 40 32ECT",
+    "price": 5.47
   },
   {
     "name": "SBO-3015",
-    "description": "RSC 12 x 12 x 48 32ECT Golf Bag Box 15/Bundle",
-    "price": 7.53
+    "description": "RSC 12 x 12 x 48 32ECT",
+    "price": 5.72
   },
   {
     "name": "SBO-3070",
-    "description": "RSC 13 x 8 x 8 32ECT 25/Bundle",
+    "description": "RSC 13 x 8 x 8 32ECT",
     "price": 1.65
   },
   {
     "name": "SBO-3080",
-    "description": "RSC 13 x 9 x 9 32ECT 25/Bundle",
+    "description": "RSC 13 x 9 x 9 32ECT",
     "price": 2.12
   },
   {
     "name": "SBO-3120",
-    "description": "RSC 13 x 10 x 4 32ECT 25/Bundle",
-    "price": 1.21
+    "description": "RSC 13 x 10 x 4 32ECT",
+    "price": 1.18
   },
   {
     "name": "SBO-3125",
-    "description": "RSC 13 x 10 x 5 32ECT 25/Bundle",
+    "description": "RSC 13 x 10 x 5 32ECT",
     "price": 1.38
   },
   {
     "name": "SBO-3175",
-    "description": "RSC 13 x 10 x 6 32ECT 25/Bundle",
+    "description": "RSC 13 x 10 x 6 32ECT",
     "price": 1.73
   },
   {
     "name": "SBO-3190",
-    "description": "RSC 13 x 11 x 7 32ECT 25/Bundle",
+    "description": "RSC 13 x 11 x 7 32ECT",
     "price": 2
   },
   {
     "name": "SBO-3195",
-    "description": "RSC 13 x 13 x 3",
-    "price": 2.32
+    "description": "RSC 13 x 13 x 3 32ECT",
+    "price": 2.19
   },
   {
     "name": "SBO-3200",
-    "description": "RSC 13 x 13 x 6 32 ECT 25/Bundle",
+    "description": "RSC 13 x 13 x 6 32ECT",
     "price": 2.15
   },
   {
     "name": "SBO-3288",
-    "description": "RSC 14 x 6 x 4 32ECT 25/Bundle",
+    "description": "RSC 14 x 6 x 4 32ECT (Speacial Order)",
     "price": 1.02
   },
   {
     "name": "SBO-3290",
-    "description": "RSC 14 x 6 x 6 32ECT 25/Bundle",
-    "price": 1.23
+    "description": "RSC 14 x 6 x 6 32ECT",
+    "price": 0.92
   },
   {
     "name": "SBO-3293",
-    "description": "RSC 14 x 8 x 4 32ECT 25/Bundle",
-    "price": 1.67
+    "description": "RSC 14 x 8 x 4 32ECT",
+    "price": 1.6
   },
   {
     "name": "SBO-3295",
-    "description": "RSC 14 x 8 x 6  32ECT 25/Bundle",
-    "price": 1.47
+    "description": "RSC 14 x 8 x 6  32ECT",
+    "price": 1.48
   },
   {
     "name": "SBO-3360",
-    "description": "RSC 14 x 10 x 4 32ECT 25/Bundle",
+    "description": "RSC 14 x 10 x 4 32ECT",
     "price": 1.57
   },
   {
     "name": "SBO-3370",
-    "description": "RSC 14 x 10 x 5 32ECT 25/Bundle",
-    "price": 2.12
+    "description": "RSC 14 x 10 x 5 32ECT",
+    "price": 1.87
   },
   {
     "name": "SBO-3420",
@@ -2156,183 +2141,183 @@
   },
   {
     "name": "SBO-3425",
-    "description": "RSC 14 x 10 x 10 32ECT multi-depth 25/Bundle",
-    "price": 2.7
+    "description": "RSC 14 x 10 x 10 32ECT Multi-depth (Scored @ 8,6) (Special Order)",
+    "price": 2.53
   },
   {
     "name": "SBO-3540",
     "description": "RSC 14 x 14 x 4 32ECT",
-    "price": 2.08
+    "price": 1.89
   },
   {
     "name": "SBO-3545",
     "description": "RSC 14 x 14 x 6 32ECT",
-    "price": 1.92
+    "price": 1.53
   },
   {
     "name": "SBO-3550",
     "description": "RSC 14 x 14 x 8 32ECT",
-    "price": 1.91
+    "price": 1.77
   },
   {
     "name": "SBO-3590",
     "description": "RSC 14 x 14 x 10 32ECT",
-    "price": 2.33
+    "price": 1.91
   },
   {
     "name": "SBO-3615",
-    "description": "RSC 14 x 14 x 14 32ECT 25/Bundle",
-    "price": 2.45
+    "description": "RSC 14 x 14 x 14 32ECT",
+    "price": 2.25
   },
   {
     "name": "SBO-3650",
-    "description": "RSC 15 x 10 x 10 32ECT 25/Bundle",
-    "price": 2.37
+    "description": "RSC 15 x 10 x 10 32ECT",
+    "price": 2.17
   },
   {
     "name": "SBO-3704",
-    "description": "RSC 15 x 15 x4 32ECT 25/Bundle",
-    "price": 2.08
+    "description": "RSC 15 x 15 x 4 32ECT (Special Order)",
+    "price": 1.84
   },
   {
     "name": "SBO-3705",
-    "description": "RSC 15 x 15 x 6 32ECT 25/Bundle",
-    "price": 2.3
+    "description": "RSC 15 x 15 x 6 32ECT (Special Order)",
+    "price": 2.12
   },
   {
     "name": "SBO-3720",
-    "description": "RSC 15 x 15 x 8 32ECT 25/Bundle",
+    "description": "RSC 15 x 15 x 8 32ECT",
     "price": 3.1
   },
   {
     "name": "SBO-3730",
-    "description": "RSC 15 x 15 x 10",
+    "description": "RSC 15 x 15 x 10 32ECT",
     "price": 3.13
   },
   {
     "name": "SBO-3750",
-    "description": "RSC 15 x 15 x 15 32ECT 25/Bundle",
-    "price": 2.82
+    "description": "RSC 15 x 15 x 15 32ECT",
+    "price": 2.39
   },
   {
     "name": "SBO-3950",
-    "description": "RSC 16 x 6 x 4 32ECT 25/Bundle",
-    "price": 1.65
+    "description": "RSC 16 x 6 x 4 32ECT",
+    "price": 1.48
   },
   {
     "name": "SBO-3960",
-    "description": "RSC 16 x 8 x 6 32ECT 25/Bundle",
-    "price": 1.55
+    "description": "RSC 16 x 8 x 6 32ECT",
+    "price": 1.4
   },
   {
     "name": "SBO-3970",
-    "description": "RSC 16 x 8 x 8 32ECT 25/Bundle",
-    "price": 1.7
+    "description": "RSC 16 x 8 x 8 32ECT",
+    "price": 1.63
   },
   {
     "name": "SBO-4040",
-    "description": "RSC 16 x 12 x 4 32ECT 25/Bundle",
-    "price": 1.56
+    "description": "RSC 16 x 12 x 4 32ECT",
+    "price": 1.48
   },
   {
     "name": "SBO-4045",
-    "description": "RSC 16 x 12 x 6 32ECT 25/Bundle",
-    "price": 1.85
+    "description": "RSC 16 x 12 x 6 32ECT",
+    "price": 1.69
   },
   {
     "name": "SBO-4050",
-    "description": "RSC 16 x 12 x 8 32ECT 25/Bundle",
-    "price": 1.64
+    "description": "RSC 16 x 12 x 8 32ECT",
+    "price": 1.62
   },
   {
     "name": "SBO-4055",
-    "description": "RSC 16 x 12 x 10 32ECT 25/Bundle",
-    "price": 2.09
-  },
-  {
-    "name": "SBO-4070",
-    "description": "RSC  16 1/4 x 12 1/4 x 9 5/16\" 32ECT Scored @ 4 CFB",
-    "price": 2.41
+    "description": "RSC 16 x 12 x 10 32ECT",
+    "price": 1.71
   },
   {
     "name": "SBO-4105",
     "description": "RSC 16 x 12 x 12 32ECT 25/Bundle",
-    "price": 3.11
+    "price": 1.9
   },
   {
     "name": "SBO-4140",
-    "description": "RSC 16 3/8 x 12 5/8 x 12 5/8 32ECT Printed Moving 1.5 Book Box 25/Bundle",
-    "price": 2.33
+    "description": "RSC Printed Moving Box 16 x 12 x 12 32ECT (1.5 Book Box)",
+    "price": 1.6
   },
   {
     "name": "SBO-4145",
-    "description": "RSC 16 x 13 x 13 32ECT 25/Bundle",
-    "price": 3.82
+    "description": "RSC 16 x 13 x 13 32ECT (Special Order)",
+    "price": 2.87
   },
   {
     "name": "SBO-4155",
-    "description": "RSC 16 x 14 x 6 32ECT 25/Bundle",
+    "description": "RSC 16 x 14 x 6 32ECT",
     "price": 2.4
   },
   {
     "name": "SBO-4160",
-    "description": "RSC 16 x 14 x 10 32ECT 25/Bundle",
+    "description": "RSC 16 x 14 x 10 32ECT",
     "price": 2.92
   },
   {
     "name": "SBO-4225",
-    "description": "RSC 16 x 16 x 4 32ECT 25/Bundle",
+    "description": "RSC 16 x 16 x 4 32ECT",
     "price": 2.3
   },
   {
     "name": "SBO-4245",
-    "description": "RSC 16 x 16 x 8 32ECT 25/Bundle",
-    "price": 2.61
+    "description": "RSC 16 x 16 x 8 32ECT",
+    "price": 2.1
   },
   {
     "name": "SBO-4247",
     "description": "RSC 16 x 16 x 10 32ECT",
-    "price": 2.64
+    "price": 2.37
   },
   {
     "name": "SBO-4250",
-    "description": "RSC 16 x 16 x 12 32ECT 25/Bundle",
-    "price": 2.67
+    "description": "RSC 16 x 16 x 12 32ECT",
+    "price": 2.58
   },
   {
     "name": "SBO-4275",
-    "description": "RSC 16 x 16 x 16 32ECT 25/Bundle",
-    "price": 3.04
+    "description": "RSC 16 x 16 x 16 32ECT",
+    "price": 2.56
   },
   {
     "name": "SBO-4600",
-    "description": "RSC 18 x 8 x 8 32ECT 25/Bundle",
+    "description": "RSC 18 x 8 x 8 32ECT",
     "price": 2.4
   },
   {
+    "name": "SBO-4697",
+    "description": "RSC 18 x 12 x 4 32ECT",
+    "price": 2.1
+  },
+  {
     "name": "SBO-4700",
-    "description": "RSC 18 x 12 x 7 32ECT 25/Bundle",
+    "description": "RSC 18 x 12 x 7 32ECT",
     "price": 2.87
   },
   {
     "name": "SBO-4705",
-    "description": "RSC 18 x 12 x12 32ECT 25/Bundle",
-    "price": 2.25
+    "description": "RSC 18 x 12 x12 32ECT",
+    "price": 2.01
   },
   {
     "name": "SBO-4710",
-    "description": "RSC 18 x 12 x 12 32ECT Scored @ 10,8,6 25/Bundle",
+    "description": "RSC 18 x 12 x 12 32ECT Multi Depth (Scored @ 10,8,6)(Special Order)",
     "price": 3.47
   },
   {
     "name": "SBO-4715",
-    "description": "RSC 18 x 12 x 12 48ECT 15/Bundle",
+    "description": "RSC 18 x 12 x 12 48ECT (Special Order)",
     "price": 3.83
   },
   {
     "name": "SBO-4725",
     "description": "RSC 18 x 14 x 6 32ECT",
-    "price": 3.38
+    "price": 2.37
   },
   {
     "name": "SBO-4785",
@@ -2341,492 +2326,472 @@
   },
   {
     "name": "SBO-4788",
-    "description": "RSC 18 x 14 x 14 32ECT 25/Bundle",
+    "description": "RSC 18 x 14 x 14 32ECT",
     "price": 2.99
   },
   {
     "name": "SBO-4791",
-    "description": "RSC 18 x 14 x 16 32ECT 25/Bundle",
-    "price": 3.44
+    "description": "RSC 18 x 14 x 16 32ECT",
+    "price": 3.97
   },
   {
     "name": "SBO-4800",
-    "description": "RSC 18 x 16 x  8 32ECT 25/Bundle",
-    "price": 3.57
+    "description": "RSC 18 x 16 x  8 32ECT",
+    "price": 3.24
   },
   {
     "name": "SBO-4840",
-    "description": "RSC 18 x 16 x 10 32ECT 25/Bundle",
-    "price": 2.2
+    "description": "RSC 18 x 16 x 10 32ECT",
+    "price": 3.22
   },
   {
     "name": "SBO-4900",
-    "description": "RSC 18 x 18 x 4 200#  32 ECT",
+    "description": "RSC 18 x 18 x 4 32ECT",
     "price": 3.12
   },
   {
     "name": "SBO-4935",
-    "description": "RSC 18 x 18 x 8 32ECT 25/Bundle",
-    "price": 3.57
-  },
-  {
-    "name": "SBO-4936",
-    "description": "RSC 18 1/2 x 18 1/2 x 9 32ECT 20/Bundle",
-    "price": 3.35
+    "description": "RSC 18 x 18 x 8 32ECT",
+    "price": 3.28
   },
   {
     "name": "SBO-4950",
-    "description": "RSC 18 x 18 x 12 32ECT 20/Bundle",
-    "price": 3.58
+    "description": "RSC 18 x 18 x 12 32ECT",
+    "price": 2.96
   },
   {
     "name": "SBO-4955",
-    "description": "RSC 18 x 18 x 12 48 ECT / 275# D.W. 10/Bundle",
-    "price": 5.81
+    "description": "RSC 18 x 18 x 12 48 ECT D.W. (Special Order)",
+    "price": 4.86
   },
   {
     "name": "SBO-4965",
-    "description": "RSC 18 x 18 x 16 32 ECT Unprinted 20/Bundle",
-    "price": 3.69
+    "description": "RSC 18 x 18 x 16 32 ECT",
+    "price": 3.02
   },
   {
     "name": "SBO-4970",
-    "description": "RSC 18 1/8 x 18 x 16 32ECT 3.0 Printed Moving Medium Box 15/Bundle",
-    "price": 3.77
+    "description": "RSC Printed Moving Box 18 x 18 x 16 32ECT (3.0 Medium)",
+    "price": 2.63
   },
   {
     "name": "SBO-4980",
-    "description": "RSC 18 x 18 x 18 32ECT 15/Bundle",
-    "price": 3.96
+    "description": "RSC 18 x 18 x 18 32ECT",
+    "price": 3.2
   },
   {
     "name": "SBO-4983",
-    "description": "RSC 18 x 18 x 24 32ECT 15/Bundle",
-    "price": 4.54
+    "description": "RSC 18 x 18 x 24 32ECT",
+    "price": 4.15
   },
   {
     "name": "SBO-4985",
-    "description": "RSC 18 x 18 x 28 48 ECT Dish Pack Printed 10/Bundle",
-    "price": 8.03
+    "description": "RSC Dish Pack Printed 18 x 18 x 28 48 ECT",
+    "price": 5.35
+  },
+  {
+    "name": "SBO-4995",
+    "description": "RSC 18 x 18 x 30 32ECT",
+    "price": 7.38
   },
   {
     "name": "SBO-5420",
-    "description": "RSC 19 x 12 x 4 32ECT 25/Bundle",
-    "price": 1.7
+    "description": "RSC 19 x 12 x 4 32ECT",
+    "price": 2.2
   },
   {
     "name": "SBO-5435",
-    "description": "RSC 20 x 5 x 5 32ECT 25/Bundle",
+    "description": "RSC 20 x 5 x 5 32ECT",
     "price": 1.65
   },
   {
     "name": "SBO-5436",
-    "description": "RSC 20 x 6 x 6 32ECT 25/Bundle",
+    "description": "RSC 20 x 6 x 6 32ECT",
     "price": 2.02
   },
   {
     "name": "SBO-5445",
-    "description": "RSC 20 x 8 x 8 32ECT 25/Bundle",
-    "price": 1.52
+    "description": "RSC 20 x 8 x 8 32ECT",
+    "price": 1.57
   },
   {
     "name": "SBO-5447",
-    "description": "RSC 20 x 8 x 50 F.O.L. 275# / 44 ECT Heavy Duty 5 bdl.",
+    "description": "RSC 20 x 8 x 50  44ECT",
     "price": 13.27
   },
   {
     "name": "SBO-5450",
-    "description": "RSC 20 x 10 x 8 32ECT 20/Bundle",
-    "price": 1.84
+    "description": "RSC 20 x 10 x 8 32ECT",
+    "price": 1.9
   },
   {
     "name": "SBO-5451",
-    "description": "RSC 20 x 12 x 8 32ECT 20/Bundle",
-    "price": 3.38
+    "description": "RSC 20 x 12 x 8 32ECT",
+    "price": 2.55
   },
   {
     "name": "SBO-5455",
-    "description": "RSC 20 x 14 x 8 32ECT 20/Bundle",
+    "description": "RSC 20 x 14 x 8 32ECT",
     "price": 2.52
   },
   {
     "name": "SBO-5456",
-    "description": "RSC 20 x 14 x 10 32ECT 20/Bundle",
+    "description": "RSC 20 x 14 x 10 32ECT",
     "price": 3.18
   },
   {
     "name": "SBO-5457",
-    "description": "RSC 20 x 14 x 12 32ECT 20/Bundle",
-    "price": 2.95
+    "description": "RSC 20 x 14 x 12 32ECT",
+    "price": 2.45
   },
   {
     "name": "SBO-5458",
-    "description": "RSC 20 x 15 x 10 32 ECT 20/Bundle",
+    "description": "RSC 20 x 15 x 10 32ECT",
     "price": 4.03
   },
   {
     "name": "SBO-5460",
-    "description": "RSC 20 x 16 x 8 200# / 32 ECT 25/Bundle",
-    "price": 2.64
+    "description": "RSC 20 x 16 x 8 32ECT",
+    "price": 3.18
   },
   {
     "name": "SBO-5465",
-    "description": "RSC 20 x 20 x 4 200# / 32 ECT 10/Bundle",
+    "description": "RSC 20 x 20 x 4 32ECT",
     "price": 3.28
   },
   {
     "name": "SBO-5470",
-    "description": "RSC 20 x 20 x 10 32ECT 15/Bundle",
+    "description": "RSC 20 x 20 x 10 32ECT",
     "price": 3.85
   },
   {
     "name": "SBO-5472",
-    "description": "RSC 20 x 20 x 12 32ECT 15/Bundle",
+    "description": "RSC 20 x 20 x 12 32ECT",
     "price": 4.05
   },
   {
     "name": "SBO-5530",
-    "description": "RSC 20 x 20 x 20 32ECT 15/Bundle",
-    "price": 4.84
+    "description": "RSC 20 x 20 x 20 32ECT",
+    "price": 3.7
   },
   {
     "name": "SBO-5531",
-    "description": "RSC 20 x 20 x 20 44ECT 10/Bundle",
+    "description": "RSC 20 x 20 x 20 44ECT",
     "price": 7.31
   },
   {
     "name": "SBO-5535",
-    "description": "RSC 20 x 20 x 20 DW10/Bundle",
+    "description": "RSC 20 x 20 x 20 48ECT D.W",
     "price": 8.61
   },
   {
     "name": "SBO-5600",
-    "description": "RSC 21 X 12 X 12 32ECT 20/Bundle",
+    "description": "RSC 21 X 12 X 12 32ECT",
     "price": 3.9
   },
   {
     "name": "SBO-5730",
-    "description": "RSC 21 x 14 x 10 32ECT 20/Bundle",
-    "price": 3.98
+    "description": "RSC 21 x 14 x 10 32ECT",
+    "price": 3.47
   },
   {
     "name": "SBO-5740",
-    "description": "RSC 21 x 17 x 15 32ECT 25/Bundle",
+    "description": "RSC 21 x 17 x 15 32ECT",
     "price": 5.23
   },
   {
     "name": "SBO-5800",
-    "description": "RSC 22 x 10 x 6 32ECT 25/Bundle",
+    "description": "RSC 22 x 10 x 6 32ECT",
     "price": 2.58
   },
   {
     "name": "SBO-5860",
-    "description": "RSC 22 x 14 x 6 32ECT 20/Bundle",
-    "price": 2.29
+    "description": "RSC 22 x 14 x 6 32ECT",
+    "price": 3.72
   },
   {
     "name": "SBO-5865",
-    "description": "RSC 22 x 14 x 8 32ECT 20/Bundle",
-    "price": 2.86
-  },
-  {
-    "name": "SBO-5890",
-    "description": "RSC 22 x 22 x 2132ECT 10/Bundle",
-    "price": 4.46
+    "description": "RSC 22 x 14 x 10 32ECT",
+    "price": 3.63
   },
   {
     "name": "SBO-5905",
-    "description": "RSC 22 x 22 x 22 32ECT 15/Bundle",
-    "price": 5.73
+    "description": "RSC 22 x 22 x 22 32ECT",
+    "price": 5.33
   },
   {
     "name": "SBO-5910",
-    "description": "RSC 22 x 22 x 22 48ECT DW 10/Bundle",
+    "description": "RSC 22 x 22 x 22 48ECT DW (Special Order)",
     "price": 15.73
   },
   {
     "name": "SBO-5970",
-    "description": "FOL Picture Box 24 x 5 x 24 32ECT Small 25/Bundle",
-    "price": 5.94
+    "description": "RSC 24 x 5 x 24 32ECT",
+    "price": 4.97
   },
   {
     "name": "SBO-6085",
-    "description": "RSC 24 x 12 x 6 32ECT 20/Bundle",
-    "price": 2.2
+    "description": "RSC 24 x 12 x 6 32ECT",
+    "price": 2.65
   },
   {
     "name": "SBO-6090",
-    "description": "RSC 24 x 12 x 12 32ECT 25/Bundle",
-    "price": 3.09
+    "description": "RSC 24 x 12 x 12 32ECT",
+    "price": 2.35
   },
   {
     "name": "SBO-6093",
-    "description": "RSC 24 x 14 x 6 32ECT 25/Bundle",
-    "price": 3.2
+    "description": "RSC 24 x 14 x 6 32ECT",
+    "price": 3.73
   },
   {
     "name": "SBO-6094",
-    "description": "RSC 24 x 14 x 8 32ECT 20/Bundle",
-    "price": 2.91
+    "description": "RSC 24 x 14 x 8 32ECT",
+    "price": 3.43
   },
   {
     "name": "SBO-6095",
-    "description": "RSC 24 x 14 x 12 32ECT 20/Bundle",
-    "price": 3.31
+    "description": "RSC 24 x 14 x 12 32ECT",
+    "price": 3.82
   },
   {
     "name": "SBO-6102",
-    "description": "RSC 24 x 14 x 14 32ECT 25/Bundle",
-    "price": 3.92
+    "description": "RSC 24 x 14 x 14 32ECT",
+    "price": 3.15
   },
   {
     "name": "SBO-6230",
-    "description": "RSC 24 x 16 x 6 32ECT 20/Bundle",
-    "price": 2.94
+    "description": "RSC 24 x 16 x 6 32ECT",
+    "price": 3.48
   },
   {
     "name": "SBO-6240",
     "description": "RSC 24 x 16 x 12 32ECT",
-    "price": 3.55
+    "price": 3.44
   },
   {
     "name": "SBO-6260",
-    "description": "RSC 24 x 18 x 4 32ECT 20/Bundle",
-    "price": 3.56
+    "description": "RSC 24 x 18 x 4 32ECT",
+    "price": 3.23
   },
   {
     "name": "SBO-6360",
-    "description": "RSC 24 x 18 x 18 32ECT Printed Moving Large Box 15/Bundle",
-    "price": 4.85
+    "description": "RSC Printed Moving Box 24 x 18 x 18 32ECT (Large Box)",
+    "price": 2.99
   },
   {
     "name": "SBO-6365",
-    "description": "RSC 24 x 18 x 18 32ECT Unprinted 15/Bundle",
-    "price": 4.47
-  },
-  {
-    "name": "SBO-6370",
-    "description": "RSC 24 x 20 x 12 32ECT 10/Bundle",
-    "price": 5.5
+    "description": "RSC 24 x 18 x 18 32ECT",
+    "price": 4.25
   },
   {
     "name": "SBO-6490",
-    "description": "RSC 24 x 24 x 4 32ECT 10/Bundle",
-    "price": 4.63
+    "description": "RSC 24 x 24 x 4 32ECT",
+    "price": 4.35
   },
   {
     "name": "SBO-6500",
-    "description": "RSC 24 x 24 x 10 32ECT 10/Bundle",
-    "price": 5
+    "description": "RSC 24 x 24 x 10 32ECT",
+    "price": 5.99
   },
   {
     "name": "SBO-6504",
-    "description": "RSC 24 x 24 x 12  32ECT 10/Bundle",
-    "price": 4.75
+    "description": "RSC 24 x 24 x 12  32ECT",
+    "price": 4.68
   },
   {
     "name": "SBO-6505",
-    "description": "RSC 24 x 24 x 12 scored @ 10, 8, 6 32ECT 10/Bundle",
+    "description": "RSC 24 x 24 x 12 32ECT Multi Depth (Scored @ 10, 8, 6)  (Special Order)",
     "price": 5.02
   },
   {
     "name": "SBO-6510",
-    "description": "RSC 24 x 24 x 12HDDW 48 ECT 10/Bundle",
-    "price": 8.95
+    "description": "RSC 24 x 24 x 12 DW 48ECT (Special Order)",
+    "price": 15
   },
   {
     "name": "SBO-6565",
-    "description": "RSC 24 x 24 x 24 32ECT 10/Bundle",
-    "price": 7.4
+    "description": "RSC 24 x 24 x 24 32ECT",
+    "price": 6.33
   },
   {
     "name": "SBO-6569",
-    "description": "RSC 24 x 24 x 24 48ECT DW 10/Bundle",
+    "description": "RSC 24 x 24 x 24 48ECT DW (Special Order)",
     "price": 12.96
   },
   {
     "name": "SBO-6680",
-    "description": "FOL Picture Box 25 x 5 x 38 Medium 5/Bundle",
-    "price": 12.04
+    "description": "RSC 28 x 5 x 38 32ECT",
+    "price": 8.43
   },
   {
     "name": "SBO-6690",
-    "description": "RSC 25 x 25 x 25 32ECT 10/Bundle",
+    "description": "RSC 25 x 25 x 25 32ECT",
     "price": 9.25
   },
   {
     "name": "SBO-6710",
-    "description": "RSC 26 x 10 x 10 32ECT 25/Bundle",
+    "description": "RSC 26 x 10 x 10 32ECT",
     "price": 3.9
   },
   {
     "name": "SBO-6735",
-    "description": "RSC 26 x 15 x 7 32ECT 20/Bundle",
+    "description": "RSC 26 x 15 x 7 32ECT",
     "price": 6
   },
   {
     "name": "SBO-6760",
-    "description": "RSC 26 x 8 x 8 32ECT 25/Bundle",
+    "description": "RSC 26 x 8 x 8 32ECT",
     "price": 2.75
   },
   {
     "name": "SBO-6765",
-    "description": "RSC 26 x 26 x 2",
+    "description": "RSC 26 x 26 x 2 32ECT (Special Order)",
     "price": 9.95
   },
   {
     "name": "SBO-6770",
-    "description": "RSC 26 x 26 x 26 48ECT DW 5/Bundle",
-    "price": 16.49
+    "description": "RSC 26 x 26 x 26 32ECT",
+    "price": 9.79
   },
   {
     "name": "SBO-6798",
-    "description": "RSC 26 x 20 x 12 32ECT Scored 15/Bundle",
-    "price": 4.55
+    "description": "RSC 26 x 20 x 12 32ECT",
+    "price": 7.37
   },
   {
     "name": "SBO-7075",
-    "description": "RSC 28 x 10 x 10 32ECT 25/Bundle",
+    "description": "RSC 28 x 10 x 10 32ECT",
     "price": 4.03
   },
   {
     "name": "SBO-7080",
-    "description": "RSC 28 x 16 x 7 32ECT 20/Bundle",
-    "price": 2.95
+    "description": "RSC 28 x 16 x 7 32ECT",
+    "price": 5.6
   },
   {
     "name": "SBO-7085",
-    "description": "RSC 28 x 20 x 12 32ECT 15/Bundle",
-    "price": 5.42
+    "description": "RSC 28 x 20 x 12 32ECT",
+    "price": 7.39
   },
   {
     "name": "SBO-7090",
-    "description": "RSC 28 x 24 x 6  32ECT 20/Bundle",
-    "price": 4.49
+    "description": "RSC 28 x 24 x 6  32ECT",
+    "price": 8.73
   },
   {
     "name": "SBO-7100",
-    "description": "RSC 28 x 28 x 12 32ECT 10/Bundle",
-    "price": 7.92
+    "description": "RSC 28 x 28 x 12 32ECT",
+    "price": 8.59
   },
   {
     "name": "SBO-7200",
-    "description": "FOL Picture Box 30 x 5 x 24 32ECT 10/Bundle",
-    "price": 5.42
+    "description": "RSC 30 x 5 x 24 32ECT",
+    "price": 4.64
   },
   {
     "name": "SBO-7205",
-    "description": "RSC 30 x 6 x 6 25/Bundle",
+    "description": "RSC 30 x 6 x 6 32ECT",
     "price": 2.7
   },
   {
     "name": "SBO-7215",
-    "description": "RSC 30 x 8 x 8 25/Bundle",
+    "description": "RSC 30 x 8 x 8 32ECT",
     "price": 3.05
   },
   {
     "name": "SBO-7425",
-    "description": "RSC 32 x 18 x 12 32ECT 15/Bundle",
-    "price": 8.96
-  },
-  {
-    "name": "SBO-7500",
-    "description": "EH Container 35 x 22 x 22 51ECT DW",
-    "price": 16.43
+    "description": "RSC 32 x 18 x 12 32ECT",
+    "price": 7.48
   },
   {
     "name": "SBO-7525",
-    "description": "Picture Box 36 x 5 x 24 FOL Medium 20/Bundle",
-    "price": 5.2
+    "description": "RSC 36 x 5 x 24 32ECT",
+    "price": 6.4
   },
   {
     "name": "SBO-7530",
-    "description": "FOL Picture Box 36 x 5 x 30 20/Bundle",
-    "price": 5.81
-  },
-  {
-    "name": "SBO-7550",
-    "description": "Picture Box 36 x 5 x 42 FOL Large 15/Bundle",
-    "price": 13.14
+    "description": "RSC 36 x 5 x 30 32ECT",
+    "price": 6.05
   },
   {
     "name": "SBO-7555",
-    "description": "FOL Picture Box 36 x 6 x 42 275# 5/Bundle",
-    "price": 12.04
+    "description": "RSC 36 x 6 x 42 44ECT",
+    "price": 12.8
   },
   {
     "name": "SBO-7570",
-    "description": "RSC 36 x 6 x 6 32ECT 25/Bundle",
+    "description": "RSC 36 x 6 x 6 32ECT",
     "price": 2.97
   },
   {
     "name": "SBO-7600",
-    "description": "RSC 36 x 8 x 8 32ECT 25/Bundle",
+    "description": "RSC 36 x 8 x 8 32ECT",
     "price": 3.3
   },
   {
     "name": "SBO-7610",
-    "description": "RSC 36 x 12 x 12 32ECT 15/Bundle",
-    "price": 4.14
+    "description": "RSC 36 x 12 x 12 32ECT",
+    "price": 6.03
   },
   {
     "name": "SBO-7620",
-    "description": "RSC 36 x 18 x 18 32ECT 15/Bundle",
+    "description": "RSC 36 x 18 x 18 32ECT",
     "price": 10.02
   },
   {
     "name": "SBO-7624",
-    "description": "RSC 36 x 24 x 12 275 32ECT 10/Bundle",
-    "price": 7.47
+    "description": "RSC 36 x 24 x 12 32ECT",
+    "price": 10.95
   },
   {
     "name": "SBO-7625",
-    "description": "RSC 36 x 24 x 12 275 DW 48ECT 5/Bundle",
+    "description": "RSC 36 x 24 x 12 DW 48ECT (Special Order)",
     "price": 17.2
   },
   {
     "name": "SBO-7626",
-    "description": "RSC 36 x 24 x 20 32ECT 5/Bundle",
-    "price": 9.27
+    "description": "RSC 36 x 24 x 20 32ECT",
+    "price": 14
   },
   {
     "name": "SBO-7627",
-    "description": "RSC 36 x 36 x 24 DW",
+    "description": "RSC 36 x 36 x 24 DW 48ECT",
     "price": 36.37
   },
   {
     "name": "SBO-7630",
-    "description": "RSC 36 x 36 x 36 32ECT 5/Bundle",
-    "price": 18.57
+    "description": "RSC 36 x 36 x 36 32ECT",
+    "price": 15.78
   },
   {
     "name": "SBO-7632",
-    "description": "RSC 36 x 36 x 36 48ECT DW 5/Bundle",
+    "description": "RSC 36 x 36 x 36  48ECT DW",
     "price": 44.99
   },
   {
     "name": "SBO-7690",
-    "description": "RSC 40 x 8 x 8 32ECT 25/Bundle",
+    "description": "RSC 40 x 8 x 8 32ECT",
     "price": 4.08
   },
   {
     "name": "SBO-7700",
-    "description": "RSC 40 x 12 x 12 32ECT 15/Bundle",
+    "description": "RSC 40 x 12 x 12 32ECT",
     "price": 7.3
   },
   {
     "name": "SBO-7730",
-    "description": "RSC 40 x 18 x 8 32ECT 20/Bundle",
-    "price": 5.03
+    "description": "RSC 40 x 18 x 8 32ECT",
+    "price": 8.82
   },
   {
     "name": "SBO-7820",
-    "description": "RSC 48 x 12 x 12 32ECT 10/Bundle",
-    "price": 6.5
+    "description": "RSC 48 x 12 x 12 32ECT",
+    "price": 9.27
   },
   {
     "name": "SBO-7844",
-    "description": "RSC 48 x 24 x 12 DW",
+    "description": "RSC 48 x 24 x 12 48ECT DW",
     "price": 22.07
   },
   {
@@ -2836,17 +2801,17 @@
   },
   {
     "name": "SBO-7846",
-    "description": "RSC 48 x 24 x 24 DW",
+    "description": "RSC 48 x 24 x 24 48ECT DW",
     "price": 29.18
   },
   {
     "name": "SBO-7865",
-    "description": "FOL Picture Box 54 x 8 x 28 275# SW KRAFT....MIN 150",
+    "description": "RSC 54 x 8 x 28 32ECT",
     "price": 17.45
   },
   {
     "name": "SBO-7866",
-    "description": "RSC 60 x 12 x 36 Flat Screen TV/Mirror Box",
+    "description": "RSC 60 x 12 x 36 44ECT",
     "price": 44.99
   },
   {
@@ -2855,24 +2820,29 @@
     "price": 15.95
   },
   {
-    "name": "SBO-7910",
-    "description": "Mirror Box Expandable 4 Piece Box",
-    "price": 9.07
+    "name": "SBO-7880",
+    "description": "Mattress Box Bottom",
+    "price": 14.75
   },
   {
-    "name": "SBO-8298",
-    "description": "Record Storage Lids 16 1/2 x 12 1/2 x 3",
-    "price": 1.13
+    "name": "SBO-7910",
+    "description": "Mirror Box Expandable 4 Piece Box",
+    "price": 7.6
   },
   {
     "name": "SBO-9800",
-    "description": "Wardrobe Box Small 18' No Bar",
-    "price": 13.92
+    "description": "Wardrobe Box 18\"",
+    "price": 10.08
   },
   {
     "name": "SBO-9801",
-    "description": "RSC 24 x 21 x 48 32ECT Wardrobe Box Large No Bar",
-    "price": 15.61
+    "description": "Wardrobe Box 24\"",
+    "price": 10.8
+  },
+  {
+    "name": "Services",
+    "description": "",
+    "price": 0
   },
   {
     "name": "SFC-1025",
@@ -2882,7 +2852,7 @@
   {
     "name": "SFC-1050",
     "description": "Corrugated Roll Single Faced 12\" x 250LF",
-    "price": 36.55
+    "price": 33.58
   },
   {
     "name": "SFC-2025",
@@ -2892,37 +2862,32 @@
   {
     "name": "SFC-2030",
     "description": "Corrugated Roll Single Faced 48\" x 250LF",
-    "price": 139.99
+    "price": 112.71
   },
   {
     "name": "SFC-4025",
     "description": "Corrugated Roll Single Faced 60' x 250LF",
-    "price": 177.45
+    "price": 163.64
   },
   {
     "name": "SHT-0950",
     "description": "Corrugated Sheet 48 x 72\" DW",
-    "price": 18.45
+    "price": 15.45
   },
   {
     "name": "SHT-1000",
-    "description": "Corrugated Sheet 48 x 96 29ECT 300/MIN",
-    "price": 5.92
-  },
-  {
-    "name": "SHT-1050",
-    "description": "Corrugated Sheet 48 x 96 32ECT",
-    "price": 6.83
+    "description": "Corrugated Sheet 48 x 96 29ECT",
+    "price": 4.95
   },
   {
     "name": "SHT-1100",
-    "description": "Corrugated Sheet 48 x 96 48ECT DW48ECT DW",
-    "price": 13.71
+    "description": "Corrugated Sheet 48 x 96 48ECT DW",
+    "price": 10.9
   },
   {
     "name": "SHT-2000",
     "description": "Corrugated Sheet 72 x 108 275# Test DW",
-    "price": 26.82
+    "price": 15.99
   },
   {
     "name": "SIZ-0001",
@@ -2936,18 +2901,18 @@
   },
   {
     "name": "SLE-2750",
-    "description": "PVC Shrink Band Clear 105 x 127 2 Mil Minimum 10,000",
-    "price": 48.31
+    "description": "PVC Shrink Band Clear 105 x 127 2 Mil 1000 Minimum 10,000",
+    "price": 46.64
   },
   {
     "name": "SLE-2755",
-    "description": "PVC Shrink Band Clear 64 x 115 2 mil Minimum 4000",
-    "price": 37.45
+    "description": "PVC Shrink Band Clear 64 x 115 2 mil 1000 Minimum 4000",
+    "price": 41.47
   },
   {
     "name": "SLE-6250",
-    "description": "PVC Shrink Band Clear 205 x 230 2 Mil Minimum 5,000",
-    "price": 133.53
+    "description": "PVC Shrink Band Clear 205 x 230 2 Mil 1000 Minimum 5,000",
+    "price": 112.65
   },
   {
     "name": "SOA-1540",
@@ -3030,48 +2995,8 @@
     "price": 28.51
   },
   {
-    "name": "SOB-1305",
-    "description": "D/C RSC 7 x 4 x 48 44ECT C Kraft MIN Order 300",
-    "price": 4.6
-  },
-  {
-    "name": "SOB-1306",
-    "description": "D/C RSC 7 x 7 x 48 44ECT C Kraft MIN Order 250",
-    "price": 5.8
-  },
-  {
-    "name": "SOB-1800",
-    "description": "RSC 9.75 x 5.75 x 7.25 32ECT 25/Bundle",
-    "price": 0.7
-  },
-  {
-    "name": "SOB-2355",
-    "description": "RSC 11.25 x 8.75 x 2.5 32ECT 25/Bundle",
-    "price": 1
-  },
-  {
-    "name": "SOB-2395",
-    "description": "RSC 11 7/16 x 4 11/16 x 7 5/16 32ECT 25/Bundle",
-    "price": 0.59
-  },
-  {
-    "name": "SOB-2405",
-    "description": "RSC 11 7/16 x 6 1316 x 7 5/16 32ECT 25/Bundle",
-    "price": 0.71
-  },
-  {
-    "name": "SOB-2775",
-    "description": "RSC 11 x 8 x 28 32ECT 25/Bundle",
-    "price": 2.68
-  },
-  {
-    "name": "SOB-3840",
-    "description": "RSC 15 x 12 x 4 32ECT 25/Bundle",
-    "price": 1.55
-  },
-  {
     "name": "SOB-4795",
-    "description": "FOL 18 x 14 x 28 350# DWPRINTED 2 PANELCOMPLETE PARACHUTE SOLUTIONSWILL ONLY ACCEPT =/- 10%USE D...",
+    "description": "FOL 18 x 14 x 28 350# DW PRINTED",
     "price": 11.51
   },
   {
@@ -3081,28 +3006,8 @@
   },
   {
     "name": "SOB-4905",
-    "description": "FOL 18 x 14 x 32 350# DWPRINTED 2 PANEL",
+    "description": "FOL 18 x 14 x 32 350# DW PRINTED 2 PANEL",
     "price": 12.47
-  },
-  {
-    "name": "SOB-6512",
-    "description": "RSC 24 x 11 x 6 1/8 200#",
-    "price": 2.27
-  },
-  {
-    "name": "SOB-7005",
-    "description": "RSC 34 x 11 x 6 200# 15/Bundle",
-    "price": 2.53
-  },
-  {
-    "name": "SOB-7685",
-    "description": "RSC 36 x 18 x 6 32ECT 15/Bundle",
-    "price": 6.33
-  },
-  {
-    "name": "SOB-7865",
-    "description": "RSC 42 1/8 x 13 5/8 x 17 3/8 48ECT",
-    "price": 8.15
   },
   {
     "name": "SPS-1525",
