@@ -1,12 +1,12 @@
 [
   {
     "name": "BAR-1000",
-    "description": "Wardrobe Box Bar 18'",
+    "description": "Wardrobe Box Bar 18\"",
     "price": 1.76
   },
   {
     "name": "BAR-2000",
-    "description": "Wardrobe Box Bar 24'",
+    "description": "Wardrobe Box Bar 24\"",
     "price": 1.8
   },
   {
@@ -166,7 +166,7 @@
   },
   {
     "name": "BPA-3100",
-    "description": "Bubble 3/16\" x 300LF x 12\" Perf 12\" Single Roll 4/Bundle Industrial",
+    "description": "Bubble 3/16\" x 300LF x 12\" Perf 12\" Roll",
     "price": 29.99
   },
   {
@@ -556,7 +556,7 @@
   },
   {
     "name": "FOA-7530",
-    "description": "Foam PE Roll 1/16' 72' x 1250'SLIT AT 60' AND 1- 12' ROLLPERFED 12",
+    "description": "Foam PE Roll 1/16\" 60\" x 1250' No Slit PERFED 12",
     "price": 383.61
   },
   {
@@ -972,17 +972,22 @@
   {
     "name": "PAC-1100",
     "description": "Bands Rubber Beige S 12/Pack",
-    "price": 11.28
+    "price": 13.8
   },
   {
     "name": "PAC-1101",
     "description": "Bands Rubber Blue L 12/Pack",
-    "price": 12.31
+    "price": 16.6
   },
   {
     "name": "PAC-1102",
     "description": "Bands Rubber Green M 12/Pack",
-    "price": 11.85
+    "price": 14.5
+  },
+  {
+    "name": "PAC-1103",
+    "description": "Bands Rubber Red XL 12/Pack",
+    "price": 20.33
   },
   {
     "name": "PAC-1150",
@@ -1021,7 +1026,7 @@
   },
   {
     "name": "PAC-2252",
-    "description": "Film Stretch 5' 80 Gauge 1000' 12 Rolls/Case With Handle",
+    "description": "Film Stretch 5\" 80 Gauge 1000' 12 Rolls/Case With Handle",
     "price": 91.95
   },
   {
@@ -1040,9 +1045,14 @@
     "price": 25.9
   },
   {
+    "name": "PAC-2284",
+    "description": "Film Stretch 18\" 80 Gauge 1500' Roll",
+    "price": 30
+  },
+  {
     "name": "PAC-2285",
     "description": "Film Stretch 18\" 80 Gauge 1500' 4 Rolls/Case",
-    "price": 104.12
+    "price": 94.12
   },
   {
     "name": "PAC-2287",
@@ -1127,7 +1137,7 @@
   {
     "name": "PAC-4260",
     "description": "Newsprint 10lb",
-    "price": 21.7
+    "price": 19.35
   },
   {
     "name": "PAC-4261",
@@ -1230,7 +1240,7 @@
     "price": 6.15
   },
   {
-    "name": "Pack and Ship",
+    "name": "PACKANDSHIP",
     "description": "",
     "price": 0
   },
@@ -1430,17 +1440,17 @@
     "price": 6.13
   },
   {
-    "name": "Pickup Mileage",
+    "name": "PICKUPM",
     "description": "Mileage",
     "price": 0.725
   },
   {
-    "name": "Pick up Residential",
+    "name": "PICKUP",
     "description": "Pick up: Residential",
     "price": 35.5
   },
   {
-    "name": "Pickup Weight exceeds 50lb",
+    "name": "PICKUPW",
     "description": "Weight exceeds 50lb",
     "price": 9.05
   },
@@ -1775,19 +1785,9 @@
     "price": 0.48
   },
   {
-    "name": "SBO-1190",
-    "description": "RSC 6 x 4 x 3 32ECT",
-    "price": 0.72
-  },
-  {
     "name": "SBO-1200",
     "description": "RSC 6 x 4 x 4 32ECT",
     "price": 0.47
-  },
-  {
-    "name": "SBO-1220",
-    "description": "RSC 6 x 6 x 3 32ECT",
-    "price": 0.85
   },
   {
     "name": "SBO-1230",
@@ -1810,19 +1810,9 @@
     "price": 3.2
   },
   {
-    "name": "SBO-1400",
-    "description": "RSC 7 x 5 x 4 32ECT",
-    "price": 0.55
-  },
-  {
     "name": "SBO-1510",
     "description": "RSC 8 x 6 x 4 32ECT",
     "price": 0.6
-  },
-  {
-    "name": "SBO-1515",
-    "description": "RSC 8 x 6 x 5 32ECT",
-    "price": 0.67
   },
   {
     "name": "SBO-1530",
@@ -1860,16 +1850,6 @@
     "price": 3.3
   },
   {
-    "name": "SBO-1805",
-    "description": "RSC 9 x 5 x 4 32ECT",
-    "price": 0.66
-  },
-  {
-    "name": "SBO-1806",
-    "description": "RSC 9 x 6 x 3 32ECT",
-    "price": 0.72
-  },
-  {
     "name": "SBO-1807",
     "description": "RSC 9 x 6 x 6 32ECT",
     "price": 0.72
@@ -1898,11 +1878,6 @@
     "name": "SBO-1950",
     "description": "RSC 10 x 6 x 4 32ECT",
     "price": 0.72
-  },
-  {
-    "name": "SBO-2000",
-    "description": "RSC 10 x 8 x 3 32ECT (Special Order)",
-    "price": 0.93
   },
   {
     "name": "SBO-2010",
@@ -2010,7 +1985,7 @@
     "price": 1.17
   },
   {
-    "name": "SBO-2795",
+    "name": "",
     "description": "RSC 12 x 12 x 2 32ECT",
     "price": 2
   },
@@ -2038,11 +2013,6 @@
     "name": "SBO-2885",
     "description": "RSC 12 x 12 x 10 32ECT",
     "price": 1.39
-  },
-  {
-    "name": "SBO-2886",
-    "description": "RSC 12 x 12 x 10 48ECT (Special Order)",
-    "price": 4.25
   },
   {
     "name": "SBO-2910",
@@ -2093,16 +2063,6 @@
     "name": "SBO-3190",
     "description": "RSC 13 x 11 x 7 32ECT",
     "price": 2
-  },
-  {
-    "name": "SBO-3195",
-    "description": "RSC 13 x 13 x 3 32ECT",
-    "price": 2.19
-  },
-  {
-    "name": "SBO-3200",
-    "description": "RSC 13 x 13 x 6 32ECT",
-    "price": 2.15
   },
   {
     "name": "SBO-3288",
@@ -2175,13 +2135,8 @@
     "price": 2.17
   },
   {
-    "name": "SBO-3704",
-    "description": "RSC 15 x 15 x 4 32ECT (Special Order)",
-    "price": 1.84
-  },
-  {
     "name": "SBO-3705",
-    "description": "RSC 15 x 15 x 6 32ECT (Special Order)",
+    "description": "RSC 15 x 15 x 6 32ECT",
     "price": 2.12
   },
   {
@@ -2190,7 +2145,7 @@
     "price": 3.1
   },
   {
-    "name": "SBO-3730",
+    "name": "SBO-3720",
     "description": "RSC 15 x 15 x 10 32ECT",
     "price": 3.13
   },
@@ -2241,13 +2196,8 @@
   },
   {
     "name": "SBO-4140",
-    "description": "RSC Printed Moving Box 16 x 12 x 12 32ECT (1.5 Book Box)",
+    "description": "RSC Printed Moving Box Small 16 x 12 x 12 32ECT",
     "price": 1.6
-  },
-  {
-    "name": "SBO-4145",
-    "description": "RSC 16 x 13 x 13 32ECT (Special Order)",
-    "price": 2.87
   },
   {
     "name": "SBO-4155",
@@ -2305,14 +2255,9 @@
     "price": 2.01
   },
   {
-    "name": "SBO-4710",
+    "name": "SBO-4705",
     "description": "RSC 18 x 12 x 12 32ECT Multi Depth (Scored @ 10,8,6)(Special Order)",
     "price": 3.47
-  },
-  {
-    "name": "SBO-4715",
-    "description": "RSC 18 x 12 x 12 48ECT (Special Order)",
-    "price": 3.83
   },
   {
     "name": "SBO-4725",
@@ -2360,18 +2305,13 @@
     "price": 2.96
   },
   {
-    "name": "SBO-4955",
-    "description": "RSC 18 x 18 x 12 48 ECT D.W. (Special Order)",
-    "price": 4.86
-  },
-  {
     "name": "SBO-4965",
     "description": "RSC 18 x 18 x 16 32 ECT",
     "price": 3.02
   },
   {
     "name": "SBO-4970",
-    "description": "RSC Printed Moving Box 18 x 18 x 16 32ECT (3.0 Medium)",
+    "description": "RSC Printed Moving Box Medium 18 x 18 x 16 32ECT",
     "price": 2.63
   },
   {
@@ -2387,7 +2327,7 @@
   {
     "name": "SBO-4985",
     "description": "RSC Dish Pack Printed 18 x 18 x 28 48 ECT",
-    "price": 5.35
+    "price": 5.4
   },
   {
     "name": "SBO-4995",
@@ -2520,11 +2460,6 @@
     "price": 5.33
   },
   {
-    "name": "SBO-5910",
-    "description": "RSC 22 x 22 x 22 48ECT DW (Special Order)",
-    "price": 15.73
-  },
-  {
     "name": "SBO-5970",
     "description": "RSC 24 x 5 x 24 32ECT",
     "price": 4.97
@@ -2576,7 +2511,7 @@
   },
   {
     "name": "SBO-6360",
-    "description": "RSC Printed Moving Box 24 x 18 x 18 32ECT (Large Box)",
+    "description": "RSC Printed Moving Box Large 24 x 18 x 18 32ECT",
     "price": 2.99
   },
   {
@@ -2600,24 +2535,9 @@
     "price": 4.68
   },
   {
-    "name": "SBO-6505",
-    "description": "RSC 24 x 24 x 12 32ECT Multi Depth (Scored @ 10, 8, 6)  (Special Order)",
-    "price": 5.02
-  },
-  {
-    "name": "SBO-6510",
-    "description": "RSC 24 x 24 x 12 DW 48ECT (Special Order)",
-    "price": 15
-  },
-  {
     "name": "SBO-6565",
     "description": "RSC 24 x 24 x 24 32ECT",
     "price": 6.33
-  },
-  {
-    "name": "SBO-6569",
-    "description": "RSC 24 x 24 x 24 48ECT DW (Special Order)",
-    "price": 12.96
   },
   {
     "name": "SBO-6680",
@@ -2645,11 +2565,6 @@
     "price": 2.75
   },
   {
-    "name": "SBO-6765",
-    "description": "RSC 26 x 26 x 2 32ECT (Special Order)",
-    "price": 9.95
-  },
-  {
     "name": "SBO-6770",
     "description": "RSC 26 x 26 x 26 32ECT",
     "price": 9.79
@@ -2658,6 +2573,11 @@
     "name": "SBO-6798",
     "description": "RSC 26 x 20 x 12 32ECT",
     "price": 7.37
+  },
+  {
+    "name": "SBO-7074",
+    "description": "RSC 28 x 8 x 8 32ECT",
+    "price": 3.02
   },
   {
     "name": "SBO-7075",
@@ -2745,11 +2665,6 @@
     "price": 10.95
   },
   {
-    "name": "SBO-7625",
-    "description": "RSC 36 x 24 x 12 DW 48ECT (Special Order)",
-    "price": 17.2
-  },
-  {
     "name": "SBO-7626",
     "description": "RSC 36 x 24 x 20 32ECT",
     "price": 14
@@ -2815,7 +2730,7 @@
     "price": 44.99
   },
   {
-    "name": "SBO-7879",
+    "name": "#1260405",
     "description": "Mattress Box Spring King/Queen Size Non Pillow Top",
     "price": 15.95
   },
@@ -2826,8 +2741,8 @@
   },
   {
     "name": "SBO-7910",
-    "description": "Mirror Box Expandable 4 Piece Box",
-    "price": 7.6
+    "description": "Mirror Box Expandable 4 Piece Box Set",
+    "price": 6.4
   },
   {
     "name": "SBO-9800",
@@ -2840,7 +2755,7 @@
     "price": 10.8
   },
   {
-    "name": "Services",
+    "name": "",
     "description": "",
     "price": 0
   },
@@ -2887,7 +2802,7 @@
   {
     "name": "SHT-2000",
     "description": "Corrugated Sheet 72 x 108 275# Test DW",
-    "price": 15.99
+    "price": 11.08
   },
   {
     "name": "SIZ-0001",
@@ -2995,6 +2910,71 @@
     "price": 28.51
   },
   {
+    "name": "SOB-1190",
+    "description": "RSC 6 x 4 x 3 32ECT",
+    "price": 0.72
+  },
+  {
+    "name": "SOB-1220",
+    "description": "RSC 6 x 6 x 3 32ECT",
+    "price": 0.85
+  },
+  {
+    "name": "SOB-1400",
+    "description": "RSC 7 x 5 x 4 32ECT",
+    "price": 0.55
+  },
+  {
+    "name": "SOB-1515",
+    "description": "RSC 8 x 6 x 5 32ECT",
+    "price": 0.67
+  },
+  {
+    "name": "SOB-1805",
+    "description": "RSC 9 x 5 x 4 32ECT",
+    "price": 0.66
+  },
+  {
+    "name": "SOB-1806",
+    "description": "RSC 9 x 6 x 3 32ECT",
+    "price": 0.72
+  },
+  {
+    "name": "SOB-2000",
+    "description": "RSC 10 x 8 x 3 32ECT (Special Order)",
+    "price": 0.93
+  },
+  {
+    "name": "SOB-2886",
+    "description": "RSC 12 x 12 x 10 48ECT (Special Order)",
+    "price": 4.25
+  },
+  {
+    "name": "SOB-3195",
+    "description": "RSC 13 x 13 x 3 32ECT",
+    "price": 2.19
+  },
+  {
+    "name": "SOB-3200",
+    "description": "RSC 13 x 13 x 6 32ECT",
+    "price": 2.15
+  },
+  {
+    "name": "SOB-3704",
+    "description": "RSC 15 x 15 x 4 32ECT (Special Order)",
+    "price": 1.84
+  },
+  {
+    "name": "SOB-4145",
+    "description": "RSC 16 x 13 x 13 32ECT (Special Order)",
+    "price": 2.87
+  },
+  {
+    "name": "SOB-4706",
+    "description": "RSC 18 x 12 x 12 48ECT (Special Order)",
+    "price": 3.83
+  },
+  {
     "name": "SOB-4795",
     "description": "FOL 18 x 14 x 28 350# DW PRINTED",
     "price": 11.51
@@ -3005,9 +2985,44 @@
     "price": 9.72
   },
   {
-    "name": "SOB-4905",
+    "name": "SOB-4797",
     "description": "FOL 18 x 14 x 32 350# DW PRINTED 2 PANEL",
     "price": 12.47
+  },
+  {
+    "name": "SOB-4955",
+    "description": "RSC 18 x 18 x 12 48 ECT D.W. (Special Order)",
+    "price": 4.86
+  },
+  {
+    "name": "SOB-5910",
+    "description": "RSC 22 x 22 x 22 48ECT DW (Special Order)",
+    "price": 15.73
+  },
+  {
+    "name": "SOB-6505",
+    "description": "RSC 24 x 24 x 12 32ECT Multi Depth (Scored @ 10, 8, 6)  (Special Order)",
+    "price": 5.02
+  },
+  {
+    "name": "SOB-6510",
+    "description": "RSC 24 x 24 x 12 DW 48ECT (Special Order)",
+    "price": 15
+  },
+  {
+    "name": "SOB-6569",
+    "description": "RSC 24 x 24 x 24 48ECT DW (Special Order)",
+    "price": 12.96
+  },
+  {
+    "name": "SOB-6765",
+    "description": "RSC 26 x 26 x 2 32ECT (Special Order)",
+    "price": 9.95
+  },
+  {
+    "name": "SOB-7625",
+    "description": "RSC 36 x 24 x 12 DW 48ECT (Special Order)",
+    "price": 17.2
   },
   {
     "name": "SPS-1525",
@@ -3026,23 +3041,48 @@
   },
   {
     "name": "TAP-2035",
-    "description": "Tape Clear 2\" x 110yd 1.9mil 36 Rolls/Case",
-    "price": 92.78
+    "description": "Tape Carton Sealing Clear 2\" x 110yd 1.9mil 36 Rolls/Case",
+    "price": 72
   },
   {
     "name": "TAP-2037",
     "description": "Tape Carton Sealing 2\" x 110yd 1.9mil 6/Pack",
-    "price": 18.2
+    "price": 14
   },
   {
     "name": "TAP-2039",
     "description": "Tape Carton Sealing 2\" x 110yd 1.9mil Single Roll",
-    "price": 4.11
+    "price": 2.5
   },
   {
     "name": "TAP-2040",
-    "description": "Tan tape Carton Sealing 2\" x 110yd  36 Rolls /Case",
-    "price": 85.57
+    "description": "Tape Carton Sealing Tan 2\" x 110yd 1.6mil 36 Rolls/Case",
+    "price": 72
+  },
+  {
+    "name": "TAP-2041",
+    "description": "Tape Carton Sealing Tan 2\" x 110yd 1.6mil 6/Pack",
+    "price": 14
+  },
+  {
+    "name": "TAP-2042",
+    "description": "Tape Carton Sealing Clear 2\" x 55yd 1.6mil 36 Rolls/Case",
+    "price": 36
+  },
+  {
+    "name": "TAP-2043",
+    "description": "Tape Carton Sealing Clear 2\" x 55yd 1.6mil 6/Pack",
+    "price": 8
+  },
+  {
+    "name": "TAP-2044",
+    "description": "Tape Carton Sealing Tan 2\" x 55yd 1.6mil 36 Rolls/Case",
+    "price": 36
+  },
+  {
+    "name": "TAP-2045",
+    "description": "Tape Carton Sealing Tan 2\" x 55yd 1.6mil 6/Pack",
+    "price": 8
   },
   {
     "name": "TAP-2115",
@@ -3051,7 +3091,7 @@
   },
   {
     "name": "TAP-2118",
-    "description": "Carton Tape 3IN Clear 2.1 Mil",
+    "description": "Tape Carton Sealing 3\" x 110yd 2.1mil 24 Rolls/Case",
     "price": 89.99
   },
   {
@@ -3083,11 +3123,6 @@
     "name": "TAP-3105",
     "description": "Tape Carton Sealing OPP 2'' x 72yd 3.2 mil Clear 36 Rolls/Case",
     "price": 118.16
-  },
-  {
-    "name": "TAP-3110",
-    "description": "Tape Carton Sealing OPP 2\" x 72yd 3.2 mil Tan 36 Rolls/Case",
-    "price": 149.35
   },
   {
     "name": "TAP-3115",
@@ -3130,11 +3165,6 @@
     "price": 8.61
   },
   {
-    "name": "TAP-4090",
-    "description": "Tape Filament 1/2\" 110 Tensile 1 Roll",
-    "price": 7.22
-  },
-  {
     "name": "TAP-4190",
     "description": "Tape Filament 2\" x 60yd 4.5mil 100lb Tensile Single Roll",
     "price": 7.39
@@ -3142,7 +3172,7 @@
   {
     "name": "TAP-4200",
     "description": "Tape Filament 2\" x 60yd 4.5mil 100lb Tensile 24 Rolls/Case",
-    "price": 166.23
+    "price": 123.19
   },
   {
     "name": "TAP-5101",
@@ -3158,11 +3188,6 @@
     "name": "TAP-6105",
     "description": "Tape Masking 1\" x 60yd 4.7 Mil 36 Rolls/Case",
     "price": 88.77
-  },
-  {
-    "name": "TAP-6205",
-    "description": "Tape Masking 2\" x 60yd 5.1 Mil 3 Rolls/Pack",
-    "price": 14.75
   },
   {
     "name": "TEQ-5515",
