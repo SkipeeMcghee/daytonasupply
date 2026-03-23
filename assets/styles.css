@@ -19,7 +19,7 @@
 }
 *{box-sizing:border-box}
 /* Ensure the page can grow naturally with content; avoid locking body to viewport height */
-html, body { min-height: 100%; height: auto; overscroll-behavior: contain; }
+html, body { min-height: 100%; height: auto; }
 body{
   margin:0;
   font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,"Noto Sans",sans-serif;
