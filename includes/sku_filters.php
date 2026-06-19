@@ -23,7 +23,7 @@ $skuFilters = [
     'POLY BAGS' => ['POL'],
     'RAGS' => ['RAG'],
     'SAFETY EQUIPMENT' => ['SAF'],
-    'SOAP AND SANITIZER' => ['SAN'],
+    'SOAP AND SANITIZER' => ['SAN', 'SOA'],
     'SPONGES AND SCRUBBERS' => ['SPS'],
     'TAPE' => ['TAP'],
     'TOOLS & EQUIPMENT' => ['TEQ'],
@@ -43,5 +43,19 @@ $skuGroups = [
     ]
 ];
 
-// Expose $skuFilters and $skuGroups to including files.
-return ['filters' => $skuFilters, 'groups' => $skuGroups];
+// Optional subcategory definitions for categories that need custom filtering
+// logic beyond simple SKU prefix grouping or on-sale toggles.
+//
+// matcher values are implemented in catalogue.php so new subcategories can be
+// added here without duplicating hardcoded conditionals in page logic.
+$skuSubcategories = [
+    'CORRUGATED BOXES' => [
+        'cube' => [
+            'label' => 'Cube Corrugated Boxes',
+            'matcher' => 'cube_dimensions'
+        ]
+    ]
+];
+
+// Expose category mappings and optional subcategory rules to including files.
+return ['filters' => $skuFilters, 'groups' => $skuGroups, 'subcategories' => $skuSubcategories];
