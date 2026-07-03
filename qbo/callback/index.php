@@ -1,26 +1,15 @@
 <?php
 declare(strict_types=1);
 
-if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
-    http_response_code(405);
-    header('Allow: GET');
-}
-
 header('Content-Type: text/html; charset=UTF-8');
-header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
-header('Pragma: no-cache');
-header('Referrer-Policy: no-referrer');
 header('X-Content-Type-Options: nosniff');
+header('Referrer-Policy: no-referrer');
 header('X-Frame-Options: DENY');
 
-function callbackParam(string $key, int $maxLength): ?string
+function callback_value(string $key, int $maxLength = 2048): ?string
 {
     $value = filter_input(INPUT_GET, $key, FILTER_UNSAFE_RAW);
     if ($value === null || $value === false) {
-        return null;
-    }
-
-    if (is_array($value)) {
         return null;
     }
 
@@ -30,59 +19,64 @@ function callbackParam(string $key, int $maxLength): ?string
     }
 
     if (strlen($value) > $maxLength) {
-        return substr($value, 0, $maxLength);
+        $value = substr($value, 0, $maxLength);
     }
 
     return $value;
 }
 
-function escapeHtml(?string $value): string
+function escape_html(?string $value): string
 {
-    return htmlspecialchars((string) ($value ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    return htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
-$code = callbackParam('code', 2048);
-$realmId = callbackParam('realmId', 64);
-$state = callbackParam('state', 512);
-$error = callbackParam('error', 255);
-$errorDescription = callbackParam('error_description', 2048);
+$code = callback_value('code');
+$realmId = callback_value('realmId', 128);
+$state = callback_value('state', 512);
+$error = callback_value('error', 256);
+$errorDescription = callback_value('error_description', 2048)
+    ?? callback_value('description', 2048);
 
-$hasError = $error !== null;
-$realmIdIsValid = $realmId === null || preg_match('/^\d{1,32}$/', $realmId) === 1;
-$isSuccess = !$hasError && $code !== null && $realmId !== null && $realmIdIsValid;
+$realmIdIsValid = $realmId === null || preg_match('/^\d+$/', $realmId) === 1;
+$hasOAuthError = $error !== null;
+$isAuthorized = !$hasOAuthError && $code !== null && $realmId !== null && $realmIdIsValid;
 
-if ($hasError || (!$isSuccess && ($code !== null || $realmId !== null || $state !== null))) {
-    http_response_code(400);
-}
+$statusCode = $isAuthorized ? 200 : 400;
+http_response_code($statusCode);
 
-$statusHeading = $isSuccess ? 'QuickBooks authorization received' : 'QuickBooks authorization not completed';
-$statusClass = $isSuccess ? 'status-success' : 'status-error';
-$statusMessage = $isSuccess
-    ? 'The production OAuth callback was received successfully. Copy the values below for the manual rollout steps.'
+$pageTitle = $isAuthorized
+    ? 'QuickBooks Authorization Received'
+    : 'QuickBooks Authorization Not Completed';
+
+$statusHeading = $isAuthorized ? 'Authorization succeeded' : 'Authorization failed';
+$statusText = $isAuthorized
+    ? 'The Intuit callback was received successfully. Copy the values below for the initial production rollout.'
     : 'The callback did not include a complete successful authorization response.';
 
-if ($hasError && $errorDescription !== null) {
-    $statusMessage = 'Intuit returned an error for the authorization request.';
+if (!$hasOAuthError && $realmId !== null && !$realmIdIsValid) {
+    $error = 'invalid_realmId';
+    $errorDescription = 'The returned realmId was not in the expected numeric format.';
 }
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QuickBooks OAuth Callback</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title><?php echo escape_html($pageTitle); ?></title>
     <style>
         :root {
             color-scheme: light;
-            --bg: #f4f1ea;
-            --panel: #fffdf8;
-            --ink: #1c2330;
-            --muted: #596273;
-            --border: #d7d0c5;
-            --success: #1d6b3c;
-            --success-bg: #e8f4eb;
-            --error: #9f2d2d;
+            --bg: #f4f7fb;
+            --panel: #ffffff;
+            --border: #d6e0ea;
+            --text: #1f2933;
+            --muted: #52606d;
+            --success: #17603a;
+            --success-bg: #e8f7ee;
+            --error: #9b1c1c;
             --error-bg: #fdecec;
+            --code-bg: #f7fafc;
         }
 
         * {
@@ -91,29 +85,46 @@ if ($hasError && $errorDescription !== null) {
 
         body {
             margin: 0;
-            font-family: Georgia, "Times New Roman", serif;
-            background: linear-gradient(180deg, #f7f3ec 0%, var(--bg) 100%);
-            color: var(--ink);
+            font-family: Arial, Helvetica, sans-serif;
+            background: linear-gradient(180deg, #f8fbff 0%, var(--bg) 100%);
+            color: var(--text);
         }
 
-        .wrap {
+        main {
             max-width: 760px;
-            margin: 0 auto;
-            padding: 48px 20px 72px;
+            margin: 48px auto;
+            padding: 0 20px;
         }
 
         .panel {
             background: var(--panel);
             border: 1px solid var(--border);
-            border-radius: 16px;
-            box-shadow: 0 18px 48px rgba(28, 35, 48, 0.08);
-            padding: 32px;
+            border-radius: 14px;
+            padding: 28px;
+            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+        }
+
+        .status {
+            margin: 0 0 18px;
+            padding: 14px 16px;
+            border-radius: 10px;
+            font-weight: 700;
+        }
+
+        .status.success {
+            color: var(--success);
+            background: var(--success-bg);
+        }
+
+        .status.error {
+            color: var(--error);
+            background: var(--error-bg);
         }
 
         h1 {
-            margin: 0 0 12px;
-            font-size: clamp(1.9rem, 4vw, 2.5rem);
-            line-height: 1.1;
+            margin: 0 0 10px;
+            font-size: 1.9rem;
+            line-height: 1.2;
         }
 
         p {
@@ -122,31 +133,12 @@ if ($hasError && $errorDescription !== null) {
             line-height: 1.6;
         }
 
-        .status {
-            display: inline-block;
-            margin-bottom: 20px;
-            padding: 8px 12px;
-            border-radius: 999px;
-            font-size: 0.95rem;
-            font-weight: 700;
-            letter-spacing: 0.01em;
-        }
-
-        .status-success {
-            color: var(--success);
-            background: var(--success-bg);
-        }
-
-        .status-error {
-            color: var(--error);
-            background: var(--error-bg);
-        }
-
         dl {
             margin: 24px 0 0;
             display: grid;
             grid-template-columns: minmax(140px, 180px) 1fr;
             gap: 12px 16px;
+            align-items: start;
         }
 
         dt {
@@ -157,18 +149,17 @@ if ($hasError && $errorDescription !== null) {
             margin: 0;
         }
 
-        .value {
-            display: block;
-            width: 100%;
-            padding: 14px 16px;
+        code {
+            display: inline-block;
+            max-width: 100%;
+            padding: 10px 12px;
+            border-radius: 8px;
             border: 1px solid var(--border);
-            border-radius: 10px;
-            background: #fcfaf5;
-            color: var(--ink);
-            font-family: Consolas, "Courier New", monospace;
-            font-size: 0.95rem;
-            line-height: 1.5;
+            background: var(--code-bg);
+            color: var(--text);
+            font-family: Consolas, Monaco, monospace;
             overflow-wrap: anywhere;
+            word-break: break-word;
             white-space: pre-wrap;
         }
 
@@ -178,61 +169,62 @@ if ($hasError && $errorDescription !== null) {
         }
 
         @media (max-width: 640px) {
+            main {
+                margin: 24px auto;
+            }
+
             .panel {
-                padding: 24px;
+                padding: 22px;
             }
 
             dl {
                 grid-template-columns: 1fr;
-                gap: 8px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="wrap">
-        <section class="panel">
-            <span class="status <?php echo escapeHtml($statusClass); ?>">
-                <?php echo $isSuccess ? 'Authorization Succeeded' : 'Authorization Incomplete'; ?>
-            </span>
-            <h1><?php echo escapeHtml($statusHeading); ?></h1>
-            <p><?php echo escapeHtml($statusMessage); ?></p>
+<main>
+    <section class="panel">
+        <div class="status <?php echo $isAuthorized ? 'success' : 'error'; ?>">
+            <?php echo escape_html($statusHeading); ?>
+        </div>
 
+        <h1><?php echo escape_html($pageTitle); ?></h1>
+        <p><?php echo escape_html($statusText); ?></p>
+
+        <?php if ($isAuthorized): ?>
             <dl>
-                <?php if ($isSuccess): ?>
-                    <dt>Authorization Code</dt>
-                    <dd><span class="value"><?php echo escapeHtml($code); ?></span></dd>
+                <dt>Authorization code</dt>
+                <dd><code><?php echo escape_html($code); ?></code></dd>
 
-                    <dt>Realm ID</dt>
-                    <dd><span class="value"><?php echo escapeHtml($realmId); ?></span></dd>
+                <dt>Realm ID</dt>
+                <dd><code><?php echo escape_html($realmId); ?></code></dd>
 
-                    <?php if ($state !== null): ?>
-                        <dt>State</dt>
-                        <dd><span class="value"><?php echo escapeHtml($state); ?></span></dd>
-                    <?php endif; ?>
-                <?php else: ?>
-                    <dt>Error</dt>
-                    <dd><span class="value"><?php echo escapeHtml($error ?? 'Missing or invalid callback parameters'); ?></span></dd>
-
-                    <?php if ($errorDescription !== null): ?>
-                        <dt>Error Description</dt>
-                        <dd><span class="value"><?php echo escapeHtml($errorDescription); ?></span></dd>
-                    <?php endif; ?>
-
-                    <?php if ($realmId !== null && !$realmIdIsValid): ?>
-                        <dt>Realm ID</dt>
-                        <dd><span class="value"><?php echo escapeHtml($realmId); ?></span></dd>
-                    <?php endif; ?>
-
-                    <?php if ($state !== null): ?>
-                        <dt>State</dt>
-                        <dd><span class="value"><?php echo escapeHtml($state); ?></span></dd>
-                    <?php endif; ?>
-                <?php endif; ?>
+                <dt>State</dt>
+                <dd><code><?php echo escape_html($state ?? 'Not provided'); ?></code></dd>
             </dl>
+        <?php else: ?>
+            <dl>
+                <dt>Error</dt>
+                <dd><code><?php echo escape_html($error ?? 'Authorization response was incomplete.'); ?></code></dd>
 
-            <p class="note">This endpoint only displays callback values for manual handling. It does not exchange tokens or store OAuth secrets.</p>
-        </section>
-    </div>
+                <dt>Description</dt>
+                <dd><code><?php echo escape_html($errorDescription ?? 'No additional error description was provided.'); ?></code></dd>
+
+                <dt>State</dt>
+                <dd><code><?php echo escape_html($state ?? 'Not provided'); ?></code></dd>
+
+                <dt>Code</dt>
+                <dd><code><?php echo escape_html($code ?? 'Not provided'); ?></code></dd>
+
+                <dt>Realm ID</dt>
+                <dd><code><?php echo escape_html($realmId ?? 'Not provided'); ?></code></dd>
+            </dl>
+        <?php endif; ?>
+
+        <p class="note">This endpoint displays callback values only. It does not exchange tokens, store credentials, or persist any authorization data.</p>
+    </section>
+</main>
 </body>
 </html>

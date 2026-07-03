@@ -4,8 +4,8 @@ RewriteCond %{HTTPS} !=on
 RewriteCond %{HTTP:X-Forwarded-Proto} !https
 RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
-# Expose the production QuickBooks OAuth callback without a .php suffix.
-RewriteRule ^qbo/callback/?$ qbo/callback/index.php [L,QSA]
+# Serve the QuickBooks OAuth callback at /qbo/callback
+RewriteRule ^qbo/callback/?$ qbo/callback/index.php [L]
 
 # Auto-upgrade any http:// resources to https://
 <IfModule mod_headers.c>
