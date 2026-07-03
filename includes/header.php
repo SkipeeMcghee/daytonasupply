@@ -4,7 +4,35 @@
 
 // Ensure a session is started so cart and user data can persist.
 if (session_status() === PHP_SESSION_NONE) {
+    // Set consistent cookie params to ensure the session cookie is sent
+    // across subdomains and respects secure flags in production.
+    $host = $_SERVER['HTTP_HOST'] ?? '';
+    $hostNoPort = preg_replace('/:\\d+$/', '', $host);
+    $isLocal = ($hostNoPort === 'localhost' || filter_var($hostNoPort, FILTER_VALIDATE_IP));
+    $secure = (!empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off');
+    $cookieDomain = $isLocal ? '' : ('.' . preg_replace('/^www\./i', '', $hostNoPort));
+    @session_set_cookie_params([
+        'lifetime' => 0,
+        'path' => '/',
+        'domain' => $cookieDomain ?: null,
+        'secure' => $secure,
+        'httponly' => true,
+        'samesite' => 'Lax'
+    ]);
     session_start();
+}
+
+// Redirect legacy/mistyped hostnames to the site's homepage.
+// This must run before any output so headers can be sent safely.
+$host = strtolower($_SERVER['HTTP_HOST'] ?? '');
+$host = preg_replace('/:\\d+$/', '', $host); // strip port if present
+if ($host === 'www.daytona.com') {
+    // Permanent redirect to the canonical homepage. Update the target if your canonical
+    // domain changes. We explicitly use https here since the request the user mentioned
+    // is over HTTPS.
+    header('HTTP/1.1 301 Moved Permanently');
+    header('Location: https://www.daytonasupply.com/');
+    exit;
 }
 
 // If the site is being served over HTTPS, instruct modern browsers
@@ -18,49 +46,220 @@ if (!empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off') {
 // Determine the number of items in the cart (stored in session)
 $cartCount = 0;
 if (!empty($_SESSION['cart']) && is_array($_SESSION['cart'])) {
-    foreach ($_SESSION['cart'] as $qty) {
-        $cartCount += (int)$qty;
+    foreach ($_SESSION['cart'] as $entry) {
+        if (is_array($entry) && isset($entry['quantity'])) {
+            $cartCount += (int)$entry['quantity'];
+        } else {
+            $cartCount += (int)$entry;
+        }
     }
 }
+// Format the displayed cart count: "empty" for 0, 1..999 for counts, and "999+" for 1000 or more
+$displayCart = ($cartCount === 0) ? 'empty' : (($cartCount >= 1000) ? '999+' : (string)$cartCount);
 // Check if user is logged in
 $loggedIn = isset($_SESSION['customer']);
 // Check if admin logged in
 $adminLoggedIn = isset($_SESSION['admin']);
+// If a logged-in customer has a preference stored in session, use it to render theme class server-side
+$serverThemeClass = '';
+if ($loggedIn) {
+    $pref = $_SESSION['customer']['darkmode'] ?? null;
+    if ($pref === null) {
+        // Some installs store flat customer array with 'id' only; try loading from DB when available
+        try {
+            if (!empty($_SESSION['customer']['id'])) {
+                // Ensure getDb() is available. Only include db.php when necessary to avoid early DB initialization on simple pages.
+                if (!function_exists('getDb')) {
+                    @include_once __DIR__ . '/db.php';
+                }
+                if (!function_exists('getDb')) throw new Exception('getDb unavailable');
+                $db = getDb();
+                $stmt = $db->prepare('SELECT darkmode FROM customers WHERE id = :id LIMIT 1');
+                $stmt->execute([':id' => $_SESSION['customer']['id']]);
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($row && isset($row['darkmode'])) $pref = (int)$row['darkmode'];
+            }
+        } catch (Exception $e) { /* ignore DB failures here */ }
+    }
+    if ($pref) $serverThemeClass = 'theme-dark';
+}
+// Determine if current logged-in customer should see Manager Portal link
+$showManagerPortal = false;
+if ($loggedIn) {
+    // Session-provided flag if available
+    if (!empty($_SESSION['customer']['isadmin'])) {
+        $showManagerPortal = ((int)$_SESSION['customer']['isadmin'] === 1);
+    }
+    // If not set via session, try to read from DB (and ignore if column missing)
+    if (!$showManagerPortal && !empty($_SESSION['customer']['id'])) {
+        try {
+            if (!function_exists('getDb')) { @include_once __DIR__ . '/db.php'; }
+            if (function_exists('getDb')) {
+                $db = getDb();
+                try {
+                    $stmt = $db->prepare('SELECT isadmin FROM customers WHERE id = :id LIMIT 1');
+                    $stmt->execute([':id' => $_SESSION['customer']['id']]);
+                    $val = $stmt->fetchColumn();
+                    if ($val !== false && (int)$val === 1) { $showManagerPortal = true; }
+                } catch (Exception $_) { /* likely column missing; ignore */ }
+            }
+        } catch (Exception $_) { /* ignore */ }
+    }
+    // Also show when an admin session is active
+    if ($adminLoggedIn) { $showManagerPortal = true; }
+}
 ?>
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
     <title><?php echo isset($title) ? htmlspecialchars($title) : 'Daytona Supply'; ?></title>
-    <!-- Use a relative path for the stylesheet. Append file modification time to bust client caches when the file changes -->
+    <meta name="description" content="<?php echo isset($metaDescription) ? htmlspecialchars($metaDescription) : 'Daytona Supply — local packaging and janitorial supplier.'; ?>">
+    <link rel="canonical" href="<?php echo (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . ($_SERVER['REQUEST_URI'] ?? '/'); ?>">
+    <meta property="og:title" content="Daytona Supply">
+    <meta property="og:description" content="Local B2B packaging & janitorial supplies">
+    <meta name="twitter:card" content="summary_large_image">
     <?php $cssPath = __DIR__ . '/../assets/styles.css'; ?>
     <link rel="stylesheet" href="assets/styles.css?v=<?php echo file_exists($cssPath) ? filemtime($cssPath) : time(); ?>">
+    <?php 
+        // Icon versioning for cache-busting
+        $boxeyPng = __DIR__ . '/../assets/images/boxey with smartphone.png';
+        $boxeyJpg = __DIR__ . '/../assets/images/boxey with smartphone.jpg';
+        $dsLogoFile = __DIR__ . '/../assets/images/DaytonaSupplyDSlogo.png';
+        $iconVer = file_exists($boxeyPng) ? filemtime($boxeyPng) : (file_exists($boxeyJpg) ? filemtime($boxeyJpg) : (file_exists($dsLogoFile) ? filemtime($dsLogoFile) : time()));
+        $dsLogoVer = file_exists($dsLogoFile) ? filemtime($dsLogoFile) : time();
+        // Detect iOS Chrome (UA contains 'CriOS'); only Safari should receive apple-touch icons
+        $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
+        $isIOSChrome = stripos($ua, 'CriOS') !== false;
+        // Favicons (browser tabs) should use the classic DS logo image.
+        // Apple/manifest icons use the generated Boxey-on-blue icon.
+    ?>
+    <!-- Favicon matrix (generated with blue background for contrast on home screens) -->
+    <!-- Favicons for browser tabs (classic DS logo) -->
+    <?php $favq = $dsLogoVer . '-tab-20251119-3'; $touchq = $iconVer . '-touch-20251119-2'; ?>
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $favq; ?>">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $favq; ?>">
+    <link rel="icon" type="image/png" sizes="48x48" href="/assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $favq; ?>">
+    <link rel="icon" type="image/png" sizes="96x96" href="/assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $favq; ?>">
+    <!-- iOS Add-to-Home icons (Boxey-on-blue) — suppressed for iOS Chrome -->
+    <?php if (!$isIOSChrome): ?>
+    <link rel="apple-touch-icon" sizes="167x167" href="/assets/icon.php?size=167&v=<?php echo $touchq; ?>">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/icon.php?size=180&v=<?php echo $touchq; ?>">
+    <link rel="apple-touch-icon-precomposed" href="/assets/icon.php?size=180&v=<?php echo $touchq; ?>">
+    <?php endif; ?>
+    <link rel="shortcut icon" href="/assets/images/DaytonaSupplyDSlogo.png?v=<?php echo $favq; ?>">
+    <link rel="manifest" href="/site.webmanifest?v=<?php echo $iconVer; ?>">
+    <!-- Theme-color for browser UI; match page background in light/dark -->
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f7f8fb">
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#121212">
+    <meta name="theme-color" id="theme-color-dynamic" content="#f7f8fb">
+    <!-- iOS PWA hints -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Daytona Supply">
 </head>
-<body>
-<header>
-    <div class="site-brand">
-        <a href="index.php">
-            <img src="assets/images/Logowhite.png" alt="Daytona Supply" class="site-logo">
-        </a>
+<?php 
+    $authClass = $loggedIn ? 'is-authenticated' : 'guest';
+    // Add a page identifier class like page-products, page-catalogue, etc.
+    $script = basename($_SERVER['SCRIPT_NAME'] ?? '');
+    $pageId = $script ? 'page-' . strtolower(preg_replace('/\.[^.]+$/', '', $script)) : '';
+    // Compute site base path (handles subdirectory deployments)
+    $siteBase = rtrim(dirname($_SERVER['SCRIPT_NAME'] ?? ''), '/\\');
+    if ($siteBase === '' || $siteBase === '.') { $siteBase = '/'; }
+?>
+<body class="<?php echo trim($serverThemeClass . ' ' . $authClass . ' ' . $pageId); ?>">
+    <?php if (!empty($_SESSION['admin']) && !empty($GLOBALS['DB_FALLBACK_REASON'])): ?>
+    <div style="background:#dc3545;color:#fff;padding:8px 12px;font-weight:600;">
+        Database fallback active: using SQLite because MySQL connection failed. Edits won’t affect MySQL until the connection succeeds.
     </div>
-    <nav>
-        <ul class="nav">
-            <!-- Use relative links so navigation works regardless of the base directory -->
-            <li><a href="index.php">Home</a></li>
-            <li><a href="catalogue.php">Catalog</a></li>
-            <li><a id="cart-link" href="cart.php">Cart (<span id="cart-count"><?php echo $cartCount; ?></span>)</a></li>
-            <?php if ($loggedIn): ?>
-                <li><a href="account.php">My Account</a></li>
-                <li><a href="logout.php">Logout</a></li>
-            <?php else: ?>
-                <li><a href="signup.php">Sign Up</a></li>
-                <li><a href="login.php">Login</a></li>
-            <?php endif; ?>
-            <?php if ($adminLoggedIn): ?>
-                <li><a href="managerportal.php">Manager Portal</a></li>
-            <?php endif; ?>
-        </ul>
-    </nav>
-</header>
-<main>
+    <?php endif; ?>
+    <header class="site-header" role="banner">
+        <div class="header-inner container">
+            <div class="brand" style="margin-right:auto; margin-left:0;">
+                <a href="index.php" aria-label="Daytona Supply home">
+                    <img src="assets/images/Logowhite.png" alt="Daytona Supply" class="logo">
+                </a>
+            </div>
+            <div class="search-wrap">
+                <form role="search" action="catalogue.php" method="get" class="search-form" autocomplete="off">
+                    <label for="search-input" class="sr-only">Search products</label>
+                    <!-- use `search` param to match catalogue.php's parameter name -->
+                    <input id="search-input" name="search" type="search" placeholder="Search SKUs, items, categories" aria-label="Search products" autocomplete="off" aria-autocomplete="list" aria-haspopup="listbox" data-suggest-url="<?php echo htmlspecialchars(($siteBase === '/' ? '' : $siteBase) . '/ajax/search_suggestions.php'); ?>">
+                    <button class="search-btn" aria-label="Search">Search</button>
+                </form>
+            </div>
+                <div class="header-actions">
+                    <a class="action link-phone" href="tel:3867887009">Call: (386) 788-7009</a>
+                    <?php if ($loggedIn): ?>
+                        <div class="has-account action edge-right" tabindex="0" aria-haspopup="true" aria-expanded="false">
+                            <button type="button" class="account-toggle" aria-label="Toggle account menu" aria-controls="account-menu" aria-expanded="false">
+                                <span class="acct-toggle-bar"></span>
+                                <span class="acct-toggle-bar"></span>
+                            </button>
+                            <a class="account-link" href="account.php">My Account</a>
+                            <div class="account-menu" id="account-menu" role="menu" aria-label="Account menu">
+                                <?php if (!empty($showManagerPortal)): ?>
+                                    <a role="menuitem" href="managerportal.php">Manager Portal</a>
+                                <?php endif; ?>
+                                <a role="menuitem" href="account.php#account-details">Account Details</a>
+                                <a role="menuitem" href="account.php#change-password">Change Your Password</a>
+                                <a role="menuitem" href="account.php#your-orders">Orders</a>
+                                <div class="menu-separator" aria-hidden="true"></div>
+                                <div class="account-menu-item darkmode-row" role="menuitem" aria-label="Dark mode toggle">
+                                    <span class="label">Dark Mode</span>
+                                    <label class="dark-toggle control">
+                                        <input type="checkbox" id="darkmode_toggle" name="darkmode_toggle" <?php echo ($serverThemeClass === 'theme-dark') ? 'checked' : ''; ?> />
+                                        <span class="dark-toggle-switch" aria-hidden="true"></span>
+                                    </label>
+                                </div>
+                                <a role="menuitem" href="logout.php">Log out</a>
+                            </div>
+                        </div>
+                    <?php else: ?>
+                        <a class="action login-register" href="login.php">Login / Register</a>
+                    <?php endif; ?>
+                    <!-- Nav cart button (upper-right) -->
+                    <a class="nav-cart action" href="cart.php" id="cart-link" aria-label="View cart">Cart (<span id="cart-count"><?php echo htmlspecialchars($displayCart); ?></span>)</a>
+                </div>
+        </div>
+
+        <nav class="main-nav" role="navigation" aria-label="Primary">
+            <div class="container nav-inner">
+                <button id="nav-toggle" class="nav-toggle" aria-expanded="false" aria-controls="nav-menu" aria-label="Toggle navigation"><span class="sr-only">Menu</span></button>
+                <div id="nav-menu" class="nav-menu" hidden>
+                    <ul class="nav-cats">
+                        <?php
+                        // Load shared SKU filters and groups. returns ['filters'=>..., 'groups'=>...]
+                        $skuData = @include __DIR__ . '/sku_filters.php';
+                        $skuFilters = is_array($skuData) && isset($skuData['filters']) ? $skuData['filters'] : [];
+                        $skuGroups = is_array($skuData) && isset($skuData['groups']) ? $skuData['groups'] : [];
+                        ?>
+                        <li class="has-mega products-item"><a class="cat-btn" href="products.php">Products</a>
+                            <div class="mega" role="menu">
+                                <button type="button" class="mega-close" aria-label="Close products menu">×</button>
+                                <?php foreach ($skuGroups as $groupLabel => $labels): ?>
+                                    <div class="mega-col">
+                                        <h4><?php echo htmlspecialchars($groupLabel); ?></h4>
+                                        <ul>
+                                            <?php foreach ($labels as $label): if (!isset($skuFilters[$label])) continue; ?>
+                                                <?php $slug = strtolower(preg_replace('/[^a-z0-9]+/i', '-', $label)); $url = 'products.php?cat=' . urlencode($slug); ?>
+                                                <li><a href="<?php echo htmlspecialchars($url); ?>"><?php echo htmlspecialchars($label); ?></a></li>
+                                            <?php endforeach; ?>
+                                        </ul>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </li>
+                        <li><a href="deals.php">Deals</a></li>
+                        <li><a href="about.php">About Us</a></li>
+                        <li><a href="contact.php">Contact Us</a></li>
+                        <li><a href="directions.php">Directions</a></li>
+                        <li><a href="shipping.php">Shipping</a></li>
+                        <!-- Removed All Products and Partner as requested -->
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <main>

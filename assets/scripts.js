@@ -1,59 +1,86 @@
-// Placeholder for future JavaScript enhancements.
-// You can add client‑side interactivity here if needed.
-// Global JS for enhanced interactivity: AJAX add-to-cart, update cart count,
-// and manager prompts for notes.
-document.addEventListener('DOMContentLoaded', function() {
-	// Handle AJAX add-to-cart forms (forms with class 'cart-add')
-	document.body.addEventListener('submit', function(e) {
+/* Site interactions: carousel, messaging slider, mega menu, back-to-top, and small helpers */
+document.addEventListener('DOMContentLoaded', function () {
+	// --- Add-to-cart AJAX handler (keeps original behavior) ---
+	document.body.addEventListener('submit', function (e) {
 		var form = e.target;
 		if (form.classList && form.classList.contains('cart-add')) {
 			e.preventDefault();
+			if (form._adding) return; // debounce double submits
+			form._adding = true;
+			var submitBtn = form.querySelector('button[type="submit"]');
+			if (submitBtn) submitBtn.disabled = true;
 			var data = new FormData(form);
 			var xhr = new XMLHttpRequest();
 			xhr.open('POST', form.action || window.location.href);
 			xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-			xhr.onload = function() {
+			xhr.onload = function () {
 				try {
 					var res = JSON.parse(xhr.responseText);
 					if (res && res.success) {
-						// update the cart count in header
 						var countEl = document.getElementById('cart-count');
-						if (countEl) countEl.textContent = res.cartCount;
-						// show a small non-intrusive added message next to the product row
+						if (countEl) {
+							// Format client-side to match server: "empty" when 0, "999+" when >=1000
+							var cc = parseInt(res.cartCount || 0, 10) || 0;
+							var display = (cc === 0) ? 'empty' : (cc >= 1000 ? '999+' : String(cc));
+							countEl.textContent = display;
+						}
 						var row = document.getElementById('product-' + res.productId);
 						if (row) {
-							var msg = document.createElement('div');
-							msg.className = 'added-msg';
-							msg.textContent = 'Added';
-							msg.style.position = 'absolute';
-							msg.style.background = '#198754';
-							msg.style.color = '#fff';
-							msg.style.padding = '6px 10px';
-							msg.style.borderRadius = '6px';
-							msg.style.zIndex = 9999;
-							// Position it near the Add button
-							var btn = row.querySelector('button[type="submit"]');
-							if (btn) {
-								var rect = btn.getBoundingClientRect();
-								msg.style.top = (window.scrollY + rect.top - 10) + 'px';
-								msg.style.left = (window.scrollX + rect.left + rect.width + 8) + 'px';
-								document.body.appendChild(msg);
-								setTimeout(function() { msg.parentNode && msg.parentNode.removeChild(msg); }, 1400);
+							// Flash green highlight on the row
+							row.classList.remove('flash-added');
+							void row.offsetWidth; // restart animation
+							row.classList.add('flash-added');
+							setTimeout(function(){ if (row) row.classList.remove('flash-added'); }, 1600);
+
+							// Added notification: banner on small screens, popup near button on larger
+							var isSmall = window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
+							if (isSmall) {
+								var banner = document.getElementById('added-banner');
+								if (!banner) {
+									banner = document.createElement('div');
+									banner.id = 'added-banner';
+									banner.className = 'added-banner';
+									banner.setAttribute('role', 'status');
+									document.body.appendChild(banner);
+								}
+								banner.textContent = 'Added to cart';
+								banner.classList.add('show');
+								setTimeout(function(){ banner && banner.classList.remove('show'); }, 1600);
+							} else {
+								var msg = document.createElement('div');
+								msg.className = 'added-msg';
+								msg.textContent = 'Added';
+								msg.style.position = 'absolute';
+								msg.style.background = '#198754';
+								msg.style.color = '#fff';
+								msg.style.padding = '6px 10px';
+								msg.style.borderRadius = '6px';
+								msg.style.zIndex = 9999;
+								var btn = row.querySelector('button[type="submit"]');
+								if (btn) {
+									var rect = btn.getBoundingClientRect();
+									msg.style.top = (window.scrollY + rect.top - 10) + 'px';
+									msg.style.left = (window.scrollX + rect.left + rect.width + 8) + 'px';
+									document.body.appendChild(msg);
+									setTimeout(function () { msg.parentNode && msg.parentNode.removeChild(msg); }, 1400);
+								}
 							}
 						}
 					} else {
 						alert('Unable to add item to cart');
 					}
-				} catch (err) {
-					console.error('Add to cart error', err, xhr.responseText);
+				} catch (err) { console.error('Add-to-cart error', err); }
+				finally {
+					form._adding = false;
+					if (submitBtn) submitBtn.disabled = false;
 				}
 			};
-			xhr.send(new URLSearchParams(data).toString());
+			xhr.send(data);
 		}
 	}, true);
 
-	// Manager portal: prompt for reason when approving/rejecting a single order
-	document.body.addEventListener('click', function(e) {
+	// --- Manager portal approve/reject prompt ---
+	document.body.addEventListener('click', function (e) {
 		var target = e.target;
 		if (target.matches && target.matches('a.action-approve, a.action-reject')) {
 			e.preventDefault();
@@ -61,15 +88,609 @@ document.addEventListener('DOMContentLoaded', function() {
 			var isApprove = target.classList.contains('action-approve');
 			var promptLabel = isApprove ? 'Additional Details (optional):' : 'Reason Why (optional):';
 			var note = prompt(promptLabel);
-			// Build a URL that submits the manager note via GET (managerportal will read it)
 			if (note !== null) {
-				// Append manager_note param
 				var sep = url.indexOf('?') === -1 ? '?' : '&';
 				window.location = url + sep + 'manager_note=' + encodeURIComponent(note);
 			} else {
-				// User cancelled prompt -> proceed without note
 				window.location = url;
 			}
 		}
 	});
+
+	// --- Sort buttons for manager lists (client-side) ---
+	document.body.addEventListener('click', function (e) {
+		var el = e.target;
+		while (el && el !== document.body && !el.classList) el = el.parentNode;
+		if (!el || !el.classList) return;
+		if (el.classList.contains('sort-btn')) {
+			e.preventDefault();
+			var target = el.dataset.target;
+			var mode = el.dataset.sort;
+			if (!target || !mode) return;
+			var t = document.getElementById(target);
+			if (!t) return;
+			var tbody = t.tBodies && t.tBodies[0] ? t.tBodies[0] : t;
+			var rows = Array.prototype.slice.call(tbody.querySelectorAll('tr'));
+			rows.forEach(function (r, i) { if (r.querySelector && r.querySelector('th')) return; if (!r.dataset || typeof r.dataset.origIndex === 'undefined') r.dataset = r.dataset || {}, r.dataset.origIndex = r.dataset.origIndex || i; });
+			rows = rows.filter(function (r) { if (r.querySelector && r.querySelector('th')) return false; return r.querySelector('td') !== null; });
+			function getCellText(row, col) { var cells = row.children; return (cells && cells.length > col) ? cells[col].innerText.trim().toLowerCase() : ''; }
+			if (mode === 'original') rows.sort(function (a, b) { return (a.dataset.origIndex || 0) - (b.dataset.origIndex || 0); });
+			else if (mode === 'name') rows.sort(function (a, b) { return getCellText(a, 1).localeCompare(getCellText(b, 1)); });
+			else if (mode === 'business') rows.sort(function (a, b) { return getCellText(a, 2).localeCompare(getCellText(b, 2)); });
+			rows.forEach(function (r) { tbody.appendChild(r); });
+			document.querySelectorAll('.sort-btn[data-target="' + target + '"]').forEach(function (b) {
+				if (b.dataset.sort === mode) { b.style.transform = 'translateY(1px)'; b.style.boxShadow = ''; } else { b.style.transform = ''; b.style.boxShadow = '0 6px 18px rgba(0,0,0,0.12)'; }
+			});
+		}
+	}, false);
+
+	// --- Simple accessible hero carousel ---
+	(function initCarousel() {
+		var carousel = document.querySelector('.hero-carousel');
+		if (!carousel) return;
+		var track = carousel.querySelector('.carousel-track');
+		var slides = Array.prototype.slice.call(carousel.querySelectorAll('.carousel-slide'));
+		var prev = carousel.querySelector('.carousel-control.prev');
+		var next = carousel.querySelector('.carousel-control.next');
+		var dotsWrap = carousel.querySelector('.carousel-dots');
+		var index = 0; var interval = 5000; var timer = null; var playing = true;
+		function go(i) {
+			index = (i + slides.length) % slides.length;
+			var x = -index * 100;
+			track.style.transform = 'translateX(' + x + '%)';
+			if (dotsWrap) Array.prototype.slice.call(dotsWrap.children).forEach(function (b, idx) { b.classList.toggle('active', idx === index); });
+		}
+		function start() { if (timer) clearInterval(timer); timer = setInterval(function () { go(index + 1); }, interval); playing = true; }
+		function stop() { if (timer) clearInterval(timer); timer = null; playing = false; }
+		if (prev) prev.addEventListener('click', function () { go(index - 1); stop(); });
+		if (next) next.addEventListener('click', function () { go(index + 1); stop(); });
+		if (dotsWrap) Array.prototype.slice.call(dotsWrap.children).forEach(function (b, idx) { b.addEventListener('click', function () { go(idx); stop(); }); });
+		carousel.addEventListener('mouseenter', stop); carousel.addEventListener('mouseleave', start);
+		// start only if more than one slide
+		if (slides.length > 1) start(); else go(0);
+	})();
+
+	// --- Favorite toggle handler for catalogue ---
+	(function favoriteToggles() {
+		var favButtons = document.querySelectorAll('button.fav-toggle');
+		if (!favButtons || favButtons.length === 0) return;
+		favButtons.forEach(function (btn) {
+			btn.addEventListener('click', function (e) {
+				e.preventDefault();
+				var pid = btn.getAttribute('data-product-id');
+				if (!pid) return;
+				var fd = new FormData();
+				fd.append('favorite_product_id', pid);
+				var xhr = new XMLHttpRequest();
+				xhr.open('POST', window.location.pathname + window.location.search);
+				xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+				xhr.onload = function () {
+					try {
+						var json = JSON.parse(xhr.responseText || '{}');
+						if (json && json.success) {
+							if (json.requiresLogin) {
+								// Redirect to login preserving return URL
+								var next = window.location.pathname + window.location.search + window.location.hash;
+								window.location.href = 'login.php?next=' + encodeURIComponent(next);
+								return;
+							}
+							if (json.favorited) btn.classList.add('fav-on'); else btn.classList.remove('fav-on');
+							btn.setAttribute('aria-pressed', json.favorited ? 'true' : 'false');
+							btn.title = json.favorited ? 'Remove from favorites' : 'Add to favorites';
+							// If currently viewing favorites list, remove the row on unfavorite
+							var q = window.location.search || '';
+							var inFavView = /(?:^|[?&])show=favorites(?:&|$)/.test(q) || /(?:^|[?&])favorites=1(?:&|$)/.test(q) || /(?:^|[?&])fav=1(?:&|$)/.test(q);
+							if (!json.favorited && inFavView) {
+								var row = btn.closest && btn.closest('tr');
+								if (row && row.parentNode) row.parentNode.removeChild(row);
+							}
+						} else {
+							// fallback to a page reload if AJAX failed
+							window.location.reload();
+						}
+					} catch (err) { window.location.reload(); }
+				};
+				xhr.onerror = function () { window.location.reload(); };
+				xhr.send(fd);
+			});
+		});
+	})();
+
+	// Account menu hover/focus tolerant toggling to avoid flicker when moving pointer
+	(function accountMenuTolerant() {
+		var acct = document.querySelector('.has-account');
+		if (!acct) return;
+		var toggleBtn = acct.querySelector('.account-toggle');
+		var timer = null;
+		function setState(open) {
+			clearTimeout(timer);
+			if (open) {
+				acct.classList.add('open');
+				acct.setAttribute('aria-expanded','true');
+				if (toggleBtn) toggleBtn.setAttribute('aria-expanded','true');
+			} else {
+				acct.classList.remove('open');
+				acct.setAttribute('aria-expanded','false');
+				if (toggleBtn) toggleBtn.setAttribute('aria-expanded','false');
+			}
+		}
+		function delayedClose() { clearTimeout(timer); timer = setTimeout(function(){ setState(false); }, 160); }
+		acct.addEventListener('mouseenter', function(){
+			if (acct.classList.contains('suppress-hover')) return; // skip hover-open during suppression
+			setState(true);
+		});
+		acct.addEventListener('mouseleave', function(){
+			if (!(toggleBtn && document.activeElement === toggleBtn)) delayedClose();
+			acct.classList.remove('suppress-hover'); // re-enable hover once pointer leaves
+		});
+		if (toggleBtn) {
+			toggleBtn.addEventListener('click', function(e){
+				e.stopPropagation();
+				var isOpen = acct.classList.contains('open');
+				if (isOpen) {
+					setState(false);
+					acct.classList.add('suppress-hover'); // prevent immediate hover re-open
+					toggleBtn.blur();
+				} else {
+					setState(true);
+				}
+			});
+			toggleBtn.addEventListener('keydown', function(e){ if (e.key === ' ') { e.preventDefault(); toggleBtn.click(); } });
+		}
+		document.addEventListener('click', function(e){ if (!acct.contains(e.target)) setState(false); });
+		// Delegated fallback in case direct listener didn't bind (e.g., dynamic injection)
+		document.body.addEventListener('click', function(e){
+			var t = e.target.closest && e.target.closest('.account-toggle');
+			if (!t) return;
+			if (!acct.contains(t)) return;
+			var isOpen = acct.classList.contains('open');
+			setState(!isOpen);
+		});
+	})();
+
+	// --- Messaging slider (rotating short messages) ---
+	(function initMessages() {
+		var list = document.querySelector('.message-list'); if (!list) return;
+		var items = Array.prototype.slice.call(list.children);
+		var i = 0; var t = 3500; if (items.length < 2) return;
+		items.forEach(function (it, idx) { it.style.transition = 'opacity 360ms'; it.style.opacity = idx === 0 ? '1' : '0'; });
+		setInterval(function () { items[i].style.opacity = '0'; i = (i + 1) % items.length; items[i].style.opacity = '1'; }, t);
+	})();
+
+	// --- Mega menu toggle for small screens ---
+	document.body.addEventListener('click', function (e) {
+		var btn = e.target.closest && e.target.closest('.nav-toggle');
+		if (!btn) return;
+		var nav = document.querySelector('.nav-menu');
+		if (!nav) return;
+		var expanded = nav.getAttribute('data-open') === 'true';
+		nav.setAttribute('data-open', (!expanded).toString());
+		btn.setAttribute('aria-expanded', (!expanded).toString());
+		nav.style.display = (!expanded) ? 'block' : 'none';
+	});
+
+	// Accessible Products dropdown behavior (keyboard & touch)
+	(function productsDropdown() {
+		var prodBtn = document.querySelector('.products-item > .cat-btn');
+		if (!prodBtn) return;
+		var prodLi = prodBtn.closest && prodBtn.closest('.products-item');
+		var mega = prodLi ? prodLi.querySelector('.mega') : null;
+		var closeBtn = mega ? mega.querySelector('.mega-close') : null;
+		var hideTimer = null;
+		var manuallyClosed = false; // when true, keep closed until pointer/focus fully leaves
+		var onProductsPage = (function(){
+			try {
+				var p = window.location.pathname || '';
+				return /(^|\/)products\.php$/.test(p);
+			} catch(e){ return false; }
+		})();
+
+		function showMega() {
+			if (onProductsPage) return; // disabled on products listing page
+			if (manuallyClosed) return; // don't reopen until user leaves and re-enters
+			if (!mega) return;
+			clearTimeout(hideTimer);
+			mega.style.display = 'block';
+			prodBtn.setAttribute('aria-expanded', 'true');
+		}
+		function hideMegaNow(force) {
+			if (!mega) return;
+			clearTimeout(hideTimer);
+			mega.style.display = 'none';
+			prodBtn.setAttribute('aria-expanded', 'false');
+			if (force) {
+				manuallyClosed = true;
+				if (prodLi) prodLi.classList.add('force-closed');
+			}
+		}
+		function scheduleHide(delay) {
+			if (!mega) return;
+			clearTimeout(hideTimer);
+			hideTimer = setTimeout(function () {
+				// Only hide if neither the trigger nor the menu are hovered or focused
+				var hovering = (prodLi && prodLi.matches && prodLi.matches(':hover')) || (mega && mega.matches && mega.matches(':hover'));
+				var hasFocus = (prodLi && prodLi.contains && prodLi.contains(document.activeElement));
+				if (!hovering && !hasFocus) {
+					hideMegaNow(false);
+				}
+			}, delay || 160);
+		}
+		// If the control is NOT an anchor, intercept clicks to toggle the mega menu (useful on small screens)
+		var isAnchor = prodBtn.tagName && prodBtn.tagName.toLowerCase() === 'a';
+		if (!isAnchor) {
+			prodBtn.addEventListener('click', function (e) {
+				e.preventDefault();
+				var expanded = prodBtn.getAttribute('aria-expanded') === 'true';
+				if (expanded) { hideMegaNow(true); }
+				else { showMega(); }
+			});
+		}
+		// If the control IS an anchor, ensure clicks do NOT toggle the mega menu — allow navigation
+		if (isAnchor) {
+			prodBtn.addEventListener('click', function (e) {
+				// Do not preventDefault; just make sure any visible mega is closed before navigation
+				try {
+					if (mega) mega.style.display = 'none';
+					prodBtn.setAttribute('aria-expanded','false');
+				} catch (err) { /* noop */ }
+			});
+		}
+		// Hide/show mega on focus/hover — keeps hover behaviour for pointer devices
+		if (mega) {
+			// On initial page load, force the mega closed and briefly suppress hover to avoid
+			// the menu covering the page when the pointer happens to start over the nav.
+			try {
+				mega.style.display = 'none';
+				prodBtn.setAttribute('aria-expanded','false');
+				if (prodLi) {
+					prodLi.classList.add('suppress-hover');
+					setTimeout(function(){ prodLi.classList.remove('suppress-hover'); }, 800);
+				}
+			} catch (err) {}
+
+			prodLi.addEventListener('focusin', function () { showMega(); });
+			prodLi.addEventListener('focusout', function () { scheduleHide(120); });
+			prodLi.addEventListener('mouseenter', function () { showMega(); });
+			prodLi.addEventListener('mouseleave', function (e) {
+				// If leaving into the mega itself, keep open; otherwise schedule a hide
+				var rt = e.relatedTarget;
+				if (rt && mega.contains(rt)) return;
+				scheduleHide(140);
+				// once the user fully leaves the area, allow re-opening again
+				manuallyClosed = false;
+				if (prodLi) prodLi.classList.remove('force-closed');
+			});
+			mega.addEventListener('mouseenter', function(){ clearTimeout(hideTimer); showMega(); });
+			mega.addEventListener('mouseleave', function(){ scheduleHide(140); });
+			// Escape key closes when focused inside the menu
+			mega.addEventListener('keydown', function(e){ if (e.key === 'Escape') { hideMegaNow(true); prodBtn.blur(); } });
+			if (closeBtn) {
+				closeBtn.addEventListener('click', function(e){
+					e.preventDefault(); e.stopPropagation();
+					// Close immediately and keep it closed until user leaves the area
+					hideMegaNow(true);
+					try { closeBtn.blur(); } catch(err) {}
+					prodLi.classList.add('suppress-hover');
+					setTimeout(function(){ prodLi.classList.remove('suppress-hover'); }, 600);
+				});
+			}
+		}
+
+		// If on the products page, keep the mega menu disabled entirely (no hover/focus open)
+		if (onProductsPage && mega) {
+			try {
+				mega.style.display = 'none';
+				prodBtn.setAttribute('aria-expanded','false');
+				manuallyClosed = true;
+				// Prevent accidental open via keyboard focus
+				prodLi.addEventListener('focusin', function(e){ if (mega) { e.stopPropagation(); hideMegaNow(true); } }, true);
+				prodLi.addEventListener('mouseenter', function(){ hideMegaNow(true); }, true);
+			} catch(e){}
+		}
+	})();
+
+	// --- Back to top button ---
+	var backWrap = document.getElementById('backToTopWrap');
+	var backBtn = document.getElementById('backToTop');
+	if (backWrap && backBtn) {
+		window.addEventListener('scroll', function () { backWrap.style.display = (window.scrollY > 360) ? 'flex' : 'none'; });
+		backBtn.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+	}
+
+	// --- Header search suggestions / typeahead ---
+	(function initSearchSuggestions(){
+		var input = document.getElementById('search-input');
+		if (!input) return;
+		var form = input.closest('.search-form');
+		var wrap = input.parentElement;
+		var list = document.createElement('div');
+		list.className = 'search-suggestions';
+		list.setAttribute('role','listbox');
+		list.hidden = true;
+		(wrap || form || document.body).appendChild(list);
+
+		var selIndex = -1; // keyboard selection index
+		var items = []; // current suggestion items [{el,data}]
+		var lastQuery = null;
+		var pending = null;
+		var debounceTimer = null;
+
+		function clearList(){
+			list.innerHTML=''; items=[]; selIndex=-1; list.hidden = true;
+		}
+		function render(itemsData){
+			list.innerHTML = '';
+			items = [];
+			itemsData.forEach(function(it, idx){
+				var row = document.createElement('div');
+				row.className = 'search-suggestion';
+				row.setAttribute('role','option');
+				row.setAttribute('data-index', String(idx));
+				var priceHtml = (it.price !== null && it.price !== undefined) ? (' · $' + escapeHtml(it.price)) : '';
+				row.innerHTML = '<div class="ss-title">' + escapeHtml(it.description || it.name || '') + '</div>' +
+					'<div class="ss-sub">' + escapeHtml(it.name || '') + priceHtml + '</div>';
+				row.addEventListener('mousedown', function(e){
+					// Use mousedown to navigate before input blurs
+					e.preventDefault();
+					window.location.href = it.url;
+				});
+				list.appendChild(row);
+				items.push({ el: row, data: it });
+			});
+			list.hidden = items.length === 0;
+		}
+		function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]); }); }
+		function highlight(idx){
+			for (var i=0;i<items.length;i++){ items[i].el.classList.toggle('active', i===idx); }
+			selIndex = idx;
+			if (idx>=0 && items[idx]) {
+				var r = items[idx].el.getBoundingClientRect();
+				var lr = list.getBoundingClientRect();
+				if (r.bottom > lr.bottom) list.scrollTop += (r.bottom - lr.bottom);
+				if (r.top < lr.top) list.scrollTop -= (lr.top - r.top);
+			}
+		}
+		function fetchSuggestions(q){
+			if (pending) { try { pending.abort(); } catch(e){} pending = null; }
+			var xhr = new XMLHttpRequest(); pending = xhr;
+			var suggestUrl = input.getAttribute('data-suggest-url');
+			if (!suggestUrl || suggestUrl === '') {
+				// Fallback: build relative to current page directory
+				try {
+					var base = window.location.pathname.replace(/\/[^\/]*$/, '');
+					suggestUrl = base + '/ajax/search_suggestions.php';
+				} catch(e){ suggestUrl = '/ajax/search_suggestions.php'; }
+			}
+			xhr.open('GET', suggestUrl + '?q=' + encodeURIComponent(q));
+			xhr.timeout = 6000; // 6s safety timeout for slow environments
+			xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+			xhr.onreadystatechange = function(){ if (xhr.readyState === 4){ pending = null; try {
+				var json = JSON.parse(xhr.responseText||'{}');
+				if (json && json.success) { render(json.suggestions || []); }
+				else { clearList(); }
+			} catch(e){ clearList(); } } };
+			xhr.ontimeout = function(){ pending = null; /* keep UI responsive */ };
+			xhr.send();
+		}
+		input.setAttribute('autocomplete', 'off');
+		input.addEventListener('input', function(){
+			var q = input.value || '';
+			if (q.trim().length < 2) { clearList(); lastQuery = null; return; }
+			// Always allow re-fetch even for same text; rely on debounce and abort
+			lastQuery = q;
+			clearTimeout(debounceTimer);
+			debounceTimer = setTimeout(function(){ fetchSuggestions(q); }, 120);
+		});
+		// If input regains focus with existing text, trigger suggestions immediately
+		input.addEventListener('focus', function(){
+			var q = (input.value || '').trim();
+			if (q.length >= 2) {
+				clearTimeout(debounceTimer);
+				debounceTimer = setTimeout(function(){ fetchSuggestions(q); }, 60);
+			}
+		});
+		input.addEventListener('keydown', function(e){
+			if (list.hidden) return;
+			if (e.key === 'ArrowDown') { e.preventDefault(); highlight(Math.min(items.length-1, selIndex+1)); }
+			else if (e.key === 'ArrowUp') { e.preventDefault(); highlight(Math.max(0, selIndex-1)); }
+			else if (e.key === 'Enter') {
+				if (selIndex >= 0 && items[selIndex]) { e.preventDefault(); window.location.href = items[selIndex].data.url; clearList(); }
+			}
+			else if (e.key === 'Escape') { clearList(); }
+		});
+		document.addEventListener('click', function(e){ if (!list.hidden && !list.contains(e.target) && e.target !== input) clearList(); });
+	})();
+
+	// --- Order collapse/expand toggles on account page ---
+	(function orderToggles() {
+		var toggles = document.querySelectorAll('.order-toggle');
+		if (!toggles || toggles.length === 0) return;
+		toggles.forEach(function (t) {
+			var id = t.getAttribute('data-order');
+			var table = document.querySelector('.order-items[data-order="' + id + '"]');
+			if (!table) return;
+			t.setAttribute('role','button');
+			t.setAttribute('tabindex','0');
+			t.setAttribute('aria-expanded','true');
+			function toggle() {
+				var expanded = t.getAttribute('aria-expanded') === 'true';
+				if (expanded) {
+					table.style.display = 'none';
+					t.setAttribute('aria-expanded','false');
+				} else {
+					table.style.display = '';
+					t.setAttribute('aria-expanded','true');
+				}
+			}
+			t.addEventListener('click', toggle);
+			t.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+		});
+	})();
+
 });
+
+/* Auto-resize textareas with class .autosize (used by signup form for long addresses) */
+(function () {
+	function autosizeOne(el) {
+		if (!el) return;
+		el.style.height = 'auto';
+		// Add a couple pixels to avoid a 1px scrollbar appearing
+		el.style.height = Math.min(el.scrollHeight + 2, 1000) + 'px';
+	}
+
+	function initAutosize() {
+		document.querySelectorAll('textarea.autosize').forEach(function (ta) {
+			autosizeOne(ta);
+			// remove existing to avoid duplicates
+			ta.removeEventListener('input', ta._autosizeHandler);
+			ta._autosizeHandler = function () { autosizeOne(ta); };
+			ta.addEventListener('input', ta._autosizeHandler, { passive: true });
+		});
+	}
+
+	if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initAutosize);
+	else initAutosize();
+})();
+
+/* Desktop-only subtle parallax for category tiles: translate image slightly on pointermove/hover.
+	 Respects reduced-motion and avoids running on touch devices. */
+(function categoryParallax() {
+	function isTouch() { return ('ontouchstart' in window) || navigator.maxTouchPoints > 0; }
+	if (isTouch()) return;
+	if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+	document.addEventListener('DOMContentLoaded', function () {
+		var cards = document.querySelectorAll('.category-card');
+		if (!cards || cards.length === 0) return;
+
+		cards.forEach(function (card) {
+			var img = card.querySelector('img');
+			if (!img) return;
+			// Use pointermove for smooth tracking on desktop; fallback to mousemove
+			function move(e) {
+				var rect = card.getBoundingClientRect();
+				var cx = rect.left + rect.width / 2;
+				var cy = rect.top + rect.height / 2;
+				var dx = (e.clientX - cx) / rect.width;
+				var dy = (e.clientY - cy) / rect.height;
+				var tx = dx * 6; // small translate range px
+				var ty = dy * 6;
+				img.style.transform = 'translate(' + tx + 'px,' + ty + 'px) scale(1.03)';
+			}
+			function reset() { img.style.transform = ''; }
+			card.addEventListener('pointermove', move, { passive: true });
+			card.addEventListener('pointerleave', reset);
+			card.addEventListener('pointerup', reset);
+		});
+	});
+})();
+
+/* Observe hero-joe and remove blur when it scrolls into view */
+(function heroJoeDynamicBlur(){
+	if (typeof window === 'undefined') return;
+	if (window.matchMedia && (window.matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+	var container = document.querySelector('.hero-joe');
+	if (!container) return;
+
+	// mapping params
+	var maxBlur = 12; // px when mostly out of view
+	var centerDeadZonePx = 18; // small dead zone in px around center where blur is zero
+
+	function setBlur(val) {
+		container.style.setProperty('--joe-blur', val + 'px');
+	}
+
+	function computeAndSet(entry) {
+		var rect = entry.boundingClientRect;
+		var viewportH = window.innerHeight || document.documentElement.clientHeight;
+		// compute distance from vertical center normalized to -1..1
+		var elementCenter = rect.top + rect.height / 2;
+		var norm = (elementCenter - viewportH / 2) / (viewportH / 2);
+		norm = Math.max(-1, Math.min(1, norm));
+
+		// When the element center is near 0 (centered), we want blur=0 within dead zone.
+		// When the element is moved so that half of it is out of frame, produce max blur.
+		// Measure half-out condition: if rect.top >= viewportH/2 or rect.bottom <= viewportH/2 then it's half-out roughly.
+
+		// Compute distance of center from center in pixels
+		var centerPx = Math.abs(elementCenter - (viewportH/2));
+
+		// If within dead zone, zero blur
+		if (centerPx <= centerDeadZonePx) { setBlur(0); return; }
+
+		// Map centerPx (0..viewportH/2) to blur (0..maxBlur) with clamp.
+		var maxDistance = viewportH / 2; // when center at top or bottom
+		var t = Math.min(1, centerPx / maxDistance);
+
+		// soften curve a bit for nicer falloff
+		var eased = Math.pow(t, 0.9);
+		var blur = Math.round(eased * maxBlur * 100) / 100;
+		setBlur(blur);
+	}
+
+	try {
+		var obs = new IntersectionObserver(function(entries){
+			entries.forEach(function(en){
+				computeAndSet(en);
+			});
+		}, { threshold: [0, 0.1, 0.25, 0.5, 0.75, 1] });
+		obs.observe(container);
+		// also update on resize/scroll to keep value in sync
+		window.addEventListener('scroll', function(){ /* no-op; IntersectionObserver triggers on scroll */ }, { passive: true });
+		window.addEventListener('resize', function(){ /* recompute via intersection */ }, { passive: true });
+	} catch (err) {
+		// IntersectionObserver not supported: just remove blur
+		setBlur(0);
+	}
+})();
+
+/* Dark mode toggle + persistence
+   - Applies saved preference from localStorage immediately
+   - Fetches server preference (if logged-in) and applies (server overrides local)
+   - Persists changes to server via POST when toggled
+*/
+(function darkMode(){
+	var storageKey = 'dg_theme';
+	function updateThemeMeta(){
+		try {
+			var meta = document.querySelector('meta#theme-color-dynamic[name="theme-color"]');
+			if (!meta) return;
+			var cs = getComputedStyle(document.documentElement);
+			var bg = cs.getPropertyValue('--bg') || '#ffffff';
+			bg = String(bg).trim();
+			if (bg) meta.setAttribute('content', bg);
+		} catch(e){}
+	}
+	function apply(isDark){
+		try { if (isDark) document.documentElement.classList.add('theme-dark'), document.body.classList.add('theme-dark'); else document.documentElement.classList.remove('theme-dark'), document.body.classList.remove('theme-dark'); } catch(e) {}
+		var cb = document.getElementById('darkmode_toggle'); if (cb) cb.checked = !!isDark;
+		updateThemeMeta();
+	}
+
+	// Apply from localStorage immediately for fast UX
+	try {
+		var local = localStorage.getItem(storageKey);
+		if (local !== null) apply(local === 'dark');
+	} catch (e) { /* storage blocked */ }
+
+	// Query server for saved preference and apply if available
+	try {
+		fetch('/ajax/get_user_prefs.php', { credentials: 'same-origin' }).then(function(r){ if (!r.ok) return null; return r.json(); }).then(function(json){ if (!json) return; if (typeof json.darkmode !== 'undefined' && json.darkmode !== null) { apply(!!json.darkmode); try { localStorage.setItem(storageKey, json.darkmode ? 'dark' : 'light'); } catch(e){} } }).catch(function(){});
+	} catch (e) {}
+
+	// Wire toggle to persist and apply
+	document.addEventListener('DOMContentLoaded', function(){
+		var toggle = document.getElementById('darkmode_toggle'); if (!toggle) return;
+		toggle.addEventListener('change', function(){
+			var isDark = !!toggle.checked; apply(isDark);
+			try { localStorage.setItem(storageKey, isDark ? 'dark' : 'light'); } catch(e){}
+			try {
+				var fd = new FormData(); fd.append('darkmode', isDark ? '1' : '0');
+				fetch('/ajax/update_darkmode.php', { method: 'POST', credentials: 'same-origin', body: fd });
+			} catch(e){ }
+		}, { passive: true });
+
+		// On first load, ensure theme meta matches computed theme
+		try { updateThemeMeta(); } catch(e){}
+	});
+})();

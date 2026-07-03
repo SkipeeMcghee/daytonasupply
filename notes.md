@@ -27,6 +27,8 @@ All data is stored in a SQLite database located at `data/database.sqlite`.  The 
 
 To enable order notification e‑mails set the `COMPANY_EMAIL` environment variable to the address that should receive new purchase orders.  The `sendEmail()` function uses PHP’s built‑in `mail()` to send messages; ensure your PHP configuration permits outgoing mail or replace this function with a suitable SMTP library.
 
+All outbound automated emails now set `Reply-To: packinggenerals@gmail.com` unless a script supplies an explicit address (e.g. the contact form). Messages are sent with UTF‑8 headers; if you previously saw sequences like `â€”` or `â€“` in place of dashes or quotes, this was mojibake from missing charset headers and is resolved. For maximum compatibility, the status update emails use a plain `-` hyphen instead of an em dash.
+
 ## Security considerations
 
 This application is intended as a demonstration and has not been hardened for production.  Passwords are hashed using PHP’s `password_hash` but the login and session logic is basic.  If you plan to deploy this site publicly you should enforce HTTPS, implement CSRF protection, and handle input validation and sanitisation more rigorously.

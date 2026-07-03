@@ -1,230 +1,1068 @@
-/* Minimal styling for Daytona Supply demo */
-body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    background: #f9f9f9;
+/* Daytona Supply — modern responsive styles (mobile-first) */
+:root{
+  --brand:#005EBD; /* Updated from #004080 per request */
+  --accent:#0d6efd;
+  --muted:#6c757d;
+  --bg:#f7f8fb;
+  --card:#ffffff;
+  --text:#0b2238;
+  --radius:10px;
+  --container:1200px;
 }
-header {
-    background: #004080;
-    color: white;
-    padding: 1em;
+/* Dark mode variables - toggled by adding `.theme-dark` to <html> or <body> */
+:root.theme-dark, body.theme-dark {
+  --bg: #121212; /* user requested */
+  --card: #0f1416; /* slightly offset from bg for cards */
+  --text: #e8f6ff;
+  --muted: rgba(255,255,255,0.68);
+  --brand: #0d2b52; /* much darker blue */
 }
-/* Site logo in header */
-.site-brand { display:flex; align-items:center; justify-content:flex-start; margin-bottom:0.6em; margin-left:0.25em; }
-.site-logo { height:88px; width:auto; display:block; }
+*{box-sizing:border-box}
+/* Ensure the page can grow naturally with content; avoid locking body to viewport height */
+html, body { min-height: 100%; height: auto; }
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,"Noto Sans",sans-serif;
+  color:var(--text);
+  background:var(--bg);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+.container{max-width:var(--container);margin:0 auto;padding:0 16px}
+.sr-only{position:absolute!important;height:1px;width:1px;overflow:hidden;clip:rect(1px,1px,1px,1px);white-space:nowrap;border:0;padding:0;margin:-1px}
 
+/* Utility to prevent unwanted word breaks in table headers and other labels */
+.no-break{white-space:nowrap}
+
+/* Header */
+.site-header{background:var(--brand);border-bottom:1px solid rgba(255,255,255,0.08);position:sticky;top:0;z-index:2000}
+.header-inner{display:flex;align-items:center;gap:12px;padding:12px 0}
+.brand{display:flex;align-items:center;margin-left:0}
+.brand .logo{height:44px;width:auto;filter:brightness(0) invert(1);display:block}
+.search-wrap{flex:1}
+.search-form{display:flex;gap:8px}
+.search-form input[type=search]{flex:1;padding:10px 12px;border:1px solid #d7e1ea;border-radius:8px;font-size:clamp(14px,1.6vw,16px)}
+.search-wrap { position: relative; }
+/* Search suggestions dropdown */
+.search-suggestions{position:absolute;left:0;right:0;top:100%;z-index:5001;background:#fff;border:1px solid #d7e1ea;border-top:none;border-radius:0 0 8px 8px;max-height:300px;overflow:auto;box-shadow:0 10px 24px rgba(0,0,0,0.08)}
+.search-suggestion{padding:8px 10px;cursor:pointer;border-top:1px solid #eef3f7}
+.search-suggestion:first-child{border-top:none}
+.search-suggestion .ss-title{font-weight:700;font-size:0.95rem;line-height:1.2}
+.search-suggestion .ss-sub{opacity:0.8;font-size:0.85rem}
+.search-suggestion.active, .search-suggestion:hover{background:#f7faff}
+.search-btn{background:var(--brand);color:#fff;border:none;padding:10px 14px;border-radius:8px;font-weight:700}
+.header-actions{display:flex;gap:10px;align-items:center}
+/* Header action links should be visible on the brand background */
+.header-actions .action{color:#fff;text-decoration:none;font-weight:600}
+.header-actions .link-phone{color:#fff}
+
+/* Strong, high-specificity rules for the cart button to override inherited header link color */
+.site-header .header-actions .nav-cart, .site-header .header-actions .nav-cart * {
+  color: var(--brand) !important;
+}
+.site-header .header-actions .nav-cart {
+  background: #fff;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-weight: 700;
+  text-decoration: none;
+  border: 2px solid rgba(0,94,189,0.18);
+}
+
+/* Account menu (shown on hover/focus for keyboard users) */
+.has-account{position:relative}
+/* Small toggle button to explicitly open/close account menu */
+.account-toggle{background:rgba(255,255,255,0.14);border:0;border-radius:18px;padding:6px 8px;display:inline-flex;flex-direction:column;justify-content:space-between;gap:4px;cursor:pointer;transition:background .25s ease;}
+.account-toggle:hover{background:rgba(255, 255, 255, 0.22)}
+.account-toggle:focus-visible{outline:3px solid rgba(255,255,255,0.4);outline-offset:2px}
+.acct-toggle-bar{width:16px;height:2px;background:#fff;display:block;border-radius:2px}
+.has-account.open .account-toggle{background:#0f56a1}
+@media (max-width:720px){.account-toggle{padding:6px 10px}}
+.has-account .account-link{color:#fff;text-decoration:none;font-weight:700}
+.has-account .account-menu{display:none;position:absolute;left:0;top:100%;background:#fff;color:var(--text);min-width:140px;padding:8px;border-radius:8px;box-shadow:0 8px 20px rgba(11,34,56,0.12);z-index:4000}
+.has-account.edge-right{margin-left:auto}
+.has-account.edge-right .account-link{display:inline-block}
+.has-account.edge-right .account-menu{left:auto;right:0}
+.has-account .account-menu a{display:block;padding:8px 10px;color:var(--text);text-decoration:none;border-radius:6px}
+.has-account .account-menu a{white-space:nowrap}
+.has-account .account-menu .account-menu-item.darkmode-row{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:8px 10px;white-space:nowrap}
+.has-account .account-menu .account-menu-item.darkmode-row .label{font-size:.9rem;font-weight:500}
+.has-account .account-menu .account-menu-item.darkmode-row .dark-toggle{margin:0}
+.has-account .account-menu a:hover{background:#f1f5fb;color:var(--brand)}
+.has-account.open .account-menu { display:block }
+/* Only show on hover when not in suppression state (used after a click-close) */
+.has-account:not(.suppress-hover):hover .account-menu { display:block }
+
+/* Dark mode: account dropdown should be dark with white text */
+html.theme-dark .has-account .account-menu,
+body.theme-dark .has-account .account-menu {
+  background: #1b1b1b; /* dark card background */
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.04);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+}
+html.theme-dark .has-account .account-menu a,
+body.theme-dark .has-account .account-menu a {
+  color: #fff;
+}
+html.theme-dark .has-account .account-menu a:hover,
+body.theme-dark .has-account .account-menu a:hover {
+  background: rgba(255,255,255,0.04);
+  color: #fff;
+}
+
+/* Dark mode styling for catalogue quantity dropdown */
+html.theme-dark .catalogue-table select.qty-preset,
+body.theme-dark .catalogue-table select.qty-preset {
+  background: #1b1b1b !important;
+  color: #fff !important;
+  border-color: rgba(255,255,255,0.2) !important;
+}
+html.theme-dark .catalogue-table select.qty-preset:focus,
+body.theme-dark .catalogue-table select.qty-preset:focus {
+  outline: 2px solid rgba(255,255,255,0.25);
+  outline-offset: 1px;
+}
+html.theme-dark .catalogue-table select.qty-preset option,
+body.theme-dark .catalogue-table select.qty-preset option {
+  background: #1b1b1b;
+  color: #fff;
+}
+
+/* Light mode: make qty preset select clearly visible with dark chevron */
+.catalogue-table select.qty-preset {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-color: #ffffff;
+  color: var(--text);
+  border: 1px solid #d7e1ea;
+  padding-right: 28px; /* room for chevron */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 20 20' fill='none'><path d='M5 7l5 5 5-5' stroke='%230b2238' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 14px 14px;
+}
+
+/* Dark mode: swap chevron to white */
+html.theme-dark .catalogue-table select.qty-preset,
+body.theme-dark .catalogue-table select.qty-preset {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 20 20' fill='none'><path d='M5 7l5 5 5-5' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 8px center !important;
+  background-size: 14px 14px !important;
+}
+
+/* Make header action controls visually consistent and add subtle dividers */
+.header-actions .action {
+  display:inline-flex;
+  align-items:center;
+  gap:.5rem;
+  padding:.35rem .6rem;
+  border-radius:6px;
+  background:transparent;
+  color:#fff;
+  text-decoration:none;
+}
+.header-actions .action + .action {
+  margin-left:.5rem;
+  padding-left:.8rem; /* space between text and divider */
+  border-left:1px solid rgba(255,255,255,0.12);
+}
+
+/* Muted search button (keeps focus ring via :focus-visible) */
+.search-wrap .search-btn, .header-actions .search-btn {
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.06);
+  padding:8px 12px;
+  border-radius:6px;
+}
+
+/* Keep cart as a distinct white pill */
+.nav-cart{background:#fff;padding:8px 10px;border-radius:8px;font-weight:700;text-decoration:none;border:2px solid rgba(0,64,128,0.08)}
+.nav-cart, .nav-cart * { color: var(--brand) !important; }
+.nav-cart:hover{background:#f1f5fb}
+
+/* Footer social icon sizing */
+.f-social .social-icon { width:56px; height:56px; display:inline-block; vertical-align:middle; }
+.f-social .social-icon { filter: none; }
+/* Increase LinkedIn icon contrast in light mode (footer now brand blue) */
+html:not(.theme-dark) .site-footer .f-social .social-icon {
+  /* Make the PNG appear as a clean white glyph without extra container chrome */
+  filter: brightness(0) invert(1) contrast(1.05) saturate(1.1);
+  background: none;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+  transition: filter .25s ease;
+}
+html:not(.theme-dark) .site-footer .f-social a:hover .social-icon {
+  filter: brightness(1.2) invert(1) contrast(1.05) saturate(1.15);
+}
+/* Preserve original look in dark mode (icon likely already light) */
+html.theme-dark .site-footer .f-social .social-icon, body.theme-dark .site-footer .f-social .social-icon {
+  filter: none;
+  background: transparent;
+  box-shadow: none;
+  padding: 0; /* keep original intrinsic sizing in dark mode */
+  border-radius: 0;
+}
+/* Slightly smaller on very small screens */
+@media (max-width:480px) {
+  .f-social .social-icon { width:40px; height:40px; }
+}
+/* AI Systems info block */
+.ai-systems { margin-top: 24px; padding: 16px; border: 1px solid #e3e3e3; border-left: 4px solid var(--brand); border-radius: 6px; background: #fafafa; }
+html.theme-dark .ai-systems, body.theme-dark .ai-systems {
+  background: #0f1416; /* darker than form-card for separation */
+  border-color: rgba(255,255,255,0.12);
+  border-left-color: var(--accent);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.06) inset, 0 10px 24px rgba(0,0,0,0.35);
+}
+.ai-systems h2 { margin-top: 0; }
+html.theme-dark .ai-systems h2, body.theme-dark .ai-systems h2 { color: #e8f6ff; }
+/* Compact landscape mode: when device height is small (landscape phone) shrink header and remove sticky to free vertical space */
+@media (orientation: landscape) and (max-height:520px) {
+  /* Remove sticky to free space, but keep everything visible */
+  .site-header { position:static; }
+  .header-inner { padding:6px 0; flex-wrap:wrap; }
+  .brand .logo { height:34px; }
+  /* Keep search & phone visible but compact */
+  .search-wrap { display:block !important; width:100% !important; margin-top:6px; }
+  .search-form input[type=search] { padding:6px 10px; font-size:14px; }
+  .search-btn { padding:6px 10px; font-size:14px; }
+  .header-actions { gap:6px; }
+  .account-toggle { padding:4px 6px; }
+  /* Let cart flow inline instead of absolute pinning */
+  .nav-cart { position: static !important; top:auto; right:auto; }
+}
+  .catalogue-table td:nth-child(3),
+  .catalogue-table td:nth-child(3) form.cart-add { display: flex !important; flex-direction: column !important; align-items: stretch; gap: 6px; }
+  .catalogue-table td:nth-child(3) { overflow: visible !important; height: auto !important; }
+  .catalogue-table td:nth-child(3) .qty-wrap { display: flex !important; gap: 6px; align-items: center; flex-wrap: nowrap; }
+  /* Keep qty input and preset select on the same (top) row and make select a compact chevron-only control */
+  .catalogue-table td:nth-child(3) .qty-wrap select.qty-preset {
+    width: 2.6em !important;
+    min-width: 2.4em !important;
+    padding-right: 0 !important;
+    background-position: center center !important; /* center the chevron */
+    background-size: 14px 14px !important;
+  }
+  .catalogue-table td:nth-child(3) .actions-inline { display: flex !important; gap: 8px; align-items: stretch; flex-wrap: nowrap; }
+  .catalogue-table td:nth-child(3) .actions-inline > * { flex: 0 0 auto; min-width: 0; }
+  .catalogue-table td:nth-child(3) .actions-inline button[type="submit"] {
+    flex: 1 1 auto; min-width: 56px; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center;
+  }
+
+  /* Force a stable compact size for the Add button so text stays horizontal (no letter stacking) */
+  .catalogue-table td:nth-child(3) .actions-inline button[type="submit"] {
+    width: 32px !important;
+    min-width: 32px !important;
+    height: 28px !important;
+    flex: 0 0 32px !important;
+    padding: 0 !important;
+    line-height: 1 !important;
+    writing-mode: horizontal-tb !important;
+    letter-spacing: 0.5px;
+    font-size: 12px;
+  }
+  .catalogue-table td:nth-child(3) form.cart-add select.qty-preset { min-width: 0; }
+  .catalogue-table td:nth-child(3) input[type=number] { width: 2.8em !important; }
+/* Small screens: remove dividers to keep layout compact */
+@media (max-width: 720px) {
+  .header-actions .action + .action {
+    border-left: none;
+    margin-left: .35rem;
+    padding-left: .35rem;
+  /* Make the nav menu span the container width and reset margins */
+  .main-nav .nav-menu { width: 100% !important; margin-left: 0 !important; margin-right: 0 !important; }
+  .main-nav .nav-cats { margin-left: 0 !important; margin-right: 0 !important; }
+  }
+  .search-wrap .search-btn { padding:6px 8px; }
+}
+
+/* Mobile header layout: prioritize logo left and cart right on a single top row,
+   then stack search and nav on separate rows for better touch layout */
+@media (max-width: 1440px) {
+  /* Enable wrapping at wider screens per request */
+  .header-inner { display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+  .brand { order: 1; flex: 0 0 auto; }
+  /* Keep cart pinned */
+  .header-inner { position: relative; }
+  .nav-cart { position:absolute; right:16px; top:12px; z-index:70; }
+  /* Second row: header actions (call + account/login + cart already pinned) */
+  .header-actions { order:2; width:100%; display:flex; align-items:center; gap:12px; justify-content:space-between; }
+  /* Third row: search spans full width */
+  .search-wrap { order:3; width:100% !important; margin-top:6px !important; }
+  .search-form { width:100%; }
+  /* Nav below search (stacked) */
+  .main-nav .nav-inner { padding:6px 0; }
+  .main-nav .nav-toggle { display:inline-flex; }
+  .main-nav .nav-menu { display:block; width:100%; }
+  .nav-cats { display:block; padding:8px 0; }
+  .nav-cats a, .nav-cats button:not(.mega-close) { display:block; width:100%; padding:10px 12px; border-radius:8px; margin-bottom:6px; background:var(--card); color:var(--text); }
+  /* Auth visibility rules still apply */
+  body.guest .header-actions .has-account { display:none !important; }
+  body.guest .header-actions .login-register { display:inline-flex; }
+  body.is-authenticated .header-actions .login-register { display:none !important; }
+}
+@media (max-width: 720px) {
+  .header-inner { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .brand { order: 1; flex: 0 0 auto; }
+  /* Keep cart prominent in the top row next to the logo */
+  /* Pin the cart to the top-right on mobile regardless of header flow */
+  .header-inner { position: relative; }
+  .nav-cart { display:inline-flex; position: absolute; right: 16px; top: 12px; margin-left:0; z-index:70; }
+
+  /* For narrow mobile: maintain search last (third row) */
+  .search-wrap { order:3; width:100% !important; display:block !important; margin-top:6px !important; flex-basis:100% !important; }
+  .search-form { width:100%; display:flex; gap:8px; }
+
+  /* Header actions row: phone left; account/login right */
+  .header-actions { order:2; display:flex; align-items:center; gap:8px; width:100%; justify-content:space-between; }
+  .header-actions .action { padding:.35rem .5rem; }
+  .header-actions .link-phone { order:1; display:inline-flex; }
+  .header-actions .has-account { order:2; display:inline-flex; }
+  .header-actions .login-register { order:2; display:none; font-weight:600; }
+  /* Guest state: hide account, show login */
+  body.guest .header-actions .has-account { display:none !important; }
+  body.guest .header-actions .login-register { display:inline-flex; }
+  /* Authenticated state: hide login */
+  body.is-authenticated .header-actions .login-register { display:none !important; }
+  .search-form { width:100%; display:flex; gap:8px; }
+  .search-form input[type=search] { width:100%; }
+
+  /* Make the search button and input larger on mobile for touch targets */
+  .search-form input[type=search], .search-form .search-btn { padding: 10px 12px; font-size: 15px; }
+  .search-form .search-btn { white-space:nowrap; }
+
+  /* Nav should be visible as a stacked row under search (use nav-toggle to expand) */
+  .main-nav .nav-inner { padding:6px 0; }
+  .main-nav .nav-toggle { display:inline-flex; }
+  .main-nav .nav-menu { display:block; width:100%; }
+  .nav-cats { display:block; padding:8px 0; }
+  .nav-cats a, .nav-cats button:not(.mega-close) { display:block; width:100%; padding:10px 12px; border-radius:8px; margin-bottom:6px; background:var(--card); color:var(--text); }
+}
+/* On screens ≤768px: render lower nav as two rows of three */
 @media (max-width: 768px) {
-    .site-logo { height:72px; }
+  /* Hide the nav toggle so it doesn't reserve space on the left */
+  .main-nav .nav-toggle { display: none !important; }
+  /* Center the nav inner so the grid is perfectly centered */
+  .main-nav .nav-inner { justify-content: center !important; }
+  .main-nav .nav-menu { display: block; width: 100%; }
+  .nav-cats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 10px; padding: 8px 0; }
+  .nav-cats li { list-style: none; }
+  .nav-cats a, .nav-cats button:not(.mega-close) {
+    width: 100%; margin: 0; text-align: center;
+    padding: 10px 12px; border-radius: 8px;
+    background: var(--card); color: var(--text);
+  }
 }
-header .nav {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    gap: 1em;
+/* Restore the cart button to the previous appearance (accent outline on brand header) */
+.nav-cart{background:#fff;padding:8px 10px;border-radius:8px;font-weight:700;text-decoration:none;border:2px solid rgba(0,64,128,0.08)}
+/* Force brand color for cart label and its children to avoid inherited white from global header links */
+.nav-cart, .nav-cart * { color: var(--brand) !important; }
+.nav-cart:hover{background:#f1f5fb}
+.nav-cart #cart-count{font-weight:800}
+
+/* Make the cart button have a hard, visible drop-shadow and interactive states */
+.nav-cart {
+  transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
+  /* Hard (non-blurred) drop-shadow: vertical offset with no blur for crisp edge */
+  box-shadow: 0 4px 0 rgba(11,34,56,0.10);
 }
-header .nav a {
-    color: white;
-    text-decoration: none;
+.nav-cart:hover {
+  /* Do not translate on hover per UX request; keep a slightly stronger shadow */
+  box-shadow: 0 6px 0 rgba(11,34,56,0.12);
 }
-main {
-    padding: 1em;
-}
-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-table th, table td {
-    border: 1px solid #ccc;
-    padding: 0.5em;
-}
-table th {
-    background: #eee;
-}
-/* Numeric alignment for currency and quantity */
-td.numeric, th.numeric {
-    text-align: right;
-    white-space: nowrap;
+.nav-cart:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 0 rgba(11,34,56,0.06);
 }
 
-/* Order grouping visuals */
-.order-group {
-    border: 1px solid #ddd;
-    background: #fff;
-    margin-bottom: 0.5em;
-    padding: 0.25em;
-}
-.order-total-row td {
-    background: #f5f5f5;
-    font-weight: 700;
+/* Dark mode: force white text for the cart and make shadow light so it shows on dark bg */
+html.theme-dark .site-header .header-actions .nav-cart,
+body.theme-dark .site-header .header-actions .nav-cart {
+  background: #1b1b1b;
+  border-color: rgba(255,255,255,0.08);
+  box-shadow: 0 4px 0 rgba(255,255,255,0.07);
 }
 
-/* Collapse toggle */
-.order-toggle {
-    cursor: pointer;
-    color: #0b5ed7;
-    text-decoration: underline;
-    font-size: 0.9em;
+/* Make the header's bottom border dark in theme-dark to remove visible white line */
+html.theme-dark .site-header, body.theme-dark .site-header {
+  border-bottom: 1px solid rgba(0,0,0,0.36);
 }
-form {
-    display: inline-block;
+/* High-specificity children override to counter earlier !important rules */
+html.theme-dark .site-header .header-actions .nav-cart,
+html.theme-dark .site-header .header-actions .nav-cart *,
+body.theme-dark .site-header .header-actions .nav-cart,
+body.theme-dark .site-header .header-actions .nav-cart * {
+  color: #ffffff !important;
 }
-button {
-    padding: 0.5em 1em;
-    background: #004080;
-    color: white;
-    border: none;
-    cursor: pointer;
+html.theme-dark .site-header .header-actions .nav-cart:hover,
+body.theme-dark .site-header .header-actions .nav-cart:hover {
+  /* keep hover visuals but do not move the element */
+  box-shadow: 0 6px 0 rgba(255,255,255,0.09);
+  background: #242424;
 }
-button:hover {
-    background: #003060;
-}
-.message {
-    padding: 0.5em;
-    background: #dff0d8;
-    border: 1px solid #d6e9c6;
-    margin-bottom: 1em;
+html.theme-dark .site-header .header-actions .nav-cart:active,
+body.theme-dark .site-header .header-actions .nav-cart:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 0 rgba(255,255,255,0.04);
 }
 
-/* Make signup form inputs approximately twice as wide for better usability */
-#signup_form input[type="text"],
-#signup_form input[type="email"],
-#signup_form input[type="password"],
-#signup_form input[type="number"],
-#signup_form textarea, #signup_form select {
-    width: 680px; /* approx twice the default in many layouts */
-    max-width: 100%; /* remain responsive on small screens */
-    box-sizing: border-box;
+/* Navigation */
+.main-nav{background:var(--brand);color:#fff}
+.nav-inner{display:flex;align-items:center;gap:12px;padding:8px 0}
+.main-nav, .nav-inner { position: relative; z-index: 2500; }
+.nav-toggle{background:transparent;border:0;color:#fff;padding:8px 12px;font-weight:700}
+.nav-menu{display:block}
+.nav-cats{list-style:none;margin:0;padding:8px 0;display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+/* Standardize lower nav links so all behave like buttons */
+.nav-cats a,.nav-cats button:not(.mega-close){color:#fff;background:transparent;border:0;padding:8px 10px;border-radius:6px;font-weight:700;line-height:1;text-decoration:none}
+.nav-cats a:hover, .nav-cats button:hover{background:rgba(255,255,255,0.06);text-decoration:none}
+.nav-cats .cat-btn{background:transparent;color:#fff;border:0;padding:8px 10px;border-radius:6px;font-weight:700;cursor:pointer;line-height:1}
+.nav-cats .cat-btn:hover{background:rgba(255,255,255,0.06)}
+.nav-cats .has-mega, .nav-cats .products-item{position:relative; z-index: 2600}
+.mega{position:absolute;left:0;top:100%;background:#fff;color:var(--text);padding:18px;display:none;box-shadow:0 10px 30px rgba(11,34,56,0.12);border-radius:8px;width:min(880px,95vw);z-index:3000}
+.mega .mega-close{
+  position:absolute;top:8px;right:8px;
+  background:transparent !important;
+  color:#dc3545 !important;
+  border:0;
+  width:28px !important;height:28px !important;
+  display:inline-flex !important;align-items:center;justify-content:center;
+  padding:0 !important;margin:0 !important;
+  line-height:1 !important;text-align:center;
+  border-radius:50%;font-weight:800;cursor:pointer;
+}
+.mega .mega-close:hover{background:transparent}
+.mega .mega-close:focus-visible{outline:3px solid rgba(220,53,69,0.4);outline-offset:2px}
+.mega-col{float:left;width:33%;padding:6px}
+.mega h4{margin:0 0 8px;font-size:14px;letter-spacing:0.06em}
+.has-mega:hover .mega,.has-mega:focus-within .mega,
+.products-item:hover .mega, .products-item:focus-within .mega {display:block}
+/* When suppress-hover/force-closed is set on the container, do not show the mega on hover or focus */
+.has-mega.suppress-hover:hover .mega,
+.products-item.suppress-hover:hover .mega,
+.has-mega.suppress-hover:focus-within .mega,
+.products-item.suppress-hover:focus-within .mega,
+.has-mega.force-closed:hover .mega,
+.products-item.force-closed:hover .mega,
+.has-mega.force-closed:focus-within .mega,
+.products-item.force-closed:focus-within .mega { display: none !important; }
+
+/* On the products listing page, never open the products mega dropdown */
+body.page-products .products-item .mega { display: none !important; }
+body.page-products .products-item:hover .mega,
+body.page-products .products-item:focus-within .mega { display: none !important; }
+
+/* Center lower nav across the full width on desktop */
+.main-nav .nav-toggle { display: none; }
+.main-nav .nav-menu { flex: 1 1 auto; }
+.main-nav .nav-inner { justify-content: center; }
+
+/* Restore mobile behavior: show toggle and let menu span 100% under search */
+@media (max-width: 720px) {
+  .main-nav .nav-toggle { display: inline-flex; }
+  .main-nav .nav-inner { justify-content: flex-start; }
+  .main-nav .nav-menu { flex: 0 0 100%; }
 }
 
-/* Make My Account form inputs approximately twice as wide as default */
-#account_form input[type="text"],
-#account_form input[type="email"],
-#account_form input[type="password"],
-#account_form input[type="number"],
-#account_form textarea, #account_form select {
-    width: 680px;
-    max-width: 100%;
-    box-sizing: border-box;
-}
+/* Ensure anchors inside the white mega menu are readable and list bullets are removed */
+.mega ul{list-style:none;margin:0;padding:0}
+.mega li{margin-bottom:8px}
+.mega a{color:var(--text);text-decoration:none}
+.mega a:hover{color:var(--brand);text-decoration:none}
 
-/* Home hero styles */
-.home-hero { margin: 1.25em 0; }
-.home-hero .hero-inner { display:flex; gap:1.25em; align-items:center; }
-.home-hero .hero-media { flex: 0 0 220px; }
-.hero-img { width:100%; max-width:220px; height:auto; display:block; border-radius:8px; }
-.home-hero .hero-content { flex:1 1 auto; }
-.home-hero h3 { margin:0 0 0.5em 0; font-size:1.25rem; color:#002b5c; }
-.lead { margin:0 0 0.75em 0; font-size:1rem; color:#222; line-height:1.4; }
-.hero-features { list-style: disc; margin:0 0 0.75em 1.25em; padding:0; color:#333; }
-.hero-features li { margin:0.35em 0; }
-.hero-ctas { display:flex; gap:0.6em; margin-top:0.5em; }
-.hero-ctas .view-btn { background:#004080; color:#fff; box-shadow:none; }
+/* Make All Products behave like the categories hover (show a simple dropdown) */
+.nav-cats .all-products{position:relative}
+.nav-cats .all-products:hover + .mega, .nav-cats .all-products:focus + .mega { display: block; }
 
-/* Generic page hero to give catalogue/cart/checkout/account/signup/login pages
-   a consistent, attractive header like the home page. */
-.page-hero {
-    background: #ffffff;
-    padding: 1em;
-    border-radius: 8px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.06);
-    margin: 1em 0;
-}
-.page-hero h1, .page-hero h2 {
-    margin: 0 0 0.45em 0;
-    color: #002b5c;
-}
-.page-hero .lead {
-    margin: 0 0 0.75em 0;
-    color: #333;
-}
-
+/* On mobile, let the header scroll away normally (disable sticky) */
 @media (max-width: 768px) {
-    .home-hero .hero-inner { flex-direction:column; align-items:flex-start; }
-    .home-hero .hero-media { flex:0 0 auto; }
-    .hero-img { max-width:180px; }
-    .lead { font-size:0.95rem; }
-    .hero-ctas { flex-wrap:wrap; }
-}
-footer {
-    text-align: center;
-    padding: 1em;
-    background: #eee;
-    margin-top: 2em;
+  .site-header { position: static; top: auto; }
 }
 
-/* Favorite star button styles */
-.fav-toggle { display:inline-flex; align-items:center; justify-content:center; padding:4px; }
-.fav-toggle .fav-icon path { fill: transparent; stroke: #000; stroke-width:1.5; transition: fill 200ms ease, stroke 200ms ease, transform 180ms ease; }
-.fav-toggle { background: transparent; border: none; }
-.fav-toggle:hover .fav-icon path { stroke: #000; transform: scale(1.05); }
-.fav-toggle.fav-on .fav-icon path { fill: #ffd54f; stroke: #000; }
-.fav-toggle.fav-on .fav-icon { filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15)); }
+/* Directions map card */
+.map-card{background:var(--card);border-radius:12px;box-shadow:0 10px 30px rgba(11,34,56,0.06);overflow:hidden}
+.map-aspect{position:relative;width:100%;padding-bottom:56.25%;background:#e9f2fb}
+.map-frame{position:absolute;inset:0;width:100%;height:100%;border:0}
+.map-meta{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:12px 14px;border-top:1px solid rgba(11,34,56,0.08)}
+.map-actions{display:flex;gap:10px;flex-wrap:wrap}
+.btn-open-maps,.btn-call{display:inline-flex;align-items:center;gap:8px;text-decoration:none;font-weight:700;border-radius:8px;padding:10px 12px}
+.btn-open-maps{background:var(--brand);color:#fff}
+.btn-open-maps:hover{filter:brightness(1.05)}
+.btn-call{background:#0c7c3f;color:#fff}
+.btn-call:hover{filter:brightness(1.05)}
 
-/* Standardized view buttons (Show All / Show Favorites) */
-.view-btn {
-    padding:6px 10px;
-    border-radius:6px;
-    text-decoration:none;
-    background:#bfbfbf; /* darker */
-    color:#000;
-    font-weight:600;
-    display:inline-block;
-    box-shadow:0 6px 18px rgba(0,0,0,0.12);
+/* Dark mode adjustments for map card */
+html.theme-dark .map-card, body.theme-dark .map-card { background:#151a1d; box-shadow:0 14px 40px rgba(0,0,0,0.5); }
+html.theme-dark .map-meta, body.theme-dark .map-meta { border-top:1px solid rgba(255,255,255,0.06); }
+
+/* Hero carousel */
+.hero-section{background:linear-gradient(180deg,#f5f9ff,transparent);padding:18px 0}
+.hero-wrap{position:relative}
+.hero-carousel{position:relative;overflow:hidden;border-radius:var(--radius)}
+.carousel-track{display:flex;transition:transform 420ms ease}
+.carousel-slide{min-width:100%;display:flex;align-items:center;gap:18px;padding:28px;background:linear-gradient(90deg,rgba(255,255,255,0.9),rgba(255,255,255,0.6));}
+.slide-img{width:120px;height:120px;object-fit:contain;border-radius:8px}
+.slide-copy{flex:1}
+.slide-title{font-weight:800;letter-spacing:0.12em;text-transform:uppercase;margin:0 0 8px;font-size:clamp(20px,6.5vw,36px)}
+.slide-sub{margin:0;color:var(--muted)}
+.cta{display:inline-block;margin-top:10px;padding:10px 16px;background:var(--accent);color:#fff;border-radius:8px;text-decoration:none;font-weight:700}
+.carousel-control{position:absolute;top:50%;transform:translateY(-50%);background:rgba(11,34,56,0.7);color:#fff;border:0;padding:6px 10px;border-radius:6px;font-size:20px;z-index:20}
+.carousel-control.prev{left:12px}
+.carousel-control.next{right:12px}
+.carousel-dots{position:absolute;left:50%;transform:translateX(-50%);bottom:12px;display:flex;gap:8px}
+.carousel-dots button{width:10px;height:10px;border-radius:50%;border:0;background:rgba(11,34,56,0.25)}
+.carousel-dots button.active{background:var(--brand)}
+
+/* Promo tiles */
+.promo-tiles{padding:18px 0}
+.promo-grid{display:grid;grid-template-columns:repeat(1,1fr);gap:12px}
+.promo.card{background:var(--card);padding:18px;border-radius:12px;text-decoration:none;color:var(--text);box-shadow:0 8px 20px rgba(11,34,56,0.06);transition:transform 120ms ease, box-shadow 120ms ease, background 120ms ease}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .promo.card:hover, .promo.card:focus-within { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(11,34,56,0.08); }
+  .promo.card:active, .promo.card.active { transform: translateY(0); box-shadow: 0 6px 12px rgba(11,34,56,0.06); }
 }
-.view-btn:hover { box-shadow:0 8px 20px rgba(0,0,0,0.14); }
-.view-btn.active {
-/* Added message (non-intrusive) */
-.added-msg { font-weight:700; box-shadow: 0 6px 18px rgba(0,0,0,0.12); }
-    box-shadow:none;
-    transform:translateY(1px);
-    background:#e9e9e9;
+
+.promo.card { position: relative; overflow: hidden; }
+/* Sheen/glare disabled per design request */
+.promo.card::after { display: none !important; }
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  /* Neutralize any hover reveal of the sheen */
+  .promo.card:hover::after, .promo.card:focus-within::after {
+    transform: none !important;
+    opacity: 0 !important;
+    transition: none !important;
+    display: none !important;
+  }
+}
+.promo.card h3{margin:0 0 6px;text-transform:uppercase;letter-spacing:0.08em}
+
+/* Message strip */
+.message-strip{padding:8px 0;background:#fff;border-top:1px solid #eef4fb;border-bottom:1px solid #eef4fb}
+.message-list{display:flex;gap:18px;list-style:none;margin:0;padding:8px 0;overflow:hidden;justify-content:center;text-align:center}
+.message-list li{font-weight:700;color:var(--brand)}
+
+/* Dark-mode: make the message strip readable with white text and a subtle dark card */
+html.theme-dark .message-strip, body.theme-dark .message-strip {
+  background: #121212; /* match page dark bg */
+  border-top: none; /* remove light-top border seen under header */
+  border-bottom-color: rgba(255,255,255,0.04);
 }
 
-/* SKU filter buttons */
-.sku-btn {
-    padding:6px 10px;
-    border-radius:6px;
-    text-decoration:none;
-    background:#5c5f63; /* slightly lighter unpressed */
-    color:#fff;
-    font-weight:600;
-    display:inline-block;
-    box-shadow:0 6px 16px rgba(0,0,0,0.18);
+/* Ensure the hero area below the sticky header is dark in dark mode to avoid a pale strip */
+html.theme-dark .hero-section, body.theme-dark .hero-section {
+  background: linear-gradient(180deg,#0f1416,transparent);
 }
-.sku-btn:hover { box-shadow:0 10px 26px rgba(0,0,0,0.22); background:#4a4d51; }
-.sku-btn.active { box-shadow:none; transform:translateY(1px); background:#3b3f44; }
+html.theme-dark .message-list li, body.theme-dark .message-list li {
+  color: #ffffff;
+}
 
-/* Proceed to cart button used in catalogue lead */
-.proceed-btn { display:inline-block; padding:6px 8px; background:#0d6efd; color:#fff; border-radius:6px; text-decoration:none; font-weight:700; font-size:0.9rem; margin-left:6px; }
-.proceed-btn:hover { background:#0b5ed7; }
+/* Wide banner */
+.wide-banner{position:relative;margin:18px 0}
+.wide-banner img{width:100%;display:block;border-radius:12px;object-fit:cover}
+.banner-overlay{position:absolute;left:20px;top:20px;color:rgba(255,255,255,0);padding:18px;border-radius:8px;z-index:4;pointer-events:auto}
+.banner-overlay::before{content:'';position:absolute;inset:0;border-radius:8px;background:transparent;z-index:-1;}
+.banner-overlay h2{margin:0;font-size:clamp(18px,2.2vw,32px);text-transform:uppercase;letter-spacing:0.06em;line-height:1.05;font-weight:800;max-width:78ch;text-shadow:0 6px 20px rgba(2,6,12,0.5)}
 
-/* Muted variant for less-prominent actions (gray background) */
-.muted-btn {
-    background: #6c757d !important;
-    color: #fff !important;
+/* Make overlay responsive and keep it readable on small screens */
+@media (max-width:720px) {
+  .banner-overlay{left:12px;right:12px;top:12px;padding:12px}
+  .banner-overlay h2{font-size:clamp(18px,6.6vw,22px);line-height:1.08}
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .banner-overlay h2 { transition: none; }
+}
+
+/* Small bottom-left caption mirroring main banner message */
+.banner-bottom-left {
+  position: absolute;
+  left: 18px;
+  bottom: 18px;
+  z-index: 5;
+  color: rgba(255,255,255,0.9);
+  font-weight:700;
+  text-transform:none;
+  font-size: clamp(18px, 2.2vw, 32px);
+  letter-spacing:0.02em;
+  text-shadow: 0 6px 18px rgba(2,6,12,0.6);
+  pointer-events: auto;
+  padding: 6px 10px;
+  border-radius:6px;
+  background: linear-gradient(180deg, rgba(0,0,0,0.12), rgba(0,0,0,0.24));
+}
+
+@media (max-width:720px) {
+  .banner-bottom-left { left: 12px; bottom: 12px; font-size:14px; padding:6px 8px; }
+}
+
+/* Center-right caption: vertically centered, right-aligned */
+.banner-center-right {
+  position: absolute;
+  right: 22px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;
+  color: rgba(255,255,255,0.92);
+  font-weight:700;
+  font-size: clamp(18px, 2.2vw, 32px);
+  text-align: right;
+  letter-spacing: 0.02em;
+  text-shadow: 0 6px 18px rgba(2,6,12,0.6);
+  pointer-events: auto;
+  padding: 6px 10px;
+  border-radius:6px;
+  background: linear-gradient(180deg, rgba(0,0,0,0.08), rgba(0,0,0,0.18));
+}
+
+/* Unified caption style and desktop hover interaction for all banner captions */
+/* These rules make the smaller captions visually match the main overlay and
+   add a subtle pop + warmth on hover when the banner is hovered. Motion is
+   disabled for users who prefer reduced motion or on touch/hoverless devices. */
+.wide-banner .banner-overlay,
+.wide-banner .banner-bottom-left,
+.wide-banner .banner-center-right {
+  transition: transform 360ms cubic-bezier(.2,.9,.2,1), box-shadow 360ms ease, background-color 420ms ease, opacity 320ms ease;
+  will-change: transform, box-shadow, opacity;
+  border-radius: 8px;
+}
+
+/* Expand hit area so hover triggers when pointer gets near the text. The pseudo
+   element is invisible but increases the effective hover zone without moving
+   visual elements. */
+.wide-banner .banner-overlay::before,
+.wide-banner .banner-bottom-left::before,
+.wide-banner .banner-center-right::before {
+  content: '';
+  position: absolute;
+  inset: -18px; /* expand 18px around each caption */
+  border-radius: 12px;
+  background: transparent;
+  pointer-events: none; /* keep pseudo-element non-interactive while still extending hover */
+}
+
+/* Make the smaller captions visually consistent with the main overlay */
+.wide-banner .banner-bottom-left,
+.wide-banner .banner-center-right {
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  /* start transparent by default — hover will reveal the caption */
+  background: transparent;
+  color: rgba(255,255,255,0); /* text hidden until hover */
+  text-shadow: none;
+}
+
+/* (Removed dark-mode-specific banner caption override so overlay behaves the same in both themes) */
+
+/* Carousel slide images: add subtle frame and increase contrast in dark mode */
+/* Dark-mode carousel: make slides fully dark with white text and no image drop-shadows */
+html.theme-dark .carousel-slide,
+body.theme-dark .carousel-slide {
+  background: linear-gradient(90deg, rgba(20,20,20,1), rgba(20,20,20,0.98));
+  color: #ffffff;
+}
+
+html.theme-dark .slide-img, body.theme-dark .slide-img {
+  background: transparent;
+  box-shadow: none; /* remove noisy shadows */
+  border-radius: 8px;
+}
+
+/* Ensure slide copy and CTAs contrast in dark mode */
+html.theme-dark .slide-title, body.theme-dark .slide-title,
+html.theme-dark .slide-sub, body.theme-dark .slide-sub,
+html.theme-dark .slide-copy a.cta, body.theme-dark .slide-copy a.cta {
+  color: #ffffff;
+}
+
+/* Ensure carousel controls/dots are visible on dark backgrounds */
+html.theme-dark .carousel-control, body.theme-dark .carousel-control {
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+}
+
+/* Catalogue: show only the arrow for the quantity preset when closed */
+.catalogue-table select.qty-preset {
+  /* Keep native arrow via default appearance; hide the selected text */
+  color: transparent !important; /* hide selected value (override dark-mode white) */
+  -webkit-text-fill-color: transparent; /* Safari/WebKit */
+  text-shadow: 0 0 0 transparent; /* avoid antialiased ghosting */
+  width: 2.6em; /* compact width to emphasize arrow */
+  min-width: 2.4em;
+  padding-left: 0.4em; /* keep some click area */
+}
+/* Ensure option list text is visible when open (OS-driven UI) */
+.catalogue-table select.qty-preset option { color: var(--text); background: #fff; }
+/* Dark mode variants for the option list are defined earlier */
+html.theme-dark .carousel-dots button { background: rgba(255,255,255,0.18); }
+html.theme-dark .carousel-dots button.active { background: #e8f6ff; }
+
+/* Hover/pointer interaction (desktop) - slightly lift and brighten the captions */
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  /* Per-caption hover triggers — reveal captions on hover (background + text)
+     so they are transparent by default and become visible when pointer is near. */
+  .wide-banner .banner-overlay,
+  .wide-banner .banner-bottom-left,
+  .wide-banner .banner-center-right {
+    transition: background-color 260ms ease, color 260ms ease, opacity 260ms ease, text-shadow 260ms ease;
+  }
+
+  .wide-banner .banner-overlay:hover {
+    background: linear-gradient(180deg, rgba(4,8,14,0.28) 0%, rgba(4,8,14,0.46) 40%, rgba(4,8,14,0.6) 100%);
+    color: rgba(255,255,255,0.95) !important;
+    text-shadow: 0 6px 18px rgba(2,6,12,0.6) !important;
+    opacity: 1;
+  }
+
+  .wide-banner .banner-bottom-left:hover {
+    background: linear-gradient(180deg, rgba(0,0,0,0.12), rgba(0,0,0,0.24)) !important;
+    color: rgba(255,255,255,0.92) !important;
+    text-shadow: 0 6px 18px rgba(2,6,12,0.6) !important;
+    opacity: 1;
+  }
+
+  .wide-banner .banner-center-right:hover {
+    background: linear-gradient(180deg, rgba(0,0,0,0.08), rgba(0,0,0,0.18)) !important;
+    color: rgba(255,255,255,0.92) !important;
+    text-shadow: 0 6px 18px rgba(2,6,12,0.6) !important;
+    opacity: 1;
+  }
+}
+
+/* Respect reduced motion and touch devices: disable caption transitions and hover effects */
+@media (prefers-reduced-motion: reduce), (hover: none) {
+  /* For touch and reduced-motion users, keep captions visible by default */
+  .wide-banner .banner-overlay,
+  .wide-banner .banner-bottom-left,
+  .wide-banner .banner-center-right {
+    transition: none !important;
+    transform: none !important;
     box-shadow: none !important;
-}
-.muted-btn:hover {
-    background: #5a6268 !important;
-}
-
-/* small gold star used in Favorites button */
-.mini-star { color:#ffd54f; margin-left:6px; font-size:0.9em; /* black outline via text-shadow */ text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; }
-
-/* Cart remove X button */
-.cart-remove-btn { background:transparent; border:0; color:#dc3545; font-weight:700; cursor:pointer; font-size:18px; }
-.cart-remove-btn:hover { color:#a71d2a; }
-
-/* Force fixed column widths and wrapping for cart/checkout/account/manager tables */
-.cart-table, .admin-table, .account-table {
-    table-layout: fixed;
-    width: 100%;
+    background: linear-gradient(180deg, rgba(4,8,14,0.28) 0%, rgba(4,8,14,0.46) 40%, rgba(4,8,14,0.6) 100%);
+    color: rgba(255,255,255,0.95) !important;
+    text-shadow: 0 6px 18px rgba(2,6,12,0.6) !important;
+    opacity: 1;
+  }
 }
 
-/* Generic cell wrapping */
-.cart-table td, .cart-table th,
+@media (max-width:720px) {
+  .banner-center-right { right: 12px; font-size:14px; padding:6px 8px; }
+}
+
+/* Categories grid */
+.categories-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.category-card{display:block;background:var(--card);border-radius:12px;overflow:hidden;text-decoration:none;color:var(--text);position:relative}
+/* Make category tiles square for visual consistency */
+.category-card { aspect-ratio: 1 / 1; display:flex; flex-direction:column; }
+.category-card img{width:100%;height:100%;object-fit:cover;display:block}
+.cat-body{padding:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+/* Position the cat-body over the image at the bottom with a translucent background for readability */
+.category-card { position: relative; }
+/* Position a solid, high-contrast label band over the bottom of the tile */
+.category-card .cat-body{
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  padding: 10px;
+  /* strong dark overlay to guarantee readability */
+  background: linear-gradient(180deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.72) 100%);
+  /* keep overlay content safely inside the image area */
+  box-sizing: border-box;
+}
+
+  /* Deals grid tweaks: keep action buttons compact inside image overlay */
+  .deals-grid .category-card .cat-body .shop-btn.deals-add{
+    padding: 8px 12px;
+    line-height: 1;
+    border: none;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle; /* remove baseline descent gap below inline-blocks */
+    box-shadow: none; /* avoid hanging visual area below on desktop */
+    font-weight: 800;
+    width: auto;
+    max-width: none; /* override generic 48% cap */
+    white-space: nowrap;
+    box-sizing: border-box;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Neutralize global hover lift/shadow for compact deals CTA */
+  .deals-grid .shop-btn.deals-add:hover,
+  .deals-grid .shop-btn.deals-add:active{
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.16);
+  }
+
+  /* Keep the mini form inline without adding extra line-height space */
+  .deals-grid .category-card .cat-body form.cart-add{
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* Deals: collapse extra card height — override global square aspect and hover effects */
+  .deals-grid .category-card{
+    aspect-ratio: auto; /* grow to content height only */
+    display: block;     /* do not force flex column behavior */
+    transform: none;    /* disable lift */
+    box-shadow: none;   /* disable card shadow */
+    transition: none;   /* remove hover transition for a tighter feel */
+  }
+  .deals-grid .category-card:hover,
+  .deals-grid .category-card:focus-within{
+    transform: none;
+    box-shadow: none;
+  }
+  .deals-grid .category-card::before{ display:none !important; }
+  /* Ensure the image defines the card height (match markup’s 220px) */
+  .deals-grid .category-card img{ height:220px; width:100%; object-fit:cover; display:block; }
+
+  /* Vertical spacing between deal cards */
+  .deals-grid{ gap: 24px 16px; }
+
+  /* Keep button color stable when hovering the whole card; only change on direct button hover */
+  .deals-grid .category-card:hover .shop-btn.deals-add,
+  .deals-grid .category-card:focus-within .shop-btn.deals-add{
+    background: #0b5ed7;
+    color: #fff;
+  }
+/* Ensure headings and buttons contrast on dark overlay */
+.category-card .cat-body h3{color:#fff;margin:0;font-size:1rem;text-shadow:0 1px 2px rgba(0,0,0,0.6);flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
+.category-card .cat-body .shop-btn{background:#ffffff;color:var(--text);border:0;padding:8px 10px;border-radius:8px;box-shadow:0 4px 10px rgba(0,0,0,0.12);white-space:normal;line-height:1.05;display:inline-block;max-width:48%;text-align:center}
+
+/* Slightly darken images to help text pop when overlay still collides with bright areas */
+.category-card img{filter:brightness(0.94);}
+.shop-btn{background:transparent;border:2px solid var(--brand);padding:8px 12px;border-radius:8px;color:var(--brand);font-weight:700}
+
+/* Dark mode toggle control styling */
+.dark-toggle{display:inline-flex;align-items:center;gap:.6rem;cursor:pointer;user-select:none}
+.dark-toggle input{display:none}
+.dark-toggle-switch{width:44px;height:26px;border-radius:18px;background:#e6eef8;position:relative;display:inline-block;transition:background .18s, box-shadow .12s}
+.dark-toggle-switch::after{content:'';position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .18s cubic-bezier(.2,.9,.2,1);box-shadow:0 2px 6px rgba(6,18,30,0.12)}
+.dark-toggle input:checked + .dark-toggle-switch{background:var(--brand)}
+.dark-toggle input:checked + .dark-toggle-switch::after{transform:translateX(18px)}
+.theme-dark .dark-toggle-switch{background:rgba(255,255,255,0.12)}
+.theme-dark .dark-toggle-switch::after{background:#fff}
+
+@media (prefers-reduced-motion: reduce){ .dark-toggle-switch, .dark-toggle-switch::after { transition:none !important } }
+.category-card:focus .shop-btn,.category-card:hover .shop-btn{background:var(--brand);color:#fff;transform:none}
+
+/* On very narrow viewports, stack label and button to keep within image bounds */
+@media (max-width: 520px){
+  .category-card .cat-body{flex-direction:column;align-items:flex-start}
+  .category-card .cat-body .shop-btn{max-width:100%;width:100%}
+}
+
+/* Catalogue table gridlines and polished table styles */
+.catalogue-table{width:100%;border-collapse:separate;border-spacing:0;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 6px 18px rgba(11,34,56,0.06)}
+.catalogue-table th,.catalogue-table td{padding:12px 14px;border-bottom:1px solid #eef4fb}
+
+/* Ensure catalogue product columns are left-aligned for Name, Description, Price and Add-to-Cart */
+.catalogue-table th, .catalogue-table td { text-align: left; }
+.catalogue-table thead th{background:#f6f8fb;border-bottom:2px solid #e6eef8;font-weight:700}
+.catalogue-table tr:nth-child(even):not(.sale-row){background:#fbfdff}
+/* Flash highlight for newly added product row (light mode) */
+@keyframes rowFlashFade {
+  0% { background: #ffe9a8; }
+  40% { background: #ffe9a8; }
+  100% { background: transparent; }
+}
+.catalogue-table tr.flash-added td { animation: rowFlashFade 1400ms ease forwards; }
+/* Dark mode variant of flash highlight */
+@keyframes rowFlashFadeDark {
+  0% { background: #553f00; }
+  40% { background: #553f00; }
+  100% { background: transparent; }
+}
+html.theme-dark .catalogue-table tr.flash-added td,
+body.theme-dark .catalogue-table tr.flash-added td { animation: rowFlashFadeDark 1400ms ease forwards; }
+.added-banner{position:fixed;left:0;right:0;top:-60px;background:#198754;color:#fff;text-align:center;padding:10px 12px;font-weight:800;z-index:9999;transition:top .2s ease}
+.added-banner.show{top:0}
+.catalogue-table tr:last-child td{border-bottom:none}
+
+/* Mobile-first constraint: ensure catalogue table fits narrow portrait screens.
+   Use fixed layout with percentage columns, reduce padding/font-size, and
+   wrap long text minimally so the table width remains within viewport. */
+@media (max-width: 420px) and (orientation: portrait) {
+  .catalogue-table { table-layout: fixed; font-size: 13px; }
+  .catalogue-table th, .catalogue-table td { padding: 8px 6px; }
+  /* Set reasonable percentage widths so columns sum to ~100% */
+  .catalogue-table th:nth-child(1), .catalogue-table td:nth-child(1) { width: 28%; } /* Name */
+  .catalogue-table th:nth-child(2), .catalogue-table td:nth-child(2) { width: 44%; } /* Description */
+  .catalogue-table th:nth-child(3), .catalogue-table td:nth-child(3) { width: 14%; } /* Price */
+  .catalogue-table th:nth-child(4), .catalogue-table td:nth-child(4) { width: 14%; } /* Add to Cart */
+  /* Reduce line-height and allow word-break to keep layout tight */
+  .catalogue-table td { line-height: 1.1; word-break: break-word; white-space: normal; }
+  /* Reduce button sizes inside table to keep within cell */
+  .catalogue-table button, .catalogue-table input { font-size: 12px; padding: 4px 6px; }
+  /* Shrink the overall table font slightly more to keep the action column visible */
+  .catalogue-table { font-size: 12px; }
+  /* Ensure action cell content doesn't force overflow: use ellipsis for long text and keep input/button inline */
+  .catalogue-table td:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .catalogue-table td:last-child form, .catalogue-table td:last-child .fav-toggle { display: inline-block; vertical-align: middle; }
+}
+
+/* Ultra-narrow screens (<= 340px) - aggressively compress layout so all four columns fit */
+@media (max-width: 340px) and (orientation: portrait) {
+  .catalogue-table { table-layout: fixed; font-size: 11px; }
+  .catalogue-table th, .catalogue-table td { padding: 6px 4px; }
+  .catalogue-table th:nth-child(1), .catalogue-table td:nth-child(1) { width: 24%; } /* Name */
+  .catalogue-table th:nth-child(2), .catalogue-table td:nth-child(2) { width: 46%; } /* Description */
+  .catalogue-table th:nth-child(3), .catalogue-table td:nth-child(3) { width: 14%; } /* Price */
+  .catalogue-table th:nth-child(4), .catalogue-table td:nth-child(4) { width: 16%; } /* Add to Cart */
+  .catalogue-table { font-size: 10.5px; }
+  .catalogue-table button, .catalogue-table input { font-size: 11px; padding: 3px 5px; }
+  .catalogue-table td:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* Make quantity input compact */
+  .catalogue-table input[type=number] { width: 2.2em; padding: 2px 4px; }
+  /* Reduce fav icon size */
+  .fav-icon { width: 14px; height: 14px; }
+  .fav-toggle { width: 22px; height: 22px; }
+  /* Tighten table header font and remove extra spacing */
+  .catalogue-table thead th { font-size: 11px; padding: 6px 4px; }
+}
+
+/* Reduce container side padding on ultra-narrow screens so table has more horizontal room */
+@media (max-width: 360px) {
+  .container { padding-left: 8px; padding-right: 8px; }
+  /* Remove extra margins around the view switcher to avoid horizontal overflow */
+  .container > div[style] { margin-left: 0; margin-right: 0; }
+  /* Reduce gap between cells and remove left/right spacing on nav/switcher */
+  .nav-inner, .header-inner { padding-left: 8px; padding-right: 8px; }
+  /* Ensure fav button has minimal margin so it doesn't push the last column */
+  .fav-toggle { margin-left: 4px !important; margin-right: 0 !important; }
+}
+
+/* Modern SKU/Category buttons used on the catalogue page */
+.sku-btn{display:inline-block;padding:8px 12px;border-radius:10px;border:0;background:#fff;color:var(--text);font-weight:700;box-shadow:0 6px 0 rgba(11,34,56,0.06);transition:transform 120ms ease, box-shadow 120ms ease, background 120ms ease;text-decoration:none}
+.sku-btn:hover{transform:translateY(-3px);box-shadow:0 10px 0 rgba(11,34,56,0.08);background:#f6f8fb}
+.sku-btn:active,.sku-btn.active{transform:translateY(0);box-shadow:0 3px 0 rgba(11,34,56,0.06);background:var(--brand);color:#fff}
+
+/* Dark mode: add click/focus visual feedback and brighter drop-shadows so buttons remain visible */
+html.theme-dark .sku-btn, body.theme-dark .sku-btn {
+  background:#222;
+  color:#fff;
+  box-shadow: 0 6px 18px rgba(255,255,255,0.04);
+}
+html.theme-dark .sku-btn:hover, body.theme-dark .sku-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(255,255,255,0.05);
+}
+html.theme-dark .sku-btn:active, body.theme-dark .sku-btn:active,
+html.theme-dark .sku-btn.active, body.theme-dark .sku-btn.active {
+  transform: translateY(0);
+  box-shadow: 0 3px 10px rgba(255,255,255,0.035);
+  background: var(--brand);
+  color: #fff;
+}
+/* Force lower nav to 3x2 grid on narrow screens, overriding any later base rules */
+@media (max-width: 768px) {
+  .main-nav .nav-cats {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px 8px !important;
+    justify-content: center !important;
+    padding: 8px 0 !important;
+  }
+  /* Add side padding so rightmost items don't touch or clip at the viewport edge */
+  .main-nav .nav-inner { padding-left: 12px !important; padding-right: 12px !important; box-sizing: border-box; }
+  .main-nav .nav-menu { max-width: 100% !important; box-sizing: border-box; }
+  .main-nav .nav-cats li { margin: 0 !important; list-style: none; }
+  .main-nav .nav-cats a,
+  .main-nav .nav-cats button:not(.mega-close),
+  .main-nav .nav-cats .cat-btn {
+    display: block !important;
+    width: 100% !important;
+    text-align: center !important;
+    padding: 10px 12px !important;
+    border-radius: 8px !important;
+  }
+  /* Ensure the close button is not widened by any generic rules */
+  .main-nav .mega .mega-close { width: 28px !important; height: 28px !important; display: inline-flex !important; }
+  /* Prevent horizontal overflow (white bar on the right) */
+  html, body { overflow-x: hidden; }
+  .site-header, .main-nav, .header-inner, .nav-inner { overflow-x: hidden; }
+}
+
+/* Ensure the mega menu isn't clipped by ancestor overflow */
+.site-header, .main-nav, .header-inner, .nav-inner { overflow: visible; }
+/* Preserve depressed look on hover immediately after activation in dark mode */
+html.theme-dark .sku-btn.active:hover, body.theme-dark .sku-btn.active:hover {
+  transform: translateY(0) !important;
+  box-shadow: 0 3px 10px rgba(255,255,255,0.035) !important;
+  background: var(--brand) !important;
+  color: #fff !important;
+}
+
+/* Make shop buttons slightly bolder with hard shadow */
+.shop-btn{background:transparent;border:2px solid var(--brand);padding:8px 12px;border-radius:8px;color:var(--brand);font-weight:700;box-shadow:0 6px 0 rgba(11,34,56,0.06)}
+.shop-btn:hover{background:var(--brand);color:#fff;transform:translateY(-2px);box-shadow:0 10px 0 rgba(11,34,56,0.08)}
+.shop-btn:active{transform:translateY(0);box-shadow:0 3px 0 rgba(11,34,56,0.06)}
+
+/* Back to top */
+.back-to-top{position:relative;display:inline-flex;align-items:center;justify-content:center;background:var(--brand);color:#fff;border:0;padding:0;width:44px;height:44px;border-radius:50%;font-size:20px;line-height:1;z-index:60}
+
+/* Wrapper positions the label to the left of the circular button */
+.back-to-top-wrap{position:fixed;right:18px;bottom:18px;display:none;align-items:center;gap:10px;z-index:60}
+.back-to-top-label{background:rgba(0,0,0,0.6);color:#fff;padding:8px 10px;border-radius:8px;font-weight:600;white-space:nowrap}
+
+/* Keep the button visually separate from the label */
+.back-to-top:focus{outline:3px solid rgba(255,255,255,0.18);outline-offset:3px}
+
+/* Footer */
+/* Footer: light mode uses brand blue, dark mode keeps deep slate */
+.site-footer{background:var(--brand);color:#fff;padding:28px 0}
+html.theme-dark .site-footer, body.theme-dark .site-footer { background:#0b2238; }
+.footer-grid{display:grid;grid-template-columns:1fr;gap:18px;align-items:start}
+.f-links ul,.f-social ul{list-style:none;padding:0;margin:0}
+.f-links a{color:#dcebf9;text-decoration:none}
+.f-news input[type=email]{padding:8px;border-radius:8px;border:0;margin-right:8px}
+
+/* Footer logo: keep it compact and responsive */
+.f-logo{max-height:48px;width:auto;display:block}
+
+/* Responsive layout for larger screens */
+@media(min-width:700px){
+  .promo-grid{grid-template-columns:repeat(3,1fr)}
+  .categories-grid{grid-template-columns:repeat(3,1fr)}
+  .footer-grid{grid-template-columns:2fr 1fr 1fr 1fr}
+}
+/* Collapse deals grid to one column on tablets/phones at 768px and narrower */
+@media (max-width: 768px) {
+  .deals-grid { grid-template-columns: 1fr !important; }
+}
+@media(min-width:1100px){
+  .container{padding:0 24px}
+  .nav-cats{gap:18px}
+  .slide-img{width:160px;height:160px}
+}
+
+/* Accessibility focus styles */
+/* Avoid bright yellow outlines on mouse click. Use :focus-visible for keyboard users. */
+button:focus, a:focus, input:focus{outline: none}
+/* Use brand-colored ring for focus-visible to remain visible but not jarring */
+button:focus-visible, a:focus-visible, input:focus-visible{outline:3px solid rgba(255,255,255,0.18);outline-offset:3px}
+/* For inputs inside white containers (like the catalogue table or card), use brand blue focus */
+.search-form input:focus-visible, input[type=text]:focus-visible, input[type=search]:focus-visible{outline:3px solid rgba(0,94,189,0.25);outline-offset:3px}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce){
+  .carousel-track{transition:none}
+}
+
 .admin-table td, .admin-table th,
 .account-table td, .account-table th {
     white-space: normal;
@@ -268,6 +1106,113 @@ footer {
 .admin-table.order-items th:nth-child(9), .admin-table.order-items td:nth-child(9),
 .account-table.order-items th:nth-child(9), .account-table.order-items td:nth-child(9) {
     width: 9%;
+}
+
+/* Orders section: allow full-width tables and add gridlines for legibility */
+.orders-wrap { padding: 18px 0; }
+.orders-wrap .account-table { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid #e6eef8; box-shadow: 0 6px 18px rgba(11,34,56,0.04); }
+.orders-wrap .account-table th, .orders-wrap .account-table td { padding: 12px 14px; border: 1px solid #eef4fb; text-align: left; vertical-align: middle; }
+.orders-wrap .account-table thead th { background: #f6f8fb; font-weight: 700; }
+.orders-wrap .order-group { margin-bottom: 18px; }
+.order-toggle { cursor: pointer; color: var(--brand); text-decoration: underline; }
+.order-toggle[aria-expanded="false"]::after { content: ' ▾'; }
+.order-toggle[aria-expanded="true"]::after { content: ' ▴'; }
+
+/* Dark-mode: make collapse/toggle buttons readable (white text, visible focus) */
+html.theme-dark .order-toggle,
+body.theme-dark .order-toggle {
+  color: #ffffff !important;
+}
+html.theme-dark .order-toggle::after,
+body.theme-dark .order-toggle::after {
+  color: #ffffff !important;
+}
+html.theme-dark .order-toggle:focus-visible,
+body.theme-dark .order-toggle:focus-visible {
+  outline: 3px solid rgba(255,255,255,0.12);
+  outline-offset: 3px;
+}
+
+/* Ultra-narrow adjustments so catalogue buttons don't blow up at <=420px */
+@media (max-width: 420px) {
+  .sku-btn { padding: 6px 10px; font-size: 13px; box-shadow: 0 4px 0 rgba(11,34,56,0.06); }
+  /* Keep actions row compact and prevent awkward wrapping */
+  .catalogue-table td:nth-child(3) .actions-inline { gap: 6px; }
+  .catalogue-table td:nth-child(3) .actions-inline button[type="submit"] { min-width: 0; }
+  .catalogue-table td:nth-child(3) form.cart-add select.qty-preset { min-width: 0; }
+  /* Prevent view-toggle buttons (Show All / Favorites / On Sale) from reflowing vertically */
+  .catalogue-view-row {
+    display: flex !important;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap !important;    /* lock orientation */
+    overflow-x: auto;                /* allow horizontal scroll if needed */
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+  .catalogue-view-row .sku-btn { flex: 0 0 auto; white-space: nowrap; }
+  .catalogue-view-row > div:first-child { flex: 0 0 auto; white-space: nowrap; font-size: 12px; }
+  .catalogue-view-row .mini-star { display: inline; }
+  /* Slightly tighten the label spacing to save a few pixels */
+  .catalogue-view-row > div:first-child { margin-right: 4px; }
+}
+
+/* Manager portal: stronger gridlines and consistent column sizing for admin tables */
+.admin-table {
+  width: 100%;
+  border-collapse: collapse; /* use true gridlines */
+  border-spacing: 0;
+  background: var(--card);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.admin-table th, .admin-table td {
+  padding: 10px 12px;
+  vertical-align: middle;
+  border: 1px solid rgba(11,34,56,0.06);
+  text-align: left;
+}
+/* Slightly stronger header background to separate header row */
+.admin-table thead th {
+  background: rgba(230,238,248,0.65);
+  font-weight: 700;
+}
+
+/* Light-mode: subtle borders; Dark-mode: lighter borders and white text */
+html.theme-dark .admin-table th,
+html.theme-dark .admin-table td,
+body.theme-dark .admin-table th,
+body.theme-dark .admin-table td {
+  border-color: rgba(255,255,255,0.06);
+  color: #e8f6ff;
+}
+
+/* Dark-mode: product inputs in manager portal should be dark background with white text */
+html.theme-dark .admin-table input[type="text"],
+html.theme-dark .admin-table input[type="number"],
+body.theme-dark .admin-table input[type="text"],
+body.theme-dark .admin-table input[type="number"] {
+  background: #1b1b1b;
+  color: #ffffff;
+  border: 1px solid rgba(255,255,255,0.06);
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+html.theme-dark .admin-table input::placeholder,
+body.theme-dark .admin-table input::placeholder {
+  color: rgba(255,255,255,0.64);
+}
+
+/* Reasonable default first/last column sizing to avoid very tight columns */
+.admin-table th:first-child, .admin-table td:first-child { width: 6%; }
+.admin-table th:last-child, .admin-table td:last-child { width: 8%; }
+
+/* Keep existing order-items specific widths intact (these rules already exist above) */
+
+/* On small screens allow horizontal scroll rather than constraining columns */
+@media (max-width: 860px) {
+  .orders-wrap .account-table { display: block; width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .orders-wrap .account-table th, .orders-wrap .account-table td { white-space: nowrap; }
 }
 
 /* Responsive behavior for small screens: allow horizontal scrolling and improve touch readability */
@@ -315,3 +1260,1072 @@ footer {
 .mgr-delete { background:#dc3545; } /* red */
 .mgr-product-delete { background:#b02a37; } /* slightly darker red for product delete */
 .mgr-btn:focus { outline:2px solid rgba(0,0,0,0.12); box-shadow:0 2px 6px rgba(0,0,0,0.08); }
+
+/* Ensure action links/buttons do not wrap letters vertically. Keep words intact. */
+.admin-table td:last-child a.action-btn,
+.admin-table td:last-child a.mgr-btn,
+.admin-table td:last-child a {
+  white-space: nowrap; /* prevent breaking between letters */
+  display: inline-block; /* ensure padding/margins apply */
+}
+
+/* Give the Actions column more room so full words like 'Approve' fit comfortably. */
+.admin-table th:last-child, .admin-table td:last-child {
+  min-width: 10ch; /* reasonable minimum for action words */
+}
+
+/* In very small screens allow actions column to be slightly smaller but keep nowrap */
+@media (max-width: 420px) {
+  .admin-table td:last-child { min-width: 8ch; }
+}
+
+/* Keep manager portal sort buttons dark specifically */
+.sort-btn {
+    background: #333333;
+    color: #fff;
+    padding:6px 8px;
+    border-radius:4px;
+    box-shadow:0 6px 18px rgba(0,0,0,0.12);
+}
+.sort-btn:hover { background: #222222; box-shadow:0 8px 20px rgba(0,0,0,0.14); }
+.sort-btn:active, .sort-btn.active { transform: translateY(1px); box-shadow: none; }
+
+/* Contact form */
+.contact-form{max-width:780px;background:var(--card);padding:18px;border-radius:10px;box-shadow:0 6px 18px rgba(11,34,56,0.06)}
+.contact-form input[type=text], .contact-form textarea{width:100%;padding:10px;border:1px solid #e2eef8;border-radius:8px;font-size:15px}
+.contact-form button{background:var(--brand);color:#fff;padding:10px 14px;border-radius:8px;border:0;font-weight:700}
+
+/* When contact-form is used inside the centered login-card, make it full-width and match padding */
+.login-card .contact-form { max-width: 100%; padding: 0; background: transparent; box-shadow: none; }
+.login-card .contact-form .form-grid { gap: 0.6rem; }
+.login-card .contact-form input, .login-card .contact-form textarea { border: 1px solid rgba(16,22,30,0.06); }
+
+/* Signup / form improvements: modern, responsive, handles long entries */
+.form-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 6px 18px rgba(10, 20, 30, 0.06);
+  max-width: 980px;
+  margin: 0 auto;
+}
+/* Page hero variant used on contact/account pages — centered modifier */
+.page-hero { padding: 18px 0; }
+.page-hero h1 { margin: 0 0 8px 0; font-size: clamp(1.4rem, 3.5vw, 2rem); color: var(--text); }
+.page-hero .lead { margin: 0; color: rgba(16,22,30,0.65); }
+.page-hero.centered, .page-hero.centered * { text-align: center !important; }
+
+/* Shipping page media block */
+.shipping-media { display:flex; justify-content:center; margin-bottom: 12px; }
+.shipping-media img { max-width: 320px; width: 100%; height: auto; border-radius: 10px; box-shadow: 0 10px 30px rgba(2,8,18,0.12); border: 1px solid rgba(11,34,56,0.06); }
+
+/* Slightly larger and centered on wide screens */
+@media (min-width: 900px) {
+  .shipping-media img { max-width: 420px; }
+}
+
+/* Dark mode adjustments for the shipping media and form card */
+  /* Critical: undo any nowrap/overflow hidden from generic small table rules */
+  .catalogue-table td:last-child { white-space: normal !important; overflow: visible !important; text-overflow: clip !important; height: auto !important; }
+  .catalogue-table td:nth-child(3) { white-space: normal !important; overflow: visible !important; height: auto !important; }
+body.theme-dark .shipping-media img {
+  box-shadow: 0 8px 28px rgba(0,0,0,0.6);
+  border-color: rgba(255,255,255,0.06);
+}
+html.theme-dark .form-card, body.theme-dark .form-card { background: #1b1b1b; color: #e8f6ff; }
+html.theme-dark .form-card a.proceed-btn.btn-catalog { background: var(--brand); color: #fff; }
+
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+@media (min-width: 860px) {
+  .form-grid.cols-2 {
+    grid-template-columns: 1fr 1fr;
+  }
+  .form-grid.label-left .form-row {
+    display: contents; /* let nested layout control label+input */
+  }
+  /* Ensure close button sits in the visible corner on small screens */
+  .mega .mega-close {
+    top: 6px !important; right: 6px !important;
+    width: 28px !important; height: 28px !important;
+    display: inline-flex !important; align-items: center !important; justify-content: center !important;
+    padding: 0 !important; margin: 0 !important; box-sizing: content-box !important;
+  }
+  /* Reanchor the mega to the nav container instead of the grid cell, and center it */
+  .nav-cats .products-item { position: static !important; }
+  .main-nav .nav-inner { position: relative; }
+  .main-nav .mega {
+    position: absolute !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    top: calc(100% + 6px) !important;
+    width: calc(100vw - 24px) !important;
+    max-width: none !important;
+  }
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+@media (min-width: 860px) {
+  .form-row.inline {
+    flex-direction: row;
+    align-items: center;
+  }
+  .form-row.inline label {
+    width: 36%;
+    flex: 0 0 36%;
+    text-align: left;
+    padding-right: 0.6rem;
+  }
+  .form-row.inline .field {
+    width: 64%;
+  }
+}
+
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="password"],
+select,
+textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid rgba(16,22,30,0.08);
+  background: #fff;
+  color: var(--text);
+  font-size: clamp(0.9rem, 1.6vw, 1rem);
+  transition: transform .08s ease, box-shadow .08s ease, border-color .12s ease;
+  outline: none;
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  box-shadow: 0 6px 18px rgba(10,20,30,0.06);
+  border-color: rgba(0,64,128,0.18);
+}
+
+:focus { outline: none; }
+:focus-visible { outline: 3px solid rgba(0, 90, 180, 0.12); outline-offset: 2px; }
+
+/* Auto-resizing textarea styling for street fields / long addresses */
+textarea.autosize {
+  min-height: 56px;
+  max-height: 360px;
+  resize: none;          /* JS will handle growth */
+  overflow: hidden;
+  padding-top: 0.65rem;
+  padding-bottom: 0.65rem;
+}
+
+.form-hint {
+  font-size: 0.88rem;
+  color: rgba(16,22,30,0.6);
+}
+
+.compact-inline {
+  display: grid;
+  grid-template-columns: 1fr 80px 1fr;
+  gap: 0.5rem;
+}
+@media (max-width: 860px) {
+  .compact-inline { grid-template-columns: 1fr; }
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .6rem .9rem;
+  border-radius: 9px;
+  border: none;
+  background: var(--brand);
+  color: #fff;
+  box-shadow: 0 6px 0 rgba(0,0,0,0.05);
+  transition: transform .08s ease, box-shadow .08s ease;
+}
+.btn-primary:active { transform: translateY(1px); box-shadow: 0 3px 0 rgba(0,0,0,0.04); }
+
+.pw-rules { display: none; margin-top: 0.4rem; padding-left: 1rem; color: #b03a2e; }
+.pw-rules.show-rules { display: block; }
+.pw-rules li { margin: .25rem 0; font-size: .95rem; }
+
+/* Constrain and center simple forms like login to avoid full-width inputs */
+.form-card.simple-form { max-width: 520px; padding: 1rem; margin: 0.75rem auto; }
+.form-card.simple-form input[type="email"], .form-card.simple-form input[type="password"] { max-width: 420px; margin: 0.25rem 0; }
+.form-card.simple-form .proceed-btn { display: inline-block; min-width: 160px; }
+
+/* Password rule hints on signup — hidden by default and shown when rules are violated */
+.pw-rules{list-style:disc;margin:8px 0 0 18px;padding:0;display:none}
+.pw-rules.show{display:block}
+.pw-rule{color:var(--muted);font-size:14px;margin-bottom:6px}
+.pw-rule.fail{color:#b02a37;font-weight:700}
+
+/* Login page — sleek centered card and tidy helper actions */
+.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.25rem 1rem;
+  min-height: calc(100vh - 120px);
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0));
+}
+
+/* Page-scoped centering for login & signup (without requiring an extra wrapper) */
+body.page-login main {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 2.5rem 1rem;
+  /* Allow the footer to sit below while visually centering relative to viewport */
+  min-height: calc(100vh - 140px);
+  box-sizing: border-box;
+}
+/* Signup form is tall; center horizontally, start near top with comfortable spacing */
+body.page-signup main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 1rem 3rem;
+  box-sizing: border-box;
+}
+/* Prevent flex shrink on auth card so tall content (signup) scrolls the page naturally */
+body.page-login .login-card, body.page-signup .login-card { flex: 0 0 auto; }
+/* When viewport is very short (<600px tall), avoid awkward vertical centering for login; anchor higher */
+@media (max-height: 600px) {
+  body.page-login main { justify-content: flex-start; padding-top: 1.5rem; }
+}
+
+.login-card {
+  width: 100%;
+  max-width: 520px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 12px 30px rgba(6,18,30,0.06);
+  border: 1px solid rgba(6,18,30,0.03);
+}
+
+/* Compact variation for pages that should show the form higher under the hero (e.g., contact) */
+.login-page.compact { padding-top: 1rem; min-height: auto; padding-bottom: 1rem; }
+
+.login-card h1 {
+  font-size: clamp(1.25rem, 2.5vw, 1.4rem);
+  margin: 0 0 .6rem 0;
+  letter-spacing: .02em;
+  color: var(--text);
+}
+
+.login-sub {
+  color: rgba(16,22,30,0.65);
+  font-size: .94rem;
+  margin-bottom: 1rem;
+}
+
+.login-helpers {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: .5rem;
+  margin-top: .6rem;
+  font-size: .94rem;
+}
+
+.login-helpers .forgot-link,
+.login-helpers .signup-trigger {
+  color: var(--brand);
+  text-decoration: none;
+  padding: .35rem .5rem;
+  border-radius: 8px;
+  transition: background .12s, transform .06s;
+}
+
+.login-helpers .forgot-link:hover,
+.login-helpers .signup-trigger:hover {
+  background: rgba(0,64,128,0.06);
+}
+
+/* Dark mode: make the Forgot your password link and Sign up button white and
+   adjust border/hover so they remain readable on dark backgrounds */
+html.theme-dark .login-helpers .forgot-link,
+body.theme-dark .login-helpers .forgot-link,
+html.theme-dark .login-helpers .signup-trigger,
+body.theme-dark .login-helpers .signup-trigger {
+  color: #ffffff;
+  background: transparent;
+  border-color: rgba(255,255,255,0.06);
+}
+html.theme-dark .login-helpers .forgot-link:hover,
+body.theme-dark .login-helpers .forgot-link:hover,
+html.theme-dark .login-helpers .signup-trigger:hover,
+body.theme-dark .login-helpers .signup-trigger:hover {
+  background: rgba(255,255,255,0.04);
+}
+
+.signup-helper {
+  display:flex;
+  gap:.5rem;
+  align-items:center;
+  color: rgba(16,22,30,0.6);
+  font-size:.92rem;
+}
+
+.signup-trigger {
+  background: transparent;
+  border: 1px solid rgba(6,18,30,0.06);
+  color: var(--brand);
+  padding: .42rem .6rem;
+}
+
+.login-card .btn-primary {
+  width: 100%;
+  margin-top: .8rem;
+}
+
+.alt-actions {
+  display:flex;
+  gap:.5rem;
+  justify-content:center;
+  margin-top:.75rem;
+}
+
+.form-hint { font-size:.88rem; color: rgba(16,22,30,0.55); }
+
+.login-card a:focus, .login-card button:focus { outline: 3px solid rgba(0,90,180,0.12); outline-offset: 2px; }
+
+/* Dark mode inline link adjustments for specific pages */
+/* 1. Contact page informational paragraph: "logged in" link (login.php target) */
+/* 2. About page paragraph links to Contact and Catalog */
+body.theme-dark .login-card p a[href="login.php"],
+html.theme-dark .login-card p a[href="login.php"],
+body.theme-dark .form-card p a[href="contact.php"],
+body.theme-dark .form-card p a[href="catalogue.php"],
+html.theme-dark .form-card p a[href="contact.php"],
+html.theme-dark .form-card p a[href="catalogue.php"] {
+  color: #ffffff !important;
+  text-decoration: underline;
+  text-decoration-color: rgba(255,255,255,0.35);
+  transition: background .12s, color .12s, text-decoration-color .12s;
+}
+body.theme-dark .form-card p a[href="contact.php"]:hover,
+body.theme-dark .form-card p a[href="catalogue.php"]:hover,
+body.theme-dark .login-card p a[href="login.php"]:hover,
+html.theme-dark .form-card p a[href="contact.php"]:hover,
+html.theme-dark .form-card p a[href="catalogue.php"]:hover,
+html.theme-dark .login-card p a[href="login.php"]:hover {
+  text-decoration-color: #ffffff;
+  background: rgba(255,255,255,0.08);
+  border-radius: 4px;
+}
+
+/* Favorite toggle (catalogue) */
+.fav-toggle { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:6px; background:transparent; }
+/* Ensure the SVG star has a visible black outline for contrast on light backgrounds */
+.fav-icon path { fill: none; stroke: #000000; stroke-width:1.6; vector-effect: non-scaling-stroke; }
+/* Maintain yellow fill when active and keep a black outline for visibility */
+.fav-toggle.fav-on .fav-icon path { fill: #ffd43b; stroke: #000000; }
+/* Hover visual: emphasize the outline and hint at activation */
+.fav-toggle:hover .fav-icon path { stroke: #000000; filter: drop-shadow(0 1px 0 rgba(0,0,0,0.25)); }
+
+/* Dark mode: when the star is NOT toggled, use a white outline so it's visible on dark backgrounds */
+html.theme-dark .fav-toggle:not(.fav-on) .fav-icon path,
+body.theme-dark .fav-toggle:not(.fav-on) .fav-icon path {
+  stroke: #ffffff;
+  filter: none;
+}
+
+/* Preserve the toggled (fav-on) appearance in dark mode (yellow fill + existing outline) */
+html.theme-dark .fav-toggle.fav-on .fav-icon path,
+body.theme-dark .fav-toggle.fav-on .fav-icon path {
+  fill: #ffd43b;
+  stroke: #000000;
+}
+
+/* Hover in dark mode (untoggled): keep white outline on hover */
+html.theme-dark .fav-toggle:hover .fav-icon path,
+body.theme-dark .fav-toggle:hover .fav-icon path {
+  stroke: #ffffff;
+  filter: drop-shadow(0 1px 0 rgba(255,255,255,0.06));
+}
+
+/* When the star is filled, add a subtle outer stroke to make it pop on both light and dark tiles */
+.fav-toggle.fav-on .fav-icon { filter: drop-shadow(0 2px 6px rgba(0,0,0,0.12)); }
+
+/* Modern proceed button styles: base + context variants */
+.proceed-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .6rem;
+  padding: .65rem .9rem;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 800;
+  letter-spacing: .04em;
+  transition: transform .12s cubic-bezier(.2,.9,.2,1), box-shadow .12s ease, opacity .12s ease;
+  box-shadow: 0 6px 0 rgba(11,34,56,0.06); /* match .sku-btn shadow scale */
+  border: 0;
+}
+
+/* Dark mode: proceed and catalog buttons get brighter drop-shadows and click feedback */
+html.theme-dark .proceed-btn, body.theme-dark .proceed-btn {
+  box-shadow: 0 8px 20px rgba(255,255,255,0.03);
+}
+html.theme-dark .proceed-btn:active, body.theme-dark .proceed-btn:active,
+html.theme-dark .proceed-btn:focus-visible, body.theme-dark .proceed-btn:focus-visible {
+  transform: translateY(1px);
+  box-shadow: 0 4px 10px rgba(255,255,255,0.04);
+}
+
+/* Ensure specific variants (btn-cart / btn-catalog) also get the effect */
+html.theme-dark .proceed-btn.btn-cart, body.theme-dark .proceed-btn.btn-cart,
+html.theme-dark .proceed-btn.btn-catalog, body.theme-dark .proceed-btn.btn-catalog {
+  box-shadow: 0 8px 20px rgba(255,255,255,0.03);
+}
+
+/* Shipping page specific button (Contact Packing Generals) uses proceed-btn styling so it inherits effects */
+
+/* Catalog button — subtle brand outline with soft white fill */
+.proceed-btn.btn-catalog {
+  background: linear-gradient(180deg,#ffffff,#f6f8fb);
+  color: var(--brand);
+  border: 2px solid rgba(0,64,128,0.08);
+  box-shadow: 0 6px 0 rgba(11,34,56,0.06);
+}
+.proceed-btn.btn-catalog:hover { transform: translateY(-3px); box-shadow: 0 10px 0 rgba(11,34,56,0.06); }
+
+/* FedEx tracking button variant: blue & orange (FedEx-inspired) */
+.proceed-btn.btn-track-fedex {
+  background: linear-gradient(90deg,#005EBD 0%, #ff7a00 100%);
+  color:#fff;
+  border:0;
+  position:relative;
+  overflow:hidden;
+}
+.proceed-btn.btn-track-fedex::after { content:""; position:absolute; inset:0; background:linear-gradient(120deg,rgba(255,255,255,0.05),rgba(255,255,255,0)); pointer-events:none; }
+.proceed-btn.btn-track-fedex:hover { filter:brightness(1.05); transform:translateY(-3px); box-shadow:0 10px 0 rgba(11,34,56,0.06); }
+.proceed-btn.btn-track-fedex:active { transform:translateY(0); box-shadow:0 3px 0 rgba(11,34,56,0.06); }
+html.theme-dark .proceed-btn.btn-track-fedex, body.theme-dark .proceed-btn.btn-track-fedex { box-shadow:0 6px 18px rgba(0,0,0,0.5); }
+html.theme-dark .proceed-btn.btn-track-fedex:hover, body.theme-dark .proceed-btn.btn-track-fedex:hover { box-shadow:0 10px 24px rgba(0,0,0,0.55); }
+.proceed-btn.btn-catalog:active { transform: translateY(1px); box-shadow: 0 3px 0 rgba(0,0,0,0.04); }
+.proceed-btn.btn-catalog:focus { outline: 3px solid rgba(0,94,189,0.22); outline-offset: 3px; }
+
+/* Cart button — solid accent with stronger shadow and inverted hover */
+.proceed-btn.btn-cart {
+  background: linear-gradient(180deg,var(--brand),#0b3b6b);
+  color: #fff;
+  box-shadow: 0 6px 0 rgba(11,34,56,0.06);
+}
+.proceed-btn.btn-cart:hover { transform: translateY(-3px); box-shadow: 0 10px 0 rgba(11,34,56,0.06); }
+.proceed-btn.btn-cart:active { transform: translateY(1px); box-shadow: 0 3px 0 rgba(0,0,0,0.06); }
+.proceed-btn.btn-cart:focus { outline: 3px solid rgba(255,255,255,0.14); outline-offset: 3px; }
+
+/* Muted variant used on cart update buttons */
+.proceed-btn.muted-btn { background: #f6f8fb; color: var(--text); box-shadow: 0 6px 0 rgba(11,34,56,0.06); border: 1px solid rgba(6,18,30,0.04); }
+
+/* Danger variant — used for Clear Cart */
+.proceed-btn.btn-danger {
+  background: linear-gradient(180deg,#ef4444,#dc2626); /* slightly lighter red top */
+  color: #fff;
+  box-shadow: 0 6px 0 rgba(11,34,56,0.06);
+}
+.proceed-btn.btn-danger:hover { transform: translateY(-3px); box-shadow: 0 10px 0 rgba(11,34,56,0.06); }
+.proceed-btn.btn-danger:active { transform: translateY(1px); box-shadow: 0 3px 0 rgba(0,0,0,0.06); }
+.proceed-btn.btn-danger:focus { outline: 3px solid rgba(239,68,68,0.35); outline-offset: 3px; }
+
+/* Dark mode adjust for danger variant */
+html.theme-dark .proceed-btn.btn-danger, body.theme-dark .proceed-btn.btn-danger {
+  box-shadow: 0 8px 20px rgba(255,255,255,0.03);
+}
+
+/* Dark mode: make the muted Update Cart button legible with white text on dark background */
+html.theme-dark .proceed-btn.muted-btn,
+body.theme-dark .proceed-btn.muted-btn {
+  background: linear-gradient(180deg,#1b1b1b,#0f1416);
+  color: #ffffff !important;
+  border: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 0 6px 0 rgba(255,255,255,0.03);
+}
+html.theme-dark .proceed-btn.muted-btn:hover,
+body.theme-dark .proceed-btn.muted-btn:hover {
+  background: #242424;
+  box-shadow: 0 10px 0 rgba(255,255,255,0.05);
+}
+html.theme-dark .proceed-btn.muted-btn:focus {
+  outline: 3px solid rgba(255,255,255,0.12);
+  outline-offset: 3px;
+}
+
+/* Align table headings to the left for better readability in tables */
+.cart-table th, table.cart-table th { text-align: left; }
+
+/* Cart and checkout table gridlines + zebra striping */
+.cart-table { width: 100%; border-collapse: collapse; border-spacing: 0; }
+.catalogue-table { width: 100%; border-collapse: collapse; border-spacing: 0; }
+.cart-table th, .cart-table td { padding: 12px 10px; border-bottom: 1px solid rgba(11,34,56,0.06); }
+.catalogue-table th, .catalogue-table td { padding: 12px 10px; border-bottom: 1px solid rgba(11,34,56,0.06); }
+.cart-table th { background: rgba(11,34,56,0.04); font-weight: 700; }
+.cart-table tr:nth-child(even) td { background: rgba(11,34,56,0.03); }
+.cart-table tr:hover td { background: rgba(11,34,56,0.05); }
+
+/* Numeric column alignment kept as before but ensure padding matches */
+.cart-table th.numeric, .cart-table td.numeric { text-align: right; }
+.cart-table .cart-total-row .cart-total-amount { padding-right: 10px !important; }
+.cart-table .cart-total-amount.numeric { text-align: right !important; min-width: 96px; }
+/* Keep totals column using the standard column width so it matches the header; no special width override */
+/* (Removed the previous width override that could misalign the column) */
+
+/* Hide the SKU column (first column) on narrow screens for cart/checkout */
+@media (max-width: 735px) {
+  .cart-table th:nth-child(1),
+  .cart-table td:nth-child(1),
+  .checkout-table th:nth-child(1),
+  .checkout-table td:nth-child(1) {
+    display: none;
+  }
+  /* Do not hide the first cell of totals rows (it is a label spanning columns, not SKU) */
+  .cart-table .cart-total-row td:first-child,
+  .checkout-table .cart-total-row td:first-child {
+    display: table-cell !important;
+  }
+}
+
+/* Dark-mode variants for table gridlines and stripes */
+html.theme-dark .cart-table th, body.theme-dark .cart-table th {
+  background: rgba(255,255,255,0.02);
+  color: var(--text);
+}
+html.theme-dark .cart-table th, html.theme-dark .cart-table td,
+body.theme-dark .cart-table th, body.theme-dark .cart-table td {
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+html.theme-dark .cart-table tr:nth-child(even) td,
+body.theme-dark .cart-table tr:nth-child(even) td {
+  background: rgba(255,255,255,0.02);
+}
+/* Center and constrain tables so they don't touch screen edges */
+.cart-table, .catalogue-table { max-width: 1080px; margin-left: 0; margin-right: auto; }
+
+@media (max-width: 900px) {
+  .cart-table, .catalogue-table { width: calc(100% - 32px); margin-left: 8px; margin-right: 16px; }
+}
+html.theme-dark .cart-table tr:hover td, body.theme-dark .cart-table tr:hover td {
+  background: rgba(255,255,255,0.03);
+}
+
+/* Mobile mini table: fit all visible columns within viewport on small screens */
+@media (max-width: 735px) {
+  /* Override generic mobile table scrolling for cart/checkout: show a compact, fixed-layout table instead */
+  .cart-table {
+    display: table !important;
+    width: 100% !important;
+    overflow: visible !important;
+    table-layout: fixed;
+    font-size: 13px;
+  }
+  /* Checkout table has no Remove column; tighten widths accordingly */
+  .checkout-table {
+    display: table !important;
+    width: 100% !important;
+    table-layout: fixed;
+  }
+  .cart-table th, .cart-table td {
+    padding: 8px 6px;
+    white-space: normal;
+    min-width: 0;
+    line-height: 1.15;
+  }
+  /* SKU is hidden via earlier rule; set widths for remaining columns by index
+     (2) Description, (3) Quantity, (4) Rate, (5) Price, (6) Remove (cart only) */
+  /* Description ~40% narrower than previous (from ~56% -> ~34%); distribute extra to other cols */
+  .cart-table th:nth-child(2), .cart-table td:nth-child(2) { width: 32%; }
+  .cart-table th:nth-child(3), .cart-table td:nth-child(3) { width: 18%; text-align: center; }
+  .cart-table th:nth-child(4), .cart-table td:nth-child(4) { width: 22%; }
+  .cart-table th:nth-child(5), .cart-table td:nth-child(5) { width: 24%; }
+  /* Leave a touch of breathing room on the right so totals don't touch the edge */
+  .cart-table td:nth-child(5), .checkout-table td:nth-child(5) { padding-right: 10px; }
+  .cart-table th:nth-child(6), .cart-table td:nth-child(6) { width: 4%; text-align: center; }
+
+  /* Checkout table column widths when SKU hidden: (2) Desc, (3) Qty, (4) Rate, (5) Price */
+  .checkout-table th:nth-child(1), .checkout-table td:nth-child(1) { display: none; }
+  .checkout-table th:nth-child(2), .checkout-table td:nth-child(2) { width: 36%; }
+  .checkout-table th:nth-child(3), .checkout-table td:nth-child(3) { width: 18%; text-align: center; }
+  .checkout-table th:nth-child(4), .checkout-table td:nth-child(4) { width: 22%; text-align: right; }
+  .checkout-table th:nth-child(5), .checkout-table td:nth-child(5) { width: 24%; text-align: right; }
+  .checkout-table .cart-total-row .cart-total-amount { padding-right: 10px !important; }
+
+  /* Compact quantity input and remove button */
+  .cart-table input[type=number] { width: 2.6em; padding: 2px 4px; }
+  .cart-remove-btn { font-size: 1rem; padding: 4px; }
+
+  /* Ensure footer totals align to the far right edge on small screens */
+  .cart-table td.numeric, .cart-table th.numeric { text-align: right !important; }
+  /* When the remove column is present, allow totals amount to reach far right by spanning */
+  .cart-table tr:last-child td.numeric { text-align: right; }
+  
+  /* Style total rows on mobile for better visibility and alignment */
+  .cart-table .cart-total-row {
+    background: rgba(11,34,56,0.03);
+    border-top: 2px solid rgba(11,34,56,0.15);
+  }
+  .cart-table .cart-total-row td {
+    padding: 12px 6px !important;
+    font-weight: bold !important;
+    border-top: 2px solid rgba(11,34,56,0.15) !important;
+    font-size: 14px !important; /* Ensure text is readable */
+    white-space: nowrap; /* Prevent text wrapping */
+    overflow: visible !important; /* Ensure text isn't clipped */
+    min-height: 44px; /* Give enough height for the text */
+  }
+  .cart-table .cart-total-row .cart-total-label { text-align: right !important; font-weight: bold !important; padding-right: 10px !important; }
+  .cart-table .cart-total-row .cart-total-label { text-align: right !important; font-weight: 700; }
+  .cart-table .cart-total-row .cart-total-amount { text-align: right !important; font-weight: 700; white-space: nowrap; }
+  .cart-table .cart-total-row .cart-total-amount .total-label { display: inline-block; vertical-align: baseline; margin-right: 8px; opacity: 0.9; font-weight: 600; max-width: 60%; overflow: hidden; text-overflow: ellipsis; }
+  .cart-table .cart-total-row .cart-total-spacer { width: 4%; }
+}
+
+@media (max-width: 420px) {
+  .cart-table { font-size: 12px; }
+  .cart-table th, .cart-table td { padding: 6px 4px; }
+  .cart-table input[type=number] { width: 2.2em; }
+  /* Slight re-balance for ultra-narrow screens with narrower Description */
+  .cart-table th:nth-child(2), .cart-table td:nth-child(2) { width: 34%; }
+  .cart-table th:nth-child(3), .cart-table td:nth-child(3) { width: 18%; }
+  .cart-table th:nth-child(4), .cart-table td:nth-child(4) { width: 22%; }
+  .cart-table th:nth-child(5), .cart-table td:nth-child(5) { width: 22%; }
+  .cart-table th:nth-child(6), .cart-table td:nth-child(6) { width: 4%; }
+  
+  /* Ensure total rows remain readable on ultra-small screens */
+  .cart-table .cart-total-row td {
+    padding: 10px 4px !important;
+    font-size: 13px !important;
+  }
+}
+
+/* Dark mode styles for total rows */
+html.theme-dark .cart-table .cart-total-row,
+body.theme-dark .cart-table .cart-total-row {
+  background: rgba(255,255,255,0.04);
+  border-top: 2px solid rgba(255,255,255,0.1);
+}
+html.theme-dark .cart-table .cart-total-row td,
+body.theme-dark .cart-table .cart-total-row td {
+  border-top: 2px solid rgba(255,255,255,0.1) !important;
+  color: #ffffff !important;
+}
+
+/* Ensure total row text is always visible and prominent */
+.cart-table .cart-total-row td {
+  color: #0b2238 !important; /* Dark blue for better contrast */
+  font-size: 15px !important; /* Slightly larger text */
+  line-height: 1.2 !important;
+}
+.cart-table .cart-total-row .cart-total-label strong,
+.cart-table .cart-total-row .cart-total-amount strong {
+  color: inherit !important;
+  font-weight: 700 !important;
+}
+
+/* Override any inherited text color that might make totals invisible */
+html.theme-dark .cart-table .cart-total-row td,
+body.theme-dark .cart-table .cart-total-row td {
+  color: #ffffff !important;
+}
+html.theme-dark .cart-table .cart-total-row .cart-total-label strong,
+html.theme-dark .cart-table .cart-total-row .cart-total-amount strong,
+body.theme-dark .cart-table .cart-total-row .cart-total-label strong,
+body.theme-dark .cart-table .cart-total-row .cart-total-amount strong {
+  color: #ffffff !important;
+}
+
+/* Style the remove X button in the cart as a visible red control */
+.cart-remove-btn {
+  background: transparent;
+  border: 0;
+  color: #c72828; /* red */
+  font-size: 1.2rem;
+  line-height: 1;
+  padding: 6px 8px;
+  cursor: pointer;
+}
+.cart-remove-btn:hover { color: #8b1b1b; transform: translateY(-1px); }
+
+/* Dark mode: keep the X button transparent and high-contrast */
+html.theme-dark .cart-remove-btn,
+body.theme-dark .cart-remove-btn {
+  background: transparent !important;
+  border: 0 !important;
+  color: #ff6b6b !important; /* slightly brighter red for dark bg */
+}
+html.theme-dark .cart-remove-btn:hover,
+body.theme-dark .cart-remove-btn:hover { color: #ff8b8b !important; }
+
+/* Hover effects for Update Cart and Proceed to Checkout */
+.proceed-btn.muted-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 0 rgba(11,34,56,0.06); }
+.proceed-btn.muted-btn:active { transform: translateY(1px); box-shadow: 0 3px 0 rgba(0,0,0,0.04); }
+.proceed-btn.muted-btn:focus { outline: none; }
+
+/* Checkout button (solid variant) hover and dark-mode styles */
+.proceed-btn.btn-checkout { background: linear-gradient(180deg,var(--brand),#0b3b6b); color: #fff; box-shadow: 0 6px 0 rgba(11,34,56,0.06); }
+.proceed-btn.btn-checkout:hover { transform: translateY(-3px); box-shadow: 0 10px 0 rgba(11,34,56,0.08); }
+.proceed-btn.btn-checkout:active { transform: translateY(1px); box-shadow: 0 3px 0 rgba(0,0,0,0.06); }
+.proceed-btn.btn-checkout:focus { outline: 3px solid rgba(255,255,255,0.14); outline-offset: 3px; }
+
+/* Dark mode: make the Proceed to Checkout button white text on dark background and match Update Cart visual language */
+html.theme-dark .proceed-btn.btn-checkout, body.theme-dark .proceed-btn.btn-checkout {
+  background: linear-gradient(180deg,#1b1b1b,#0f1416);
+  color: #ffffff !important;
+  border: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 0 6px 0 rgba(255,255,255,0.03);
+}
+html.theme-dark .proceed-btn.btn-checkout:hover, body.theme-dark .proceed-btn.btn-checkout:hover {
+  background: #242424;
+  box-shadow: 0 10px 0 rgba(255,255,255,0.05);
+}
+
+/* Remove focus outline on proceed/cart/checkout buttons to match requested style (visual focus handled by other cues) */
+.proceed-btn:focus { outline: none; }
+
+/* PO number field styling: match search input look but with white text on dark background in dark mode */
+form#checkout-form input[name="po_number"] {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #d7e1ea;
+}
+html.theme-dark form#checkout-form input[name="po_number"], body.theme-dark form#checkout-form input[name="po_number"] {
+  background: #1e1e1e;
+  color: #ffffff;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+/* Place Order button: light green with black text in both light and dark modes */
+.proceed-btn.place-order {
+  background: linear-gradient(180deg,#c8f5c2,#a6e89a);
+  color: #000000;
+  box-shadow: 0 6px 0 rgba(0,0,0,0.06);
+}
+.proceed-btn.place-order:hover { transform: translateY(-3px); box-shadow: 0 10px 0 rgba(0,0,0,0.08); }
+.proceed-btn.place-order:active { transform: translateY(1px); box-shadow: 0 3px 0 rgba(0,0,0,0.04); }
+.proceed-btn.place-order:focus { outline: none; }
+
+/* Ensure Place Order is still readable in dark mode (keeps same colors but remove translucent glows) */
+html.theme-dark .proceed-btn.place-order, body.theme-dark .proceed-btn.place-order {
+  background: linear-gradient(180deg,#bfeeb0,#9fe08e);
+  color: #000000;
+}
+
+/* Polished hover/shine effect for category tiles (desktop only). Respects reduced-motion. */
+@media (min-width: 860px) and (prefers-reduced-motion: no-preference) {
+  .category-card { transition: transform 260ms cubic-bezier(.2,.9,.2,1), box-shadow 260ms ease; will-change: transform; }
+  .category-card:hover, .category-card:focus-within { transform: translateY(-6px) scale(1.02); box-shadow: 0 20px 40px rgba(11,34,56,0.12); }
+
+  /* Add a subtle sheen that moves with hover — implemented with a pseudo-element on the image area */
+  .category-card::before {
+    content: '';
+    position: absolute;
+    left: -60%;
+    top: -40%;
+    width: 60%;
+    height: 180%;
+    background: linear-gradient(120deg, rgba(255,255,255,0.00) 0%, rgba(255,255,255,0.28) 50%, rgba(255,255,255,0.00) 100%);
+    transform: rotate(-18deg) translateX(0);
+    transition: transform 640ms cubic-bezier(.2,.9,.2,1), opacity 420ms ease;
+    pointer-events: none;
+    opacity: 0;
+    z-index: 1;
+  }
+  .category-card:hover::before, .category-card:focus-within::before { transform: translateX(110%); opacity: 1; }
+
+  /* Slight scale on the underlying image for a more dynamic feel */
+  .category-card img { transition: transform 420ms cubic-bezier(.2,.9,.2,1), filter 420ms ease; }
+  .category-card:hover img, .category-card:focus-within img { transform: scale(1.04); filter: brightness(0.92) saturate(0.98); }
+
+  /* Ensure the label band remains above the sheen and readable */
+  .category-card .cat-body { z-index: 3; }
+}
+
+/* Hero joe: dynamic blur controlled by --joe-blur (JS updates value). */
+.hero-joe { position: relative; overflow: hidden; border-radius: 10px; --joe-blur: 12px; --joe-grayscale: 0.02; --joe-contrast: 0.98; }
+.hero-joe .joe-wrap { transition: transform 520ms ease; will-change: transform; }
+.hero-joe img.joe-img { display:block; width:100%; height:auto; transition: filter 360ms ease, transform 360ms ease; will-change: filter, transform; filter: blur(var(--joe-blur)) grayscale(var(--joe-grayscale)) contrast(var(--joe-contrast)); transform: scale(1.01); }
+
+/* When JS sets --joe-blur to 0px the image becomes sharp. Keep a tiny dead-zone handled in JS. */
+
+/* Respect reduced-motion and touch devices */
+@media (prefers-reduced-motion: reduce), (hover: none) {
+  .hero-joe .joe-wrap, .hero-joe img.joe-img { transition: none !important; filter: none !important; transform: none !important; }
+}
+/* Dark-mode search input overrides */
+body.theme-dark .search-form input[type=search], html.theme-dark .search-form input[type=search] {
+  background: #1e1e1e; /* dark gray */
+  border-color: rgba(255,255,255,0.06);
+  color: var(--text);
+}
+/* Dark mode: suggestions */
+body.theme-dark .search-suggestions, html.theme-dark .search-suggestions { background:#1e1e1e; border-color: rgba(255,255,255,0.06); box-shadow:0 10px 24px rgba(0,0,0,0.5); }
+body.theme-dark .search-suggestion { border-top-color: rgba(255,255,255,0.06); }
+body.theme-dark .search-suggestion.active, body.theme-dark .search-suggestion:hover { background:#181a1f; }
+body.theme-dark .search-form input[type=search]::placeholder, html.theme-dark .search-form input[type=search]::placeholder {
+  color: rgba(232,246,255,0.5);
+}
+body.theme-dark .search-wrap .search-btn, html.theme-dark .search-wrap .search-btn {
+  background: rgba(255,255,255,0.04);
+  color: var(--text);
+  border-color: rgba(255,255,255,0.04);
+}
+
+/* Reuse the dark-mode search input look for manager/admin form fields when theme is dark */
+body.theme-dark .search-variant, html.theme-dark .search-variant {
+  background: #1e1e1e; /* dark gray */
+  border-color: rgba(255,255,255,0.06);
+  color: var(--text);
+}
+body.theme-dark .search-variant::placeholder, html.theme-dark .search-variant::placeholder {
+  color: rgba(232,246,255,0.5);
+}
+
+/* Dark mode: make cards and forms high-contrast (white text on dark gray) */
+body.theme-dark .form-card,
+body.theme-dark .login-card,
+body.theme-dark .card,
+body.theme-dark .promo.card,
+body.theme-dark .mega,
+html.theme-dark .form-card,
+html.theme-dark .login-card,
+html.theme-dark .card,
+html.theme-dark .promo.card,
+html.theme-dark .mega {
+  background: #1b1b1b; /* dark gray */
+  color: #fff;
+  border-color: rgba(255,255,255,0.04);
+}
+
+/* Cart button in header: match dark search bar color with white text when dark theme active */
+body.theme-dark .nav-cart,
+html.theme-dark .nav-cart {
+  background: #1e1e1e; /* same as dark search bar */
+  color: #fff !important;
+  border: 1px solid rgba(255,255,255,0.04);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.35);
+}
+/* Slightly lighten the cart button on hover in dark mode to match search input hover feel */
+body.theme-dark .nav-cart:hover, html.theme-dark .nav-cart:hover {
+  background: #242424; /* a touch lighter */
+  box-shadow: 0 8px 18px rgba(0,0,0,0.4);
+  transform: translateY(-1px);
+}
+
+/* Proceed to cart button (on catalogue page) in dark mode */
+body.theme-dark .proceed-btn.btn-cart, html.theme-dark .proceed-btn.btn-cart {
+  background: #1e1e1e; /* dark gray */
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+}
+
+/* Tables: catalogue, account/order, and cart should match card style in dark mode */
+body.theme-dark .catalogue-table,
+body.theme-dark .account-table,
+body.theme-dark .cart-table,
+body.theme-dark table.order-items,
+html.theme-dark .catalogue-table,
+html.theme-dark .account-table,
+html.theme-dark .cart-table,
+html.theme-dark table.order-items {
+  background: #1b1b1b; /* same as cards */
+  color: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.04);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+}
+
+/* Table header and rows */
+body.theme-dark .catalogue-table thead th,
+body.theme-dark .account-table thead th,
+body.theme-dark .cart-table thead th,
+html.theme-dark .catalogue-table thead th,
+html.theme-dark .account-table thead th,
+html.theme-dark .cart-table thead th {
+  background: transparent; /* keep consistent with dark card */
+  color: rgba(255,255,255,0.9);
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+
+body.theme-dark .catalogue-table td,
+body.theme-dark .catalogue-table th,
+body.theme-dark .account-table td,
+body.theme-dark .account-table th,
+body.theme-dark .cart-table td,
+body.theme-dark .cart-table th,
+html.theme-dark .catalogue-table td,
+html.theme-dark .catalogue-table th,
+html.theme-dark .account-table td,
+html.theme-dark .account-table th,
+html.theme-dark .cart-table td,
+html.theme-dark .cart-table th {
+  color: #fff;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+
+/* Zebra rows subtle overlay for readability — apply to whole row and exclude sale rows */
+body.theme-dark .catalogue-table tr:nth-child(even):not(.sale-row),
+html.theme-dark .catalogue-table tr:nth-child(even):not(.sale-row),
+body.theme-dark .account-table tr:nth-child(even),
+html.theme-dark .account-table tr:nth-child(even),
+body.theme-dark .cart-table tr:nth-child(even),
+html.theme-dark .cart-table tr:nth-child(even) {
+  background: rgba(255,255,255,0.01);
+}
+body.theme-dark .catalogue-table button,
+body.theme-dark .account-table input,
+body.theme-dark .account-table button,
+body.theme-dark .cart-table input,
+body.theme-dark .cart-table button,
+html.theme-dark .catalogue-table input,
+html.theme-dark .catalogue-table button,
+html.theme-dark .account-table input,
+html.theme-dark .account-table button,
+html.theme-dark .cart-table input,
+html.theme-dark .cart-table button {
+  background: #222;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.04);
+}
+
+/* Ensure numeric cells align and remain readable */
+body.theme-dark .numeric, html.theme-dark .numeric { color: #fff; }
+
+/* Inputs, textareas, selects inside those cards should be dark and white text */
+body.theme-dark .form-card input,
+body.theme-dark .form-card textarea,
+body.theme-dark .form-card select,
+body.theme-dark .login-card input,
+body.theme-dark .login-card textarea,
+body.theme-dark .login-card select,
+html.theme-dark .form-card input,
+html.theme-dark .form-card textarea,
+html.theme-dark .form-card select,
+html.theme-dark .login-card input,
+html.theme-dark .login-card textarea,
+html.theme-dark .login-card select {
+  background: #222;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+body.theme-dark .form-card label,
+body.theme-dark .login-card label,
+html.theme-dark .form-card label,
+html.theme-dark .login-card label {
+  color: #fff;
+}
+
+/* Ensure mega menu links are readable on dark background */
+body.theme-dark .mega a, html.theme-dark .mega a { color: #fff; }
+
+/* Slightly brighten card headings */
+body.theme-dark .form-card h2, body.theme-dark .form-card h3, html.theme-dark .form-card h2, html.theme-dark .form-card h3 { color: #fff; }
+
+/* Category & SKU buttons in dark mode: light gray with white text and softer shadows */
+body.theme-dark .category-card .cat-body .shop-btn,
+html.theme-dark .category-card .cat-body .shop-btn,
+body.theme-dark .sku-btn,
+html.theme-dark .sku-btn {
+  background: #2f2f2f; /* light gray against dark card */
+  color: #fff !important;
+  border: 1px solid rgba(255,255,255,0.04);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+  transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+body.theme-dark .category-card .cat-body .shop-btn:hover,
+html.theme-dark .category-card .cat-body .shop-btn:hover,
+body.theme-dark .sku-btn:hover,
+html.theme-dark .sku-btn:hover {
+  background: #3a3a3a;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.14);
+  transform: translateY(-2px);
+}
+
+/* Small catalogue search (the inline form under SKU/category buttons) */
+body.theme-dark form[action="catalogue.php"] input[name="search"],
+html.theme-dark form[action="catalogue.php"] input[name="search"] {
+  background: #1e1e1e;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.06);
+  padding: 8px 10px;
+  border-radius: 6px;
+}
+body.theme-dark form[action="catalogue.php"] .proceed-btn,
+html.theme-dark form[action="catalogue.php"] .proceed-btn {
+  background: #1e1e1e;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.28);
+}
+body.theme-dark form[action="catalogue.php"] a,
+html.theme-dark form[action="catalogue.php"] a { color: rgba(255,255,255,0.85); }
+
+/* Highly specific dark-mode override for header cart to prevent white pill flash
+   and ensure consistent hover behavior. Placed at end for precedence. */
+html.theme-dark .site-header .header-actions .nav-cart,
+body.theme-dark .site-header .header-actions .nav-cart {
+  background: #1e1e1e !important; /* force same dark gray used for search input */
+  color: #fff !important;
+  border: 1px solid rgba(255,255,255,0.04) !important;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.35) !important;
+  transform: none; /* reset any earlier transform */
+}
+html.theme-dark .site-header .header-actions .nav-cart:hover,
+body.theme-dark .site-header .header-actions .nav-cart:hover {
+  background: #242424 !important; /* slightly lighter on hover */
+  box-shadow: 0 8px 18px rgba(0,0,0,0.4) !important;
+  transform: translateY(-1px) !important;
+}
+/* Ensure the numeric/cart text inside the nav pill is white in dark mode (overrides earlier brand color rule) */
+html.theme-dark .site-header .header-actions .nav-cart, html.theme-dark .site-header .header-actions .nav-cart *,
+body.theme-dark .site-header .header-actions .nav-cart, body.theme-dark .site-header .header-actions .nav-cart * {
+  color: #fff !important;
+}
+
+/* Make specific lead paragraphs' text white in dark mode so inline copy is readable */
+html.theme-dark p.lead, body.theme-dark p.lead {
+  color: #fff; /* primary lead text should be white in dark mode */
+}
+
+/* Ensure inline catalog button (.proceed-btn.btn-catalog) in dark mode matches dark cart styling (dark gray background, white text) */
+html.theme-dark .proceed-btn.btn-catalog, body.theme-dark .proceed-btn.btn-catalog {
+  background: #1e1e1e;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.28);
+}
+html.theme-dark .proceed-btn.btn-catalog:hover, body.theme-dark .proceed-btn.btn-catalog:hover {
+  background: #242424;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.32);
+}
+
+/* Manager portal image dropzone */
+.manager-dropzone { position: relative; width: 120px; min-height: 96px; border: 2px dashed #b6c2cd; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; padding: 6px; cursor: pointer; background: #f8fbff; }
+.manager-dropzone .dz-preview { width: 100%; height: 80px; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 6px; background: #fff; }
+.manager-dropzone .dz-preview img { max-width: 100%; max-height: 100%; display: block; object-fit: contain; }
+.manager-dropzone .dz-instructions { position: absolute; bottom: 4px; left: 4px; right: 4px; font-size: 11px; text-align: center; color: #5b6b7a; }
+.manager-dropzone.dz-over { border-color: #0b5ed7; background: #eef5ff; }
+.manager-dropzone.dz-uploading { opacity: 0.6; pointer-events: none; }
+
+html.theme-dark .manager-dropzone,
+body.theme-dark .manager-dropzone { border-color: #445063; background: #1f2937; }
+html.theme-dark .manager-dropzone .dz-preview,
+body.theme-dark .manager-dropzone .dz-preview { background: #111827; }
+html.theme-dark .manager-dropzone .dz-instructions,
+body.theme-dark .manager-dropzone .dz-instructions { color: #cbd5e1; }

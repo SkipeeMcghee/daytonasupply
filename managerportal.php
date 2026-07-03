@@ -47,7 +47,7 @@ if (!isset($_SESSION['admin'])) {
         <p class="error"><?php echo htmlspecialchars($loginError); ?></p>
     <?php endif; ?>
     <form method="post" action="">
-        <p>Password: <input type="password" name="password" required></p>
+        <p>Password: <input type="password" name="password" required class="search-variant"></p>
         <p><button type="submit">Login</button></p>
     </form>
     <?php
@@ -164,26 +164,107 @@ if (isset($_GET['delete_product'])) {
     exit;
 }
 
+// Toggle deal flag for a product (GET action for simplicity)
+if (isset($_GET['toggle_deal'])) {
+    $prodId = (int)$_GET['toggle_deal'];
+    $db = getDb();
+    try {
+        // Ensure column exists; for MySQL ensure helper already runs at connect, SQLite migration covers others.
+        $row = getProductById($prodId);
+        if ($row) {
+            $newVal = (!empty($row['deal']) && (int)$row['deal'] === 1) ? 0 : 1;
+            if ($newVal === 0) {
+                // Clearing a deal also clears any temporary deal_price
+                $stmt = $db->prepare('UPDATE products SET deal = 0, deal_price = NULL WHERE id = :id');
+                $stmt->execute([':id' => $prodId]);
+            } else {
+                $stmt = $db->prepare('UPDATE products SET deal = 1 WHERE id = :id');
+                $stmt->execute([':id' => $prodId]);
+            }
+        }
+    } catch (Exception $e) {
+        error_log('toggle_deal error: ' . $e->getMessage());
+    }
+    invalidateProductsCache();
+    header('Location: managerportal.php#products');
+    exit;
+}
+
 // Handle POST actions for saving products, adding products, and saving customers
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Save products
     if (isset($_POST['save_products'])) {
-        $products = getAllProducts();
-        foreach ($products as $prod) {
-            $id = (int)$prod['id'];
-            $nameField = 'name_' . $id;
-            $descField = 'desc_' . $id;
-            $priceField = 'price_' . $id;
-            if (isset($_POST[$nameField], $_POST[$priceField])) {
-                $data = [
-                    'name' => normalizeScalar($_POST[$nameField] ?? '', 128, ''),
-                    'description' => normalizeScalar($_POST[$descField] ?? '', 512, ''),
-                    'price' => (float)($_POST[$priceField] ?? 0.0)
-                ];
-                saveProduct($data, $id);
+        $db = getDb();
+        $driver = 'unknown';
+        try { $driver = $db->getAttribute(PDO::ATTR_DRIVER_NAME); } catch (Exception $_) {}
+
+        // Prefer JSON payload to bypass PHP max_input_vars limits
+        $updates = [];
+        if (!empty($_POST['products_json'])) {
+            $decoded = json_decode((string)$_POST['products_json'], true);
+            if (is_array($decoded)) {
+                foreach ($decoded as $idStr => $vals) {
+                    $id = (int)$idStr;
+                    if ($id <= 0) continue;
+                    $name = normalizeScalar((string)($vals['name'] ?? ''), 128, '');
+                    $desc = normalizeScalar((string)($vals['description'] ?? ''), 512, '');
+                    $num = (string)($vals['price'] ?? '0');
+                    $num = str_replace([',', ' '], '', $num);
+                    if (!preg_match('/^-?\d*(?:\.\d+)?$/', $num)) { $num = '0'; }
+                    $price = number_format((float)$num, 2, '.', '');
+                    $updates[$id] = ['name' => $name, 'description' => $desc, 'price' => $price];
+                }
+            }
+        } else {
+            // Fallback: build updates from individual inputs (may be truncated by max_input_vars)
+            foreach ($_POST as $key => $val) {
+                if (!is_string($key)) continue;
+                if (preg_match('/^(name|desc|price)_(\d+)$/', $key, $m)) {
+                    $field = $m[1];
+                    $id = (int)$m[2];
+                    if ($id <= 0) continue;
+                    if (!isset($updates[$id])) $updates[$id] = ['name' => null, 'description' => null, 'price' => null];
+                    if ($field === 'name') {
+                        $updates[$id]['name'] = normalizeScalar((string)$val, 128, '');
+                    } elseif ($field === 'desc') {
+                        $updates[$id]['description'] = normalizeScalar((string)$val, 512, '');
+                    } elseif ($field === 'price') {
+                        $num = (string)$val;
+                        $num = str_replace([',', ' '], '', $num);
+                        if (!preg_match('/^-?\d*(?:\.\d+)?$/', $num)) { $num = '0'; }
+                        $updates[$id]['price'] = number_format((float)$num, 2, '.', '');
+                    }
+                }
             }
         }
-    header('Location: managerportal.php');
+
+        if (!empty($updates)) {
+            // Start transaction where supported
+            $inTx = false;
+            try { $db->beginTransaction(); $inTx = true; } catch (Exception $_) {}
+
+            $stmt = $db->prepare('UPDATE products SET name = :name, description = :description, price = :price WHERE id = :id');
+            $updatedCount = 0;
+            foreach ($updates as $id => $vals) {
+                $name = (string)($vals['name'] ?? '');
+                $desc = (string)($vals['description'] ?? '');
+                $price = (string)($vals['price'] ?? '0.00');
+                $stmt->execute([':id' => (int)$id, ':name' => $name, ':description' => $desc, ':price' => $price]);
+                $updatedCount += (int)$stmt->rowCount();
+            }
+            if ($inTx) { try { $db->commit(); } catch (Exception $_) {} }
+            error_log('saveProducts: direct updates executed for ' . count($updates) . ' products; rows affected=' . $updatedCount);
+        }
+
+        // Invalidate caches and force a fresh reload
+        invalidateProductsCache();
+        $cacheFile = __DIR__ . '/data/cache_products.json';
+        if (file_exists($cacheFile)) { @unlink($cacheFile); }
+
+        header('Cache-Control: no-cache, no-store, must-revalidate');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+        header('Location: managerportal.php?updated=' . time() . '&nocache=' . mt_rand());
         exit;
     }
     // Add a new product
@@ -243,6 +324,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Location: managerportal.php');
         exit;
     }
+    // Save deal prices for active deals
+    if (isset($_POST['save_deal_prices'])) {
+        $db = getDb();
+        $updates = [];
+        foreach ($_POST as $key => $val) {
+            if (!is_string($key)) continue;
+            if (preg_match('/^deal_price_(\d+)$/', $key, $m)) {
+                $id = (int)$m[1];
+                $num = (string)$val;
+                $num = str_replace([',', ' '], '', $num);
+                if (!preg_match('/^-?\d*(?:\.\d+)?$/', $num)) { $num = ''; }
+                $price = $num !== '' ? number_format((float)$num, 2, '.', '') : null;
+                $updates[$id] = $price;
+            }
+        }
+        if (!empty($updates)) {
+            $stmt = $db->prepare('UPDATE products SET deal_price = :dp WHERE id = :id');
+            foreach ($updates as $id => $dp) {
+                $stmt->bindValue(':id', (int)$id, PDO::PARAM_INT);
+                if ($dp === null) { $stmt->bindValue(':dp', null, PDO::PARAM_NULL); }
+                else { $stmt->bindValue(':dp', (string)$dp, PDO::PARAM_STR); }
+                $stmt->execute();
+            }
+            invalidateProductsCache();
+        }
+        header('Location: managerportal.php?updated=' . time() . '#products');
+        exit;
+    }
 }
 
 // At this point all actions are complete. Determine which set of orders to display
@@ -265,7 +374,26 @@ if ($filter === 'archived') {
 // Customers: separate lists for unverified and verified
 $unverifiedCustomers = getCustomersByVerified(false);
 $verifiedCustomers = getCustomersByVerified(true);
-$products = getAllProducts();
+
+// Debug: Check database driver and add timestamp
+$db = getDb();
+$driver = 'unknown';
+try { $driver = $db->getAttribute(PDO::ATTR_DRIVER_NAME); } catch (Exception $_) {}
+error_log('managerportal: loading products via driver=' . $driver . ' at ' . date('H:i:s'));
+
+// If we just updated products, force cache bypass
+if (isset($_GET['updated']) || isset($_GET['nocache'])) {
+    invalidateProductsCache();
+    $cacheFile = __DIR__ . '/data/cache_products.json';
+    if (file_exists($cacheFile)) {
+        unlink($cacheFile);
+    }
+    error_log('managerportal: forced cache clear due to updated parameter');
+}
+
+// Use a fresh DB read to ensure UI reflects the latest data immediately
+$products = getAllProductsFresh();
+error_log('managerportal: loaded ' . count($products) . ' products');
 
 // Whether we're showing archived orders (used by the toggle link below)
 $showArchived = ($filter === 'archived');
@@ -277,6 +405,12 @@ require_once __DIR__ . '/includes/header.php';
 <h2>Manager Portal</h2>
 
 <!-- Toolbar removed; Update Inventory button moved to Products section -->
+
+<?php if (isset($_GET['updated'])): ?>
+    <div style="margin:10px 0; padding:10px; background:#e7f5ff; border:1px solid #b3e0ff; border-radius:6px; color:#0b5ed7;">
+        Product changes saved at <?php echo htmlspecialchars(date('n/j/Y g:i:s A')); ?>.
+    </div>
+<?php endif; ?>
 
 <section id="orders-section">
     <h3>Orders</h3>
@@ -315,12 +449,13 @@ require_once __DIR__ . '/includes/header.php';
         ?>
     </div>
     <?php foreach ($orders as $order): ?>
-    <div id="order-<?php echo $order['id']; ?>" class="order-group">
+    <?php $isCollapsed = $showArchived ? true : false; ?>
+    <div id="order-<?php echo $order['id']; ?>" class="order-group<?php echo $isCollapsed ? ' is-collapsed' : ''; ?>">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-    <div><strong>Order #<?php echo $order['id']; ?></strong> — <?php echo htmlspecialchars(date('n/j/Y g:i A', strtotime($order['created_at']))); ?> by <?php echo htmlspecialchars((getCustomerById((int)$order['customer_id'])['name'] ?? 'Unknown')); ?></div>
-        <div><span class="order-toggle" data-order="<?php echo $order['id']; ?>">Collapse</span></div>
+    <div><strong>Order #<?php echo $order['id']; ?></strong> — <?php echo htmlspecialchars(date('n/j/Y g:i A', strtotime($order['created_at']))); ?><?php if (!empty($order['po_number'])): ?> <span class="order-po">PO: <?php echo htmlspecialchars($order['po_number']); ?></span><?php endif; ?> by <?php echo htmlspecialchars((getCustomerById((int)$order['customer_id'])['name'] ?? 'Unknown')); ?></div>
+        <div><span class="order-toggle" role="button" tabindex="0" aria-expanded="<?php echo $isCollapsed ? 'false' : 'true'; ?>" data-order="<?php echo $order['id']; ?>" data-collapsed="<?php echo $isCollapsed ? '1' : '0'; ?>" style="cursor:pointer;color:#0d6efd;font-weight:600;"><?php echo $isCollapsed ? 'Expand' : 'Collapse'; ?></span></div>
     </div>
-    <table class="admin-table order-items" data-order="<?php echo $order['id']; ?>">
+    <table class="admin-table order-items" data-order="<?php echo $order['id']; ?>" style="<?php echo $isCollapsed ? 'display:none;' : ''; ?>">
         <tr>
             <th>ID</th>
             <th>Date</th>
@@ -341,11 +476,26 @@ require_once __DIR__ . '/includes/header.php';
         <?php if (!empty($items)): ?>
             <?php $firstItem = true; foreach ($items as $it): ?>
                 <?php
-                    $prod = getProductById((int)$it['product_id']);
-                    $sku = $prod ? htmlspecialchars($prod['name']) : $it['product_id'];
-                    $desc = $prod ? htmlspecialchars($prod['description'] ?? $prod['name']) : 'Unknown product';
+                    // Prefer snapshot fields saved with the order item to prevent
+                    // historical orders from changing when products are updated.
                     $qty = (int)$it['quantity'];
-                    $rate = $prod ? (float)$prod['price'] : 0.0;
+                    $sku = htmlspecialchars($it['product_name'] ?? '');
+                    $pricePerUnit = isset($it['product_price']) ? (float)$it['product_price'] : null;
+                    if ($sku === '' || $pricePerUnit === null) {
+                        $prod = getProductById((int)$it['product_id']);
+                        if ($prod) {
+                            $sku = htmlspecialchars($prod['name']);
+                            $desc = htmlspecialchars($prod['description'] ?? $prod['name']);
+                            $pricePerUnit = (float)$prod['price'];
+                        } else {
+                            $sku = 'Unknown item';
+                            $desc = 'Unknown product';
+                            $pricePerUnit = 0.0;
+                        }
+                    } else {
+                        $desc = htmlspecialchars($it['product_description'] ?? $it['product_name']);
+                    }
+                    $rate = $pricePerUnit;
                     $price = $rate * $qty;
                     $orderTotal += $price;
                 ?>
@@ -393,6 +543,40 @@ require_once __DIR__ . '/includes/header.php';
     </table>
     </div>
     <?php endforeach; ?>
+    <script>
+    // Order collapse/expand toggler; archived view starts collapsed
+    (function(){
+        function toggleOrder(orderId, force){
+            var table = document.querySelector('table.order-items[data-order="' + orderId + '"]');
+            var toggle = document.querySelector('.order-toggle[data-order="' + orderId + '"]');
+            if (!table || !toggle) return;
+            var collapsed = toggle.getAttribute('data-collapsed') === '1';
+            if (force === true) collapsed = false;
+            else if (force === false) collapsed = true; // invert logic for force flags
+            else collapsed = !collapsed; // normal toggle
+            if (collapsed) {
+                table.style.display = 'none';
+                toggle.textContent = 'Expand';
+                toggle.setAttribute('data-collapsed','1');
+                toggle.setAttribute('aria-expanded','false');
+            } else {
+                table.style.display = '';
+                toggle.textContent = 'Collapse';
+                toggle.setAttribute('data-collapsed','0');
+                toggle.setAttribute('aria-expanded','true');
+            }
+        }
+        function onActivate(e){
+            var t = e.target.closest && e.target.closest('.order-toggle');
+            if (!t) return;
+            var oid = t.getAttribute('data-order');
+            if (!oid) return;
+            toggleOrder(oid);
+        }
+        document.addEventListener('click', onActivate);
+        document.addEventListener('keydown', function(e){ if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('order-toggle')) { e.preventDefault(); onActivate(e); } });
+    })();
+    </script>
     <?php if (empty($orders)): ?>
         <p>No orders found.</p>
     <?php endif; ?>
@@ -403,12 +587,18 @@ require_once __DIR__ . '/includes/header.php';
     <!-- Unverified/Pending Customers (top) -->
     <h4>Unverified / Pending Customers</h4>
     <form method="post" action="" id="bulkUnverifiedForm">
-        <div style="margin-bottom:10px;display:flex;gap:10px;">
+        <div style="margin-bottom:10px;display:flex;gap:10px;align-items:center;">
             <button type="submit" name="bulk_verify" onclick="return confirm('Verify all selected customers?');" style="background:#198754;color:#fff;padding:8px 16px;border:none;border-radius:4px;font-weight:600;">Verify Selected</button>
             <button type="submit" name="mass_delete_unverified" onclick="return confirmMassDelete();" style="background:#dc3545;color:#fff;padding:8px 16px;border:none;border-radius:4px;font-weight:600;">Delete Selected</button>
         </div>
-        <table class="admin-table">
-            <tr><th><input type="checkbox" id="selectAllUnverified"></th><th>ID</th><th>Name</th><th>Business</th><th>Phone</th><th>Email</th><th>Billing</th><th>Shipping</th><th>Actions</th></tr>
+        <div style="margin-bottom:8px;">
+            <small>Sort list:</small>
+            <button type="button" class="action-btn small sort-btn" data-target="unverified_table" data-sort="original">Original</button>
+            <button type="button" class="action-btn small sort-btn" data-target="unverified_table" data-sort="name">Name</button>
+            <button type="button" class="action-btn small sort-btn" data-target="unverified_table" data-sort="business">Business</button>
+        </div>
+    <table id="unverified_table" class="admin-table">
+            <tr><th><input type="checkbox" id="selectAllUnverified"></th><th>Name</th><th>Business</th><th>Phone</th><th>Email</th><th>Billing</th><th>Shipping</th><th>Actions</th></tr>
             <?php foreach ($unverifiedCustomers as $cust): ?>
                 <?php
                     $billDisplay = trim((
@@ -424,7 +614,6 @@ require_once __DIR__ . '/includes/header.php';
                 ?>
                 <tr>
                     <td><input type="checkbox" name="unverified_ids[]" value="<?= $cust['id'] ?>"></td>
-                    <td><?= $cust['id'] ?></td>
                     <td><?= htmlspecialchars($cust['name']) ?></td>
                     <td><?= htmlspecialchars($cust['business_name']) ?></td>
                     <td><?= htmlspecialchars($cust['phone']) ?></td>
@@ -438,7 +627,7 @@ require_once __DIR__ . '/includes/header.php';
                 </tr>
             <?php endforeach; ?>
             <?php if (empty($unverifiedCustomers)): ?>
-                <tr><td colspan="9">No unverified customers found.</td></tr>
+                <tr><td colspan="8">No unverified customers found.</td></tr>
             <?php endif; ?>
         </table>
     </form>
@@ -451,6 +640,77 @@ require_once __DIR__ . '/includes/header.php';
     function confirmMassDelete() {
         return confirm('Are you sure you want to delete all selected unverified customers? This cannot be undone.');
     }
+    // Sorting utilities for customer lists
+    (function(){
+        // add original order index to each data row (skip header rows that use <th>)
+        function annotateOriginal(tableId) {
+            var t = document.getElementById(tableId);
+            if (!t) return;
+            var rows = t.querySelectorAll('tbody > tr');
+            if (!rows.length) rows = t.querySelectorAll('tr');
+            for (var i = 0; i < rows.length; i++) {
+                var r = rows[i];
+                // skip header rows which contain <th>
+                if (r.querySelector && r.querySelector('th')) continue;
+                if (!r.dataset) r.dataset = {};
+                r.dataset.origIndex = r.dataset.origIndex || i;
+            }
+        }
+        function getCellText(row, colIndex) {
+            var cells = row.children;
+            if (!cells || cells.length <= colIndex) return '';
+            return cells[colIndex].innerText.trim().toLowerCase();
+        }
+        function sortTable(tableId, mode) {
+            var t = document.getElementById(tableId);
+            if (!t) return;
+            var tbody = t.tBodies[0] || t;
+            var rows = Array.prototype.slice.call(tbody.querySelectorAll('tr'));
+            // header row may be first; ensure we sort only actual data rows (skip rows that contain <th>)
+            rows = rows.filter(function(r){ if (r.querySelector && r.querySelector('th')) return false; return r.querySelector('td') !== null; });
+            // determine column indices: checkbox(0), name(1), business(2)
+            if (mode === 'original') {
+                rows.sort(function(a,b){ return (a.dataset.origIndex||0) - (b.dataset.origIndex||0); });
+            } else if (mode === 'name') {
+                rows.sort(function(a,b){ return getCellText(a,1).localeCompare(getCellText(b,1)); });
+            } else if (mode === 'business') {
+                rows.sort(function(a,b){ return getCellText(a,2).localeCompare(getCellText(b,2)); });
+            }
+            // append rows in new order
+            for (var i = 0; i < rows.length; i++) tbody.appendChild(rows[i]);
+        }
+        function setActiveButton(targetTable, mode) {
+            var buttons = document.querySelectorAll('.sort-btn[data-target="' + targetTable + '"]');
+            buttons.forEach(function(b){
+                if (b.dataset.sort === mode) {
+                    b.style.transform = 'translateY(1px)';
+                    b.style.boxShadow = '';
+                } else {
+                    b.style.transform = '';
+                    b.style.boxShadow = '0 6px 18px rgba(0,0,0,0.12)';
+                }
+            });
+        }
+        // initialize for unverified and verified
+        annotateOriginal('unverified_table');
+        annotateOriginal('verified_table');
+        // Select all verified checkboxes
+        var selectAllVerified = document.getElementById('selectAllVerified');
+        if (selectAllVerified) selectAllVerified.onclick = function() {
+            var boxes = document.querySelectorAll('input[name="verified_ids[]"]');
+            for (var i = 0; i < boxes.length; i++) boxes[i].checked = this.checked;
+        };
+        // bind click handlers
+        document.querySelectorAll('.sort-btn').forEach(function(btn){
+                btn.addEventListener('click', function(e){
+                    e.preventDefault();
+                    var tableId = this.dataset.target;
+                    var mode = this.dataset.sort;
+                    sortTable(tableId, mode);
+                    setActiveButton(tableId, mode);
+                });
+            });
+    })();
     </script>
     <!-- Verified Customers (below) -->
     <h4>Verified Customers</h4>
@@ -459,8 +719,14 @@ require_once __DIR__ . '/includes/header.php';
             <button type="submit" name="bulk_unverify" onclick="return confirm('Unverify all selected customers?');" style="background:#ffc107;color:#000;padding:8px 16px;border:none;border-radius:4px;font-weight:600;">Unverify Selected</button>
             <button type="submit" name="bulk_delete_verified" onclick="return confirm('Delete all selected verified customers? This cannot be undone.');" style="background:#dc3545;color:#fff;padding:8px 16px;border:none;border-radius:4px;font-weight:600;">Delete Selected</button>
         </div>
-        <table class="admin-table">
-            <tr><th><input type="checkbox" id="selectAllVerified"></th><th>ID</th><th>Name</th><th>Business</th><th>Phone</th><th>Email</th><th>Billing</th><th>Shipping</th><th>Actions</th></tr>
+        <div style="margin-bottom:8px;">
+            <small>Sort list:</small>
+            <button type="button" class="action-btn small sort-btn" data-target="verified_table" data-sort="original">Original</button>
+            <button type="button" class="action-btn small sort-btn" data-target="verified_table" data-sort="name">Name</button>
+            <button type="button" class="action-btn small sort-btn" data-target="verified_table" data-sort="business">Business</button>
+        </div>
+        <table id="verified_table" class="admin-table">
+            <tr><th><input type="checkbox" id="selectAllVerified"></th><th>Name</th><th>Business</th><th>Phone</th><th>Email</th><th>Billing</th><th>Shipping</th><th>Actions</th></tr>
             <?php foreach ($verifiedCustomers as $cust): ?>
                 <?php
                     $billDisplay = trim((
@@ -476,7 +742,6 @@ require_once __DIR__ . '/includes/header.php';
                 ?>
                 <tr>
                     <td><input type="checkbox" name="verified_ids[]" value="<?= $cust['id'] ?>"></td>
-                    <td><?= $cust['id'] ?></td>
                     <td><?= htmlspecialchars($cust['name']) ?></td>
                     <td><?= htmlspecialchars($cust['business_name']) ?></td>
                     <td><?= htmlspecialchars($cust['phone']) ?></td>
@@ -490,45 +755,182 @@ require_once __DIR__ . '/includes/header.php';
                 </tr>
             <?php endforeach; ?>
             <?php if (empty($verifiedCustomers)): ?>
-                <tr><td colspan="9">No verified customers found.</td></tr>
+                <tr><td colspan="8">No verified customers found.</td></tr>
             <?php endif; ?>
         </table>
     </form>
 </section>
 
-<section>
+<section id="products">
     <h3>Products</h3>
-    <div style="display:flex; justify-content:flex-start; margin:8px 0 12px 0;">
-        <a href="admin/update_inventory.php" style="background:#0b5ed7; color:#fff; padding:8px 14px; border-radius:6px; text-decoration:none; font-weight:600;">Update Inventory</a>
-    </div>
-    <form method="post" action="">
+    <?php
+        // Derive list of active deals for display
+        $activeDeals = array_values(array_filter($products, function($p){ return !empty($p['deal']); }));
+    ?>
+    <h4>Active Deals</h4>
+        <form method="post" action="" id="dealsForm">
+            <input type="hidden" name="save_deal_prices" value="1">
+            <table class="admin-table">
+                <tr><th>ID</th><th>Name</th><th>Description</th><th>Base Price</th><th>Deal Price (override)</th><th>Actions</th></tr>
+                <?php foreach ($activeDeals as $d): ?>
+                    <tr>
+                        <td><?= (int)$d['id'] ?></td>
+                        <td><?= htmlspecialchars($d['name']) ?></td>
+                        <td><?= htmlspecialchars($d['description']) ?></td>
+                        <td>$<?= number_format((float)$d['price'], 2) ?></td>
+                        <td>
+                            <input type="number" step="0.01" name="deal_price_<?= (int)$d['id'] ?>" value="<?= htmlspecialchars(isset($d['deal_price']) && $d['deal_price'] !== '' ? (string)$d['deal_price'] : '') ?>" placeholder="e.g. 9.99">
+                        </td>
+                        <td>
+                            <a class="mgr-btn" href="?toggle_deal=<?= (int)$d['id'] ?>" style="background:#dc3545;color:#fff;" onclick="return confirm('Remove this item from Deals? This will clear the deal price.');">Unset Deal</a>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                <?php if (empty($activeDeals)): ?>
+                    <tr><td colspan="6">No active deals.</td></tr>
+                <?php endif; ?>
+            </table>
+            <?php if (!empty($activeDeals)): ?>
+                <p><button type="submit" class="proceed-btn">Save Deal Prices</button></p>
+            <?php endif; ?>
+        </form>
+    <!-- Update Inventory button moved below the products table to sit beside Save Product Changes -->
+    <form method="post" action="" id="productsForm">
         <input type="hidden" name="save_products" value="1">
+        <input type="hidden" name="products_json" id="products_json" value="">
         <table class="admin-table">
-            <tr><th>ID</th><th>Name</th><th>Description</th><th>Price</th><th>Actions</th></tr>
-            <?php $rowNum = 1; foreach ($products as $prod): ?>
+            <tr><th>ID</th><th>Name</th><th>Description</th><th>Price</th><th>Deal</th><th>Image</th><th>Actions</th></tr>
+            <?php foreach ($products as $prod): ?>
                 <tr>
-                    <!-- Display a sequential row number instead of the raw product ID -->
-                    <td><?php echo $rowNum; ?></td>
-                    <td><input type="text" name="name_<?php echo $prod['id']; ?>" value="<?php echo htmlspecialchars($prod['name']); ?>"></td>
-                    <td><input type="text" name="desc_<?php echo $prod['id']; ?>" value="<?php echo htmlspecialchars($prod['description']); ?>"></td>
-                    <td><input type="number" step="0.01" name="price_<?php echo $prod['id']; ?>" value="<?php echo number_format($prod['price'], 2); ?>"></td>
-                    <td><a class="mgr-btn mgr-product-delete" href="?delete_product=<?php echo $prod['id']; ?>" onclick="return confirm('Delete this product?');">Delete</a></td>
+                    <!-- Show the real product ID for clarity -->
+                    <td><?php echo (int)$prod['id']; ?></td>
+                    <td><input type="text" name="name_<?php echo (int)$prod['id']; ?>" value="<?php echo htmlspecialchars($prod['name']); ?>"></td>
+                    <td><input type="text" name="desc_<?php echo (int)$prod['id']; ?>" value="<?php echo htmlspecialchars($prod['description']); ?>"></td>
+                    <!-- Avoid number_format to prevent commas; let the browser handle display/format -->
+                    <td><input type="number" step="0.01" name="price_<?php echo (int)$prod['id']; ?>" value="<?php echo htmlspecialchars((string)$prod['price']); ?>"></td>
+                    <td>
+                        <?php $isDeal = !empty($prod['deal']); ?>
+                        <a class="mgr-btn" href="?toggle_deal=<?php echo (int)$prod['id']; ?>" style="background: <?php echo $isDeal ? '#dc3545' : '#198754'; ?>; color:#fff;" onclick="return confirm('<?php echo $isDeal ? 'Unset this deal?' : 'Mark this item as a Deal?'; ?>');"><?php echo $isDeal ? 'Unset' : 'Set'; ?> Deal</a>
+                    </td>
+                    <td>
+                        <?php
+                            // Resolve current image URL by trying extensions
+                            $name = (string)($prod['name'] ?? '');
+                            $slug = strtolower(preg_replace('/[^a-z0-9]+/i', '-', $name));
+                            $slug = trim(preg_replace('/-+/', '-', $slug), '-');
+                            if ($slug === '') $slug = 'product';
+                            $base = '/assets/uploads/products/' . $slug;
+                            $exts = ['jpg','jpeg','png','webp','gif'];
+                            $imgUrl = '';
+                            foreach ($exts as $e) {
+                                $path = __DIR__ . '/assets/uploads/products/' . $slug . '.' . $e;
+                                if (is_file($path)) { $imgUrl = $base . '.' . $e; break; }
+                            }
+                            $placeholder = '/assets/DaytonaSupplyDSlogo.png';
+                            if (!is_file(__DIR__ . '/assets/DaytonaSupplyDSlogo.png')) {
+                                // fallback to existing logo path in assets/images
+                                $placeholder = '/assets/images/DaytonaSupplyDSlogo.png';
+                            }
+                        ?>
+                        <div class="manager-dropzone" data-product-id="<?= (int)$prod['id'] ?>" data-product-name="<?= htmlspecialchars($name) ?>">
+                            <div class="dz-preview">
+                                <img src="<?= htmlspecialchars($imgUrl ?: $placeholder) ?>" alt="Preview" />
+                            </div>
+                            <div class="dz-instructions">Drop image here or click to upload</div>
+                            <input type="file" accept="image/*" class="dz-file" style="display:none;" />
+                        </div>
+                    </td>
+                    <td><a class="mgr-btn mgr-product-delete" href="?delete_product=<?php echo (int)$prod['id']; ?>" onclick="return confirm('Delete this product?');">Delete</a></td>
                 </tr>
-                <?php $rowNum++; ?>
             <?php endforeach; ?>
             <?php if (empty($products)): ?>
-                <tr><td colspan="5">No products found.</td></tr>
+                <tr><td colspan="7">No products found.</td></tr>
             <?php endif; ?>
         </table>
-        <p><button type="submit">Save Product Changes</button></p>
+    <p style="display:flex;gap:8px;align-items:center;">
+        <button type="submit" class="proceed-btn">Save Product Changes</button>
+        <a href="admin/update_inventory.php" style="background:#0b5ed7; color:#fff; padding:8px 14px; border-radius:6px; text-decoration:none; font-weight:600;">Update Inventory</a>
+    </p>
     </form>
+    <script>
+    // Serialize the products table into a single JSON payload to avoid hitting PHP max_input_vars
+    (function(){
+        var form = document.getElementById('productsForm');
+        if (!form) return;
+        form.addEventListener('submit', function(){
+            try {
+                var rows = form.querySelectorAll('table.admin-table tr');
+                var data = {};
+                for (var i = 1; i < rows.length; i++) { // skip header row
+                    var r = rows[i];
+                    var idCell = r.children && r.children[0];
+                    if (!idCell) continue;
+                    var idText = idCell.textContent ? idCell.textContent.trim() : '';
+                    var id = parseInt(idText, 10);
+                    if (!id || id <= 0) continue;
+                    var nameInput = r.querySelector('input[name="name_' + id + '"]');
+                    var descInput = r.querySelector('input[name="desc_' + id + '"]');
+                    var priceInput = r.querySelector('input[name="price_' + id + '"]');
+                    if (!nameInput && !descInput && !priceInput) continue;
+                    var name = nameInput ? nameInput.value : '';
+                    var desc = descInput ? descInput.value : '';
+                    var price = priceInput ? priceInput.value : '0';
+                    data[id] = { name: name, description: desc, price: price };
+                }
+                var hidden = document.getElementById('products_json');
+                hidden.value = JSON.stringify(data);
+            } catch (e) {
+                // If serialization fails, allow normal submission of individual inputs
+                console.error('products_json serialization failed', e);
+            }
+        });
+    })();
+    // Bind manager dropzones
+    (function(){
+        function uploadFile(dz, file, name, id){
+            if (!file) return;
+            var fd = new FormData();
+            fd.append('image', file);
+            if (name) fd.append('product_name', name);
+            if (id) fd.append('product_id', String(id));
+            dz.classList.add('dz-uploading');
+            fetch('/ajax/upload_product_image.php', { method: 'POST', body: fd, credentials: 'same-origin' })
+                .then(function(r){ return r.json().catch(function(){ return {}; }); })
+                .then(function(json){
+                    dz.classList.remove('dz-uploading');
+                    if (!json || !json.success) { alert('Upload failed' + (json && json.error ? ': ' + json.error : '')); return; }
+                    var img = dz.querySelector('.dz-preview img');
+                    if (img) { img.src = json.url; }
+                })
+                .catch(function(){ dz.classList.remove('dz-uploading'); alert('Upload failed'); });
+        }
+        document.querySelectorAll('.manager-dropzone').forEach(function(dz){
+            var input = dz.querySelector('input.dz-file');
+            var name = dz.getAttribute('data-product-name') || '';
+            var id = parseInt(dz.getAttribute('data-product-id') || '0', 10) || 0;
+            dz.addEventListener('click', function(e){
+                if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON')) return;
+                if (input) input.click();
+            });
+            if (input) input.addEventListener('change', function(){ if (input.files && input.files[0]) uploadFile(dz, input.files[0], name, id); });
+            dz.addEventListener('dragover', function(e){ e.preventDefault(); dz.classList.add('dz-over'); });
+            dz.addEventListener('dragleave', function(e){ dz.classList.remove('dz-over'); });
+            dz.addEventListener('drop', function(e){ e.preventDefault(); dz.classList.remove('dz-over'); var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (f) uploadFile(dz, f, name, id); });
+        });
+    })();
+    </script>
     <h4>Add Product</h4>
     <form method="post" action="">
         <input type="hidden" name="add_product" value="1">
-        <p>Name: <input type="text" name="name" required></p>
-        <p>Description: <input type="text" name="description"></p>
-        <p>Price: <input type="number" step="0.01" name="price" required></p>
-        <p><button type="submit">Add Product</button></p>
+        <p>Name: <input type="text" name="name" required class="search-variant"></p>
+        <p>Description: <input type="text" name="description" class="search-variant"></p>
+        <p>Price: <input type="number" step="0.01" name="price" required class="search-variant"></p>
+    <p><button type="submit" class="proceed-btn">Add Product</button></p>
     </form>
 </section>
+    <!-- Back to top -->
+    <div id="backToTopWrap" class="back-to-top-wrap" aria-hidden="true">
+        <span class="back-to-top-label">Return To Top</span>
+        <button id="backToTop" class="back-to-top" aria-label="Back to top">↑</button>
+    </div>
 <?php include __DIR__ . '/includes/footer.php'; ?>

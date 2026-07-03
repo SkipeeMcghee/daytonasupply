@@ -57,6 +57,12 @@ if (!getenv('COMPANY_EMAIL')) {
     putenv('COMPANY_EMAIL=packinggenerals@gmail.com');
 }
 
+// Ensure NOTIFY_EMAIL defaults to COMPANY_EMAIL (used for internal notifications)
+if (!getenv('NOTIFY_EMAIL')) {
+    $defaultFrom = getenv('COMPANY_EMAIL') ?: 'packinggenerals@gmail.com';
+    putenv('NOTIFY_EMAIL=' . $defaultFrom);
+}
+
 // Attempt to load Composer autoloader if PHPMailer and other vendor
 // packages were installed via composer.  This will register the
 // PHPMailer classes automatically.  If the autoloader file does not
@@ -162,9 +168,61 @@ function updateCustomer(int $id, array $data)
  */
 function getAllProducts(): array
 {
+    $cacheKey = 'daytona_all_products_v1';
+    $useApc = function_exists('apcu_fetch');
+    if ($useApc) {
+        $cached = @apcu_fetch($cacheKey, $ok);
+        if ($ok && is_array($cached)) return $cached;
+    } else {
+        $cacheFile = __DIR__ . '/../data/cache_products.json';
+        if (is_readable($cacheFile)) {
+            $json = @file_get_contents($cacheFile);
+            $arr = json_decode($json, true);
+            if (is_array($arr)) return $arr;
+        }
+    }
     $db = getDb();
-    $stmt = $db->query('SELECT * FROM products ORDER BY id ASC');
+    // Always return products ordered by name (our SKU) for consistent UI ordering
+    $stmt = $db->query('SELECT * FROM products ORDER BY name ASC');
+    $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    // Cache the result for subsequent requests
+    if ($useApc) {
+        @apcu_store($cacheKey, $products, 300); // 5 minutes
+    } else {
+        // best-effort write
+        @file_put_contents(__DIR__ . '/../data/cache_products.json', json_encode($products), LOCK_EX);
+    }
+    return $products;
+}
+
+/**
+ * Retrieve all products directly from the database, bypassing any cache.
+ * Useful for admin/manager views where immediate consistency is required.
+ *
+ * @return array An array of associative arrays describing products.
+ */
+function getAllProductsFresh(): array
+{
+    $db = getDb();
+    $stmt = $db->query('SELECT * FROM products ORDER BY name ASC');
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+/**
+ * Invalidate the products cache used by getAllProducts(). This clears the APCu
+ * entry when available and deletes the on-disk cache file. Safe to call even if
+ * the cache does not exist.
+ */
+function invalidateProductsCache(): void
+{
+    $cacheKey = 'daytona_all_products_v1';
+    if (function_exists('apcu_delete')) {
+        @apcu_delete($cacheKey);
+    }
+    $cacheFile = __DIR__ . '/../data/cache_products.json';
+    if (is_file($cacheFile)) {
+        @unlink($cacheFile);
+    }
 }
 
 /**
@@ -249,7 +307,126 @@ function getProductById(int $id): ?array
     $stmt = $db->prepare('SELECT * FROM products WHERE id = :id');
     $stmt->execute([':id' => $id]);
     $prod = $stmt->fetch(PDO::FETCH_ASSOC);
-    return $prod ?: null;
+    if ($prod) return $prod;
+    // DB lookup missed — attempt a best-effort fallback to the on-disk
+    // product cache so the site can still display product details when
+    // the database is temporarily unavailable or the row is missing.
+    try {
+        $cacheFile = __DIR__ . '/../data/cache_products.json';
+        if (is_readable($cacheFile)) {
+            $json = @file_get_contents($cacheFile);
+            $arr = $json ? json_decode($json, true) : null;
+            if (is_array($arr)) {
+                foreach ($arr as $p) {
+                    if (isset($p['id']) && (int)$p['id'] === $id) {
+                        error_log('getProductById: falling back to cache_products.json for id=' . $id);
+                        return $p;
+                    }
+                }
+            }
+        }
+    } catch (Exception $e) {
+        // ignore and return null below
+    }
+    return null;
+}
+
+/**
+ * Return a best-effort display SKU/name for a product row.
+ * Supports products that may use 'name', 'sku' or 'code' as the identifier.
+ */
+function getProductDisplayName(array $prod): string
+{
+    if (empty($prod)) return '';
+    if (!empty($prod['name'])) return (string)$prod['name'];
+    if (!empty($prod['sku'])) return (string)$prod['sku'];
+    if (!empty($prod['code'])) return (string)$prod['code'];
+    return '';
+}
+
+/**
+ * Return a best-effort product description.
+ */
+function getProductDescription(array $prod): string
+{
+    if (empty($prod)) return '';
+    if (!empty($prod['description'])) return (string)$prod['description'];
+    if (!empty($prod['desc'])) return (string)$prod['desc'];
+    // fallback to name/sku if no description
+    return getProductDisplayName($prod);
+}
+
+/**
+ * Return a best-effort product price as float. Supports columns like
+ * 'price', 'unit_price', 'list_price'. Returns 0.0 when unknown.
+ */
+function getProductPrice(array $prod): float
+{
+    if (empty($prod)) return 0.0;
+    // Prefer deal_price when deal is active and a deal price exists
+    if (!empty($prod['deal'])) {
+        if (isset($prod['deal_price']) && $prod['deal_price'] !== '' && $prod['deal_price'] !== null) {
+            return (float)$prod['deal_price'];
+        }
+    }
+    foreach (['price', 'unit_price', 'list_price', 'cost'] as $c) {
+        if (isset($prod[$c]) && $prod[$c] !== '') {
+            return (float)$prod[$c];
+        }
+    }
+    return 0.0;
+}
+
+/**
+ * Get the list of favorite SKUs for a customer from the favorites table.
+ * The favorites table is expected to have columns (id, sku) where id = customer id.
+ * Returns an array of SKU strings (product name values).
+ */
+function getFavoriteSkusByCustomerId(int $customerId): array
+{
+    $db = getDb();
+    try {
+        // Ensure the table exists; if not, this will throw and we return empty
+        $stmt = $db->prepare('SELECT sku FROM favorites WHERE id = :id');
+        $stmt->execute([':id' => $customerId]);
+        $rows = $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
+        return array_values(array_filter(array_map('strval', (array)$rows)));
+    } catch (Exception $e) {
+        error_log('getFavoriteSkusByCustomerId error: ' . $e->getMessage());
+        return [];
+    }
+}
+
+/**
+ * Toggle a favorite for a given customer and product id.
+ * Uses the product name as the SKU value in favorites.sku per requirements.
+ * Returns true if now favorited, false if removed or on failure.
+ */
+function toggleFavoriteForCustomerProduct(int $customerId, int $productId): bool
+{
+    $db = getDb();
+    try {
+        $prod = getProductById($productId);
+        if (!$prod) return false;
+        $sku = getProductDisplayName($prod);
+        if ($sku === '') return false;
+        // Check if exists
+        $check = $db->prepare('SELECT 1 FROM favorites WHERE id = :id AND sku = :sku LIMIT 1');
+        $check->execute([':id' => $customerId, ':sku' => $sku]);
+        $exists = (bool)$check->fetchColumn();
+        if ($exists) {
+            $del = $db->prepare('DELETE FROM favorites WHERE id = :id AND sku = :sku');
+            $del->execute([':id' => $customerId, ':sku' => $sku]);
+            return false; // now unfavorited
+        } else {
+            $ins = $db->prepare('INSERT INTO favorites (id, sku) VALUES (:id, :sku)');
+            $ins->execute([':id' => $customerId, ':sku' => $sku]);
+            return true; // now favorited
+        }
+    } catch (Exception $e) {
+        error_log('toggleFavoriteForCustomerProduct error: ' . $e->getMessage());
+        return false;
+    }
 }
 
 /**
@@ -261,17 +438,30 @@ function getProductById(int $id): ?array
  * @param array $cart Map of product IDs to quantities
  * @return int Newly created order ID
  */
-function createOrder(int $customerId, array $cart, float $taxAmount = 0.0): int
+function createOrder(int $customerId, array $cart, float $taxAmount = 0.0, ?string $poNumber = null): int
 {
     $db = getDb();
     $db->beginTransaction();
     try {
-        // Calculate order total
+        // Calculate order total. Support new cart shape where each entry
+        // may be a snapshot array (product_name, product_description,
+        // product_price, quantity) or the legacy productId => qty map.
         $total = 0.0;
-        foreach ($cart as $productId => $qty) {
-            $prod = getProductById((int)$productId);
-            if ($prod) {
-                $total += $prod['price'] * $qty;
+        foreach ($cart as $productId => $entry) {
+            if (is_array($entry) && isset($entry['quantity'])) {
+                $qty = (int)$entry['quantity'];
+                $price = isset($entry['product_price']) ? (float)$entry['product_price'] : null;
+                if ($price === null || $price === 0.0) {
+                    $prod = getProductById((int)$productId);
+                    if ($prod) $price = (float)$prod['price']; else $price = 0.0;
+                }
+                $total += $price * $qty;
+            } else {
+                $qty = (int)$entry;
+                $prod = getProductById((int)$productId);
+                if ($prod) {
+                    $total += $prod['price'] * $qty;
+                }
             }
         }
         // Apply tax amount if provided
@@ -279,26 +469,125 @@ function createOrder(int $customerId, array $cart, float $taxAmount = 0.0): int
             $total += $taxAmount;
         }
         // Insert order
-        $insOrder = $db->prepare('INSERT INTO orders(customer_id, status, total, created_at) VALUES(:customer_id, :status, :total, :created_at)');
+        $insOrder = $db->prepare('INSERT INTO orders(customer_id, status, total, po_number, created_at) VALUES(:customer_id, :status, :total, :po_number, :created_at)');
         $insOrder->execute([
             ':customer_id' => $customerId,
             ':status' => 'Pending',
             ':total' => $total,
+            ':po_number' => $poNumber,
             ':created_at' => date('c')
         ]);
         $orderId = (int)$db->lastInsertId();
-        // Insert order items
-        $insItem = $db->prepare('INSERT INTO order_items(order_id, product_id, quantity) VALUES(:order_id, :product_id, :quantity)');
-        foreach ($cart as $productId => $qty) {
-            $insItem->execute([
-                ':order_id' => $orderId,
-                ':product_id' => (int)$productId,
-                ':quantity' => (int)$qty
-            ]);
+        if (empty($orderId)) {
+            // Order insert failed to produce an ID — fail loudly so calling
+            // code (checkout) can report an error and we don't send emails
+            // with an empty order id.
+            $db->rollBack();
+            throw new Exception('Failed to create order (no insert id returned)');
+        }
+    // Insert order items and snapshot product name/description/price
+        // if the order_items table contains those columns. Fall back to
+        // a minimal insert when the migration hasn't been applied yet.
+        $cols = array_map('strval', getTableColumns('order_items'));
+        $hasName = in_array('product_name', $cols, true);
+        $hasDesc = in_array('product_description', $cols, true);
+        $hasPrice = in_array('product_price', $cols, true);
+
+        // If using MySQL, prefer snapshot columns (create them earlier in
+        // the connection setup). If they are missing, ensureMySQLOrderSnapshotSchema
+        // should have attempted to add them; re-check now and prefer snapshots
+        // when available so historical snapshots are always stored.
+        try {
+            $driver = $db->getAttribute(PDO::ATTR_DRIVER_NAME);
+        } catch (Exception $_) {
+            $driver = 'sqlite';
+        }
+        if (strcasecmp($driver, 'mysql') === 0) {
+            // re-evaluate columns to prefer snapshot path
+            $cols = array_map('strval', getTableColumns('order_items'));
+            $hasName = in_array('product_name', $cols, true) || $hasName;
+            $hasDesc = in_array('product_description', $cols, true) || $hasDesc;
+            $hasPrice = in_array('product_price', $cols, true) || $hasPrice;
+        }
+
+        // If using MySQL, temporarily disable foreign key checks to allow
+        // inserting historical snapshots even if the product FK references
+        // a legacy table (e.g. products_old) or the product row has been
+        // removed. We'll re-enable checks before committing.
+        $driver = 'sqlite';
+        try { $driver = $db->getAttribute(PDO::ATTR_DRIVER_NAME); } catch (Exception $_) {}
+        $fkDisabled = false;
+        if (strcasecmp($driver, 'mysql') === 0) {
+            try {
+                $db->exec('SET FOREIGN_KEY_CHECKS=0');
+                $fkDisabled = true;
+                error_log('createOrder: disabled FOREIGN_KEY_CHECKS for order snapshot insert');
+            } catch (Exception $e) {
+                error_log('createOrder: failed to disable FOREIGN_KEY_CHECKS: ' . $e->getMessage());
+            }
+        }
+
+        if ($hasName || $hasDesc || $hasPrice) {
+            // Build dynamic insert based on available snapshot columns
+            $fields = ['order_id', 'product_id', 'quantity'];
+            $params = [':order_id', ':product_id', ':quantity'];
+            if ($hasName) { $fields[] = 'product_name'; $params[] = ':product_name'; }
+            if ($hasDesc) { $fields[] = 'product_description'; $params[] = ':product_description'; }
+            if ($hasPrice) { $fields[] = 'product_price'; $params[] = ':product_price'; }
+            $sql = 'INSERT INTO order_items(' . implode(',', $fields) . ') VALUES(' . implode(',', $params) . ')';
+            $insItem = $db->prepare($sql);
+            foreach ($cart as $productId => $entry) {
+                // Support snapshot entries stored in session cart
+                if (is_array($entry) && isset($entry['quantity'])) {
+                    $qty = (int)$entry['quantity'];
+                    $pname = $entry['product_name'] ?? '';
+                    $pdesc = $entry['product_description'] ?? '';
+                    $pprice = isset($entry['product_price']) ? (float)$entry['product_price'] : null;
+                } else {
+                    $qty = (int)$entry;
+                    $prod = getProductById((int)$productId);
+                    $pname = $prod ? getProductDisplayName($prod) : '';
+                    $pdesc = $prod ? getProductDescription($prod) : '';
+                    $pprice = $prod ? getProductPrice($prod) : 0.0;
+                }
+                // If snapshot price was not provided, fall back to current product
+                if ($pprice === null) {
+                    $prod = getProductById((int)$productId);
+                    $pprice = $prod ? ((float)($prod['price'] ?? 0.0)) : 0.0;
+                }
+                $bind = [':order_id' => $orderId, ':product_id' => (int)$productId, ':quantity' => (int)$qty];
+                if ($hasName) $bind[':product_name'] = $pname;
+                if ($hasDesc) $bind[':product_description'] = $pdesc;
+                if ($hasPrice) $bind[':product_price'] = $pprice;
+                $insItem->execute($bind);
+            }
+        } else {
+            // Minimal legacy insert
+            $insItem = $db->prepare('INSERT INTO order_items(order_id, product_id, quantity) VALUES(:order_id, :product_id, :quantity)');
+            foreach ($cart as $productId => $qty) {
+                $insItem->execute([
+                    ':order_id' => $orderId,
+                    ':product_id' => (int)$productId,
+                    ':quantity' => (int)$qty
+                ]);
+            }
+        }
+        // Re-enable FK checks if we disabled them earlier
+        if (!empty($fkDisabled)) {
+            try {
+                $db->exec('SET FOREIGN_KEY_CHECKS=1');
+                error_log('createOrder: re-enabled FOREIGN_KEY_CHECKS after inserts');
+            } catch (Exception $e) {
+                error_log('createOrder: failed to re-enable FOREIGN_KEY_CHECKS: ' . $e->getMessage());
+            }
         }
         $db->commit();
         return $orderId;
     } catch (Exception $e) {
+        // Attempt to re-enable FK checks if we disabled them before rolling back
+        if (!empty($fkDisabled)) {
+            try { $db->exec('SET FOREIGN_KEY_CHECKS=1'); } catch (Exception $_) { }
+        }
         $db->rollBack();
         throw $e;
     }
@@ -315,7 +604,7 @@ function createOrder(int $customerId, array $cart, float $taxAmount = 0.0): int
  * @param string $subject Email subject
  * @param string $message Email body
  */
-function sendEmail(string $to, string $subject, string $message): bool
+function sendEmail(string $to, string $subject, string $message, ?string $replyTo = null): bool
 {
     /*
      * This helper attempts to send email using PHPMailer if it is available.
@@ -349,8 +638,14 @@ function sendEmail(string $to, string $subject, string $message): bool
                     $mailer->SMTPSecure = $secure;
                 }
             }
+            $mailer->CharSet = 'UTF-8';
+            $mailer->Encoding = '8bit';
             $mailer->setFrom($from, 'Daytona Supply');
             $mailer->addAddress($to);
+            // If a valid reply-to address was supplied, add it so replies go to the user
+            if (!empty($replyTo) && filter_var($replyTo, FILTER_VALIDATE_EMAIL)) {
+                $mailer->addReplyTo($replyTo);
+            }
             $mailer->Subject = $subject;
             $mailer->Body = $message;
             // Attempt to send
@@ -362,8 +657,13 @@ function sendEmail(string $to, string $subject, string $message): bool
         }
     }
     // Fallback to PHP mail()
+    // Use the supplied reply-to if valid, otherwise keep Reply-To as the company address
+    $effectiveReply = (!empty($replyTo) && filter_var($replyTo, FILTER_VALIDATE_EMAIL)) ? $replyTo : $from;
     $headers = 'From: ' . $from . "\r\n"
-             . 'Reply-To: ' . $from . "\r\n"
+             . 'Reply-To: ' . $effectiveReply . "\r\n"
+             . 'MIME-Version: 1.0' . "\r\n"
+             . 'Content-Type: text/plain; charset=UTF-8' . "\r\n"
+             . 'Content-Transfer-Encoding: 8bit' . "\r\n"
              . 'X-Mailer: PHP/' . phpversion();
     $success = @mail($to, $subject, $message, $headers);
     if (!$success) {
@@ -750,6 +1050,8 @@ function getCustomerById(int $id): ?array
 function saveProduct(array $data, ?int $id = null): void
 {
     $db = getDb();
+    $driver = 'unknown';
+    try { $driver = $db->getAttribute(PDO::ATTR_DRIVER_NAME); } catch (Exception $_) {}
     if ($id === null) {
         $stmt = $db->prepare('INSERT INTO products(name, description, price) VALUES(:name, :description, :price)');
         $stmt->execute([
@@ -757,6 +1059,8 @@ function saveProduct(array $data, ?int $id = null): void
             ':description' => $data['description'] ?? '',
             ':price' => (float)$data['price']
         ]);
+        $newId = (int)$db->lastInsertId();
+        error_log('saveProduct: insert id=' . $newId . ' via driver=' . $driver);
     } else {
         $stmt = $db->prepare('UPDATE products SET name=:name, description=:description, price=:price WHERE id=:id');
         $stmt->execute([
@@ -765,7 +1069,11 @@ function saveProduct(array $data, ?int $id = null): void
             ':description' => $data['description'] ?? '',
             ':price' => (float)$data['price']
         ]);
+        $rc = (int)$stmt->rowCount();
+        error_log('saveProduct: update id=' . $id . ' affected=' . $rc . ' via driver=' . $driver);
     }
+    // Ensure subsequent reads reflect the new data immediately
+    invalidateProductsCache();
 }
 
 /**
@@ -778,6 +1086,8 @@ function deleteProduct(int $id): void
     $db = getDb();
     $stmt = $db->prepare('DELETE FROM products WHERE id = :id');
     $stmt->execute([':id' => $id]);
+    // Invalidate product caches so UIs reflect the deletion
+    invalidateProductsCache();
 }
 
 /**
@@ -870,19 +1180,219 @@ function getProductsBySearch(string $term, ?PDO $db = null): array
     $term = normalizeScalar($term, 150, '');
     if ($term === '') return [];
 
-    // Escape wildcard chars and use a parameterized query. Use the
-    // same ESCAPE character for portability across drivers.
+    // Fuzzy matching: compare both raw text and a normalized variant
+    // where we remove spaces, common separators, and the letter 'x'.
+    // This lets queries like "444" match "4 x 4 x 4" or "4x4x4".
+    $driver = 'generic';
+    try { $driver = $db->getAttribute(PDO::ATTR_DRIVER_NAME) ?: 'generic'; } catch (Exception $_) {}
+
+    // Build a portable normalized expression: UPPER(), REPLACE() chaining
+    // to remove spaces, '-', '/', '.', ',', and both 'x'/'X'.
+    $norm = function(string $col) use ($driver): string {
+        $expr = "UPPER(" . $col . ")";
+        foreach ([' ', 'x', 'X', '-', '/', '.', ',', '\\t'] as $rm) {
+            // In SQL string literals, backslash isn't special for SQLite/MySQL with standard settings.
+            $lit = $rm === "\\t" ? "\t" : $rm;
+            $expr = "REPLACE(" . $expr . ", '" . str_replace("'", "''", $lit) . "', '')";
+        }
+        return $expr;
+    };
+
     $escapeChar = "\\";
-    $sql = 'SELECT * FROM products WHERE name LIKE :term ESCAPE ' . "'" . $escapeChar . "'" . ' OR description LIKE :term ESCAPE ' . "'" . $escapeChar . "'" . ' ORDER BY id ASC';
+    $like = likeTerm($term);
+    $nTerm = strtoupper(preg_replace('/[^A-Z0-9]/i', '', (string)$term));
+    $nLike = '%' . $nTerm . '%';
+    $nPrefix = $nTerm . '%';
+    $prefix = strtoupper($term) . '%';
+
+    // Build SQL with a relevance score for better ordering
+    $nName = $norm('name');
+    $nDesc = $norm('description');
+    $sql = "SELECT *, ".
+           "(CASE WHEN UPPER(name) LIKE :prefix THEN 120 ELSE 0 END) + ".
+           "(CASE WHEN $nName LIKE :nprefix THEN 100 ELSE 0 END) + ".
+           "(CASE WHEN UPPER(description) LIKE :prefix THEN 60 ELSE 0 END) + ".
+           "(CASE WHEN $nDesc LIKE :nprefix THEN 50 ELSE 0 END) + ".
+           "(CASE WHEN name LIKE :like ESCAPE '$escapeChar' OR description LIKE :like ESCAPE '$escapeChar' THEN 20 ELSE 0 END) + ".
+           "(CASE WHEN $nName LIKE :nlike OR $nDesc LIKE :nlike THEN 10 ELSE 0 END) AS score ".
+           "FROM products ".
+           "WHERE name LIKE :like ESCAPE '$escapeChar' ".
+           "   OR description LIKE :like ESCAPE '$escapeChar' ".
+           "   OR $nName LIKE :nlike ".
+           "   OR $nDesc LIKE :nlike ".
+           "ORDER BY score DESC, name ASC";
     $stmt = $db->prepare($sql);
-    $stmt->execute([':term' => likeTerm($term)]);
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $stmt->execute([
+        ':like' => $like,
+        ':nlike' => $nLike,
+        ':prefix' => $prefix,
+        ':nprefix' => $nPrefix,
+    ]);
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    return $rows;
 }
 
 // Keep the old name for backward compatibility
 function searchProducts(string $term): array
 {
     return getProductsBySearch($term);
+}
+
+/**
+ * Return compact suggestions for typeahead dropdown.
+ * @param string $term
+ * @param int $limit
+ * @return array[] {id,name,description,price}
+ */
+function getProductSuggestions(string $term, int $limit = 8): array
+{
+    $db = getDb();
+    $term = normalizeScalar($term, 150, '');
+    if ($term === '') return [];
+    $rows = getProductSuggestionsLimited($term, $limit, $db);
+    if (!$rows) return [];
+    $out = [];
+    foreach ($rows as $r) {
+        $out[] = [
+            'id' => (int)($r['id'] ?? 0),
+            'name' => getProductDisplayName($r),
+            'description' => getProductDescription($r),
+            'price' => getProductPrice($r)
+        ];
+        if (count($out) >= $limit) break;
+    }
+    return $out;
+}
+
+/**
+ * Build a normalized search key removing spaces, common separators, and 'x'/'X', uppercased.
+ * Useful for fuzzy comparisons like 444 vs 4x4x4 vs 4 x 4 x 4.
+ */
+function normalizeSearchKey(string $s): string
+{
+    $u = strtoupper($s);
+    // Remove spaces, tabs, dashes, slashes, dots, commas, and the letter X
+    $u = str_replace(["\t", ' ', '-', '/', '.', ',', 'X'], '', $u);
+    // Remove any remaining non-alphanumeric characters
+    $u = preg_replace('/[^A-Z0-9]/', '', $u);
+    return $u;
+}
+
+/**
+ * Return products from cache only (APCu or file) without touching the DB.
+ * Useful for fast suggestions when DB connectivity is slow.
+ */
+function getAllProductsCachedOnly(): array
+{
+    // APCu cache
+    $cacheKey = 'daytona_all_products_v1';
+    if (function_exists('apcu_fetch')) {
+        $cached = @apcu_fetch($cacheKey, $ok);
+        if ($ok && is_array($cached)) return $cached;
+    }
+    // File cache
+    $cacheFile = __DIR__ . '/../data/cache_products.json';
+    if (is_readable($cacheFile)) {
+        $json = @file_get_contents($cacheFile);
+        $arr = json_decode($json, true);
+        if (is_array($arr)) return $arr;
+    }
+    return [];
+}
+
+/**
+ * Compute suggestions from a provided product list using fuzzy scoring.
+ */
+function buildSuggestionsFromList(string $term, array $list, int $limit = 8): array
+{
+    $term = normalizeScalar($term, 150, '');
+    if ($term === '') return [];
+    $norm = normalizeSearchKey($term);
+    $upper = strtoupper($term);
+    $out = [];
+    foreach ($list as $p) {
+        $name = (string)($p['name'] ?? '');
+        $desc = (string)($p['description'] ?? '');
+        $price = getProductPrice($p);
+        $score = 0;
+        if ($name !== '') {
+            if (stripos($name, $term) === 0) $score += 120;
+            if (stripos($name, $term) !== false) $score += 20;
+            $nName = normalizeSearchKey($name);
+            if ($norm !== '' && strpos($nName, $norm) === 0) $score += 100;
+            if ($norm !== '' && strpos($nName, $norm) !== false) $score += 10;
+        }
+        if ($desc !== '') {
+            if (stripos($desc, $term) === 0) $score += 60;
+            if (stripos($desc, $term) !== false) $score += 20;
+            $nDesc = normalizeSearchKey($desc);
+            if ($norm !== '' && strpos($nDesc, $norm) === 0) $score += 50;
+            if ($norm !== '' && strpos($nDesc, $norm) !== false) $score += 10;
+        }
+        if ($score > 0) {
+            $out[] = [
+                'id' => (int)($p['id'] ?? 0),
+                'name' => getProductDisplayName($p),
+                'description' => getProductDescription($p),
+                'price' => $price,
+                'score' => $score
+            ];
+        }
+    }
+    if (!$out) return [];
+    usort($out, function($a, $b){ $d = ($b['score'] ?? 0) - ($a['score'] ?? 0); if ($d !== 0) return $d; return strcmp((string)$a['name'], (string)$b['name']); });
+    // Trim to limit and drop score
+    $res = [];
+    foreach ($out as $row) {
+        $res[] = [ 'id'=>$row['id'], 'name'=>$row['name'], 'description'=>$row['description'], 'price'=>$row['price'] ];
+        if (count($res) >= $limit) break;
+    }
+    return $res;
+}
+
+/**
+ * Optimized limited suggestions query: select only fields needed and apply a LIMIT.
+ * Uses same fuzzy scoring approach but constrains output size for responsiveness.
+ */
+function getProductSuggestionsLimited(string $term, int $limit = 8, ?PDO $db = null): array
+{
+    $db = $db ?? getDb();
+    $limit = max(1, min(50, (int)$limit));
+    $term = normalizeScalar($term, 150, '');
+    if ($term === '') return [];
+
+    $escapeChar = "\\";
+    $like = likeTerm($term);
+    $nTerm = strtoupper(preg_replace('/[^A-Z0-9]/i', '', (string)$term));
+    $nLike = '%' . $nTerm . '%';
+    $nPrefix = $nTerm . '%';
+    $prefix = strtoupper($term) . '%';
+
+    $nName = "REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(UPPER(name),' ','') ,'x','') ,'X','') ,'-','') ,'/', '') ,'.','') ,',','')";
+    $nDesc = "REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(UPPER(description),' ','') ,'x','') ,'X','') ,'-','') ,'/', '') ,'.','') ,',','')";
+    // Build SQL; interpolate LIMIT safely after validation to avoid driver quirks
+    $sql = "SELECT id, name, description, price, ".
+           "(CASE WHEN UPPER(name) LIKE :prefix THEN 120 ELSE 0 END) + ".
+           "(CASE WHEN $nName LIKE :nprefix THEN 100 ELSE 0 END) + ".
+           "(CASE WHEN UPPER(description) LIKE :prefix THEN 60 ELSE 0 END) + ".
+           "(CASE WHEN $nDesc LIKE :nprefix THEN 50 ELSE 0 END) + ".
+           "(CASE WHEN name LIKE :like ESCAPE '$escapeChar' OR description LIKE :like ESCAPE '$escapeChar' THEN 20 ELSE 0 END) + ".
+           "(CASE WHEN $nName LIKE :nlike OR $nDesc LIKE :nlike THEN 10 ELSE 0 END) AS score ".
+           "FROM products ".
+           "WHERE name LIKE :like ESCAPE '$escapeChar' ".
+           "   OR description LIKE :like ESCAPE '$escapeChar' ".
+           "   OR $nName LIKE :nlike ".
+           "   OR $nDesc LIKE :nlike ".
+           "ORDER BY score DESC, name ASC ".
+           "LIMIT $limit";
+    $stmt = $db->prepare($sql);
+    $stmt->execute([
+        ':like' => $like,
+        ':nlike' => $nLike,
+        ':prefix' => $prefix,
+        ':nprefix' => $nPrefix,
+    ]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 }
 
 /**
@@ -904,19 +1414,27 @@ function updateOrderStatus(int $orderId, string $status, ?string $managerNote = 
     ]);
     // Send a notification email to the customer about the status change
     try {
-        // Fetch order with customer info
-        $query = $db->prepare('SELECT o.id, o.status, c.name AS customer_name, c.email AS customer_email FROM orders o JOIN customers c ON o.customer_id = c.id WHERE o.id = :id');
+        // Fetch order with customer info and PO number
+        $query = $db->prepare('SELECT o.id, o.status, o.po_number, c.name AS customer_name, c.email AS customer_email FROM orders o JOIN customers c ON o.customer_id = c.id WHERE o.id = :id');
         $query->execute([':id' => $orderId]);
         $order = $query->fetch(PDO::FETCH_ASSOC);
         if ($order && !empty($order['customer_email'])) {
             $to = $order['customer_email'];
-            $subj = 'Your Order #' . $order['id'] . ' has been updated';
-            $msg = "Hello " . $order['customer_name'] . ",\n\n" .
-                   "Your order #" . $order['id'] . " has been " . strtolower($status) . ".\n\n" .
-                   "You can log in to your account to view the details.\n\n";
+            // Include PO number in the subject when present for quick reference
+            $poText = (!empty($order['po_number'])) ? ' (PO: ' . $order['po_number'] . ')' : '';
+            $subj = 'Your Order #' . $order['id'] . ' has been updated' . $poText;
+
+                 // Use simple ASCII dash to avoid mojibake if a client mishandles UTF-8
+                 $msg = "Hello " . $order['customer_name'] . ",\n\n" .
+                     "Your order #" . $order['id'] . (!empty($poText) ? ' - PO: ' . $order['po_number'] : '') . " has been " . strtolower($status) . ".\n";
+
+            // If the manager left a note, place it directly under the status line
             if ($managerNote && trim($managerNote) !== '') {
-                $msg .= "Message from our team:\n" . trim($managerNote) . "\n\n";
+                $msg .= "\nMessage from our team:\n" . trim($managerNote) . "\n";
             }
+
+            // Continue with account login prompt and thank-you footer
+            $msg .= "\nYou can log in to your account to view the details.\n\n";
             $msg .= "Thank you for shopping with us.";
             sendEmail($to, $subj, $msg);
         }
