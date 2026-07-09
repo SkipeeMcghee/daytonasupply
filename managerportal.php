@@ -822,14 +822,25 @@ require_once __DIR__ . '/includes/header.php';
                             $base = '/assets/uploads/products/' . $slug;
                             $exts = ['jpg','jpeg','png','webp','gif'];
                             $imgUrl = '';
+                            $imgVersion = null;
                             foreach ($exts as $e) {
                                 $path = __DIR__ . '/assets/uploads/products/' . $slug . '.' . $e;
-                                if (is_file($path)) { $imgUrl = $base . '.' . $e; break; }
+                                if (is_file($path)) {
+                                    $imgUrl = $base . '.' . $e;
+                                    $mtime = @filemtime($path);
+                                    if ($mtime !== false) {
+                                        $imgVersion = (string)$mtime;
+                                    }
+                                    break;
+                                }
                             }
                             $placeholder = '/assets/DaytonaSupplyDSlogo.png';
                             if (!is_file(__DIR__ . '/assets/DaytonaSupplyDSlogo.png')) {
                                 // fallback to existing logo path in assets/images
                                 $placeholder = '/assets/images/DaytonaSupplyDSlogo.png';
+                            }
+                            if ($imgUrl !== '' && $imgVersion !== null) {
+                                $imgUrl .= '?v=' . rawurlencode($imgVersion);
                             }
                         ?>
                         <div class="manager-dropzone" data-product-id="<?= (int)$prod['id'] ?>" data-product-name="<?= htmlspecialchars($name) ?>" data-placeholder-url="<?= htmlspecialchars($placeholder) ?>">
