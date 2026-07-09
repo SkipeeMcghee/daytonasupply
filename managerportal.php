@@ -810,7 +810,7 @@ require_once __DIR__ . '/includes/header.php';
                     <td><input type="number" step="0.01" name="price_<?php echo (int)$prod['id']; ?>" value="<?php echo htmlspecialchars((string)$prod['price']); ?>"></td>
                     <td>
                         <?php $isDeal = !empty($prod['deal']); ?>
-                        <a class="mgr-btn" href="?toggle_deal=<?php echo (int)$prod['id']; ?>" style="background: <?php echo $isDeal ? '#dc3545' : '#198754'; ?>; color:#fff;" onclick="return confirm('<?php echo $isDeal ? 'Unset this deal?' : 'Mark this item as a Deal?'; ?>');"><?php echo $isDeal ? 'Unset' : 'Set'; ?> Deal</a>
+                        <span class="deal-state"><?php echo $isDeal ? 'Active' : 'Inactive'; ?></span>
                     </td>
                     <td>
                         <?php
@@ -832,7 +832,7 @@ require_once __DIR__ . '/includes/header.php';
                                 $placeholder = '/assets/images/DaytonaSupplyDSlogo.png';
                             }
                         ?>
-                        <div class="manager-dropzone" data-product-id="<?= (int)$prod['id'] ?>" data-product-name="<?= htmlspecialchars($name) ?>">
+                        <div class="manager-dropzone" data-product-id="<?= (int)$prod['id'] ?>" data-product-name="<?= htmlspecialchars($name) ?>" data-placeholder-url="<?= htmlspecialchars($placeholder) ?>">
                             <div class="dz-preview">
                                 <img src="<?= htmlspecialchars($imgUrl ?: $placeholder) ?>" alt="Preview" />
                             </div>
@@ -840,7 +840,11 @@ require_once __DIR__ . '/includes/header.php';
                             <input type="file" accept="image/*" class="dz-file" style="display:none;" />
                         </div>
                     </td>
-                    <td><a class="mgr-btn mgr-product-delete" href="?delete_product=<?php echo (int)$prod['id']; ?>" onclick="return confirm('Delete this product?');">Delete</a></td>
+                    <td>
+                        <a class="mgr-btn" href="?toggle_deal=<?php echo (int)$prod['id']; ?>" style="background: <?php echo $isDeal ? '#dc3545' : '#198754'; ?>; color:#fff;" onclick="return confirm('<?php echo $isDeal ? 'Unset this deal?' : 'Mark this item as a Deal?'; ?>');"><?php echo $isDeal ? 'Unset' : 'Set'; ?> Deal</a>
+                        <button type="button" class="mgr-btn dz-remove" data-product-id="<?= (int)$prod['id'] ?>"<?php echo $imgUrl === '' ? ' disabled' : ''; ?>>Remove Picture</button>
+                        <a class="mgr-btn mgr-product-delete" href="?delete_product=<?php echo (int)$prod['id']; ?>" onclick="return confirm('Delete this product?');">Delete</a>
+                    </td>
                 </tr>
             <?php endforeach; ?>
             <?php if (empty($products)): ?>
@@ -887,7 +891,19 @@ require_once __DIR__ . '/includes/header.php';
     })();
     // Bind manager dropzones
     (function(){
-        function uploadFile(dz, file, name, id){
+        function withCacheBuster(url){
+            if (!url) return url;
+            return url + (url.indexOf('?') >= 0 ? '&' : '?') + 'v=' + Date.now();
+        }
+        function setRemoveButtonState(btn, enabled){
+            if (!btn) return;
+            btn.disabled = !enabled;
+        }
+        function findRemoveButton(productId){
+            if (!productId) return null;
+            return document.querySelector('.dz-remove[data-product-id="' + String(productId) + '"]');
+        }
+        function uploadFile(dz, file, name, id, removeBtn){
             if (!file) return;
             var fd = new FormData();
             fd.append('image', file);
@@ -900,22 +916,50 @@ require_once __DIR__ . '/includes/header.php';
                     dz.classList.remove('dz-uploading');
                     if (!json || !json.success) { alert('Upload failed' + (json && json.error ? ': ' + json.error : '')); return; }
                     var img = dz.querySelector('.dz-preview img');
-                    if (img) { img.src = json.url; }
+                    if (img) { img.src = withCacheBuster(json.url); }
+                    setRemoveButtonState(removeBtn, true);
                 })
                 .catch(function(){ dz.classList.remove('dz-uploading'); alert('Upload failed'); });
+        }
+        function removeImage(dz, name, id, removeBtn){
+            var fd = new FormData();
+            if (name) fd.append('product_name', name);
+            if (id) fd.append('product_id', String(id));
+            dz.classList.add('dz-uploading');
+            fetch('/ajax/remove_product_image.php', { method: 'POST', body: fd, credentials: 'same-origin' })
+                .then(function(r){ return r.json().catch(function(){ return {}; }); })
+                .then(function(json){
+                    dz.classList.remove('dz-uploading');
+                    if (!json || !json.success) { alert('Remove failed' + (json && json.error ? ': ' + json.error : '')); return; }
+                    var img = dz.querySelector('.dz-preview img');
+                    var placeholderUrl = dz.getAttribute('data-placeholder-url') || '';
+                    if (img && placeholderUrl) {
+                        img.src = withCacheBuster(placeholderUrl);
+                    }
+                    setRemoveButtonState(removeBtn, false);
+                })
+                .catch(function(){ dz.classList.remove('dz-uploading'); alert('Remove failed'); });
         }
         document.querySelectorAll('.manager-dropzone').forEach(function(dz){
             var input = dz.querySelector('input.dz-file');
             var name = dz.getAttribute('data-product-name') || '';
             var id = parseInt(dz.getAttribute('data-product-id') || '0', 10) || 0;
+            var removeBtn = findRemoveButton(id);
             dz.addEventListener('click', function(e){
                 if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON')) return;
                 if (input) input.click();
             });
-            if (input) input.addEventListener('change', function(){ if (input.files && input.files[0]) uploadFile(dz, input.files[0], name, id); });
+            if (input) input.addEventListener('change', function(){ if (input.files && input.files[0]) uploadFile(dz, input.files[0], name, id, removeBtn); });
             dz.addEventListener('dragover', function(e){ e.preventDefault(); dz.classList.add('dz-over'); });
             dz.addEventListener('dragleave', function(e){ dz.classList.remove('dz-over'); });
-            dz.addEventListener('drop', function(e){ e.preventDefault(); dz.classList.remove('dz-over'); var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (f) uploadFile(dz, f, name, id); });
+            dz.addEventListener('drop', function(e){ e.preventDefault(); dz.classList.remove('dz-over'); var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (f) uploadFile(dz, f, name, id, removeBtn); });
+            if (removeBtn) {
+                removeBtn.addEventListener('click', function(e){
+                    e.preventDefault();
+                    if (!confirm('Remove this product picture?')) return;
+                    removeImage(dz, name, id, removeBtn);
+                });
+            }
         });
     })();
     </script>

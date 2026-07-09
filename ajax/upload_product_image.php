@@ -126,7 +126,8 @@ if (!@move_uploaded_file($tmpPath, $target)) {
     exit;
 }
 
-// Build public URL
-$url = '/assets/uploads/products/' . rawurlencode($slug . '.' . $ext) . '?v=' . time();
+// Build public URL with ms precision cache-buster so quick re-uploads refresh preview
+$version = (string)floor(microtime(true) * 1000);
+$url = '/assets/uploads/products/' . rawurlencode($slug . '.' . $ext) . '?v=' . $version;
 echo json_encode(['success' => true, 'url' => $url, 'slug' => $slug]);
 exit;
