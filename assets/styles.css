@@ -1264,6 +1264,8 @@ body.theme-dark .admin-table input::placeholder {
 /* Ensure action links/buttons do not wrap letters vertically. Keep words intact. */
 .admin-table td:last-child a.action-btn,
 .admin-table td:last-child a.mgr-btn,
+.admin-table td:last-child button.mgr-btn,
+.admin-table td:last-child button,
 .admin-table td:last-child a {
   white-space: nowrap; /* prevent breaking between letters */
   display: inline-block; /* ensure padding/margins apply */
@@ -2323,8 +2325,15 @@ html.theme-dark .proceed-btn.btn-catalog:hover, body.theme-dark .proceed-btn.btn
 .manager-dropzone .dz-instructions { position: absolute; bottom: 4px; left: 4px; right: 4px; font-size: 11px; text-align: center; color: #5b6b7a; }
 .manager-dropzone.dz-over { border-color: #0b5ed7; background: #eef5ff; }
 .manager-dropzone.dz-uploading { opacity: 0.6; pointer-events: none; }
-.manager-image-controls .dz-remove { text-align: center; margin-right: 0; }
-.manager-image-controls .dz-remove[disabled] { opacity: 0.55; cursor: not-allowed; pointer-events: none; }
+.dz-remove {
+  background: #0d6efd;
+  border: 0;
+  padding: 2px 5px;
+  font-size: 0.72em;
+  line-height: 1.15;
+  text-align: center;
+}
+.dz-remove[disabled] { opacity: 0.55; cursor: not-allowed; pointer-events: none; }
 
 html.theme-dark .manager-dropzone,
 body.theme-dark .manager-dropzone { border-color: #445063; background: #1f2937; }
