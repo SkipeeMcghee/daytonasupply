@@ -3,7 +3,7 @@
         "name":  "BAR-1000",
         "description":  "Wardrobe Box Bar 18\"",
         "price":  1.76,
-        "_agent_note":  "When syncing from inventory.csv: keep dispenser SKUs (SOA-2010, SOA-2011, SOA-2020, SOA-4530) at price 0 if blank; remove Bad Debt, NONSTOCK, Pack and Ship, and Services."
+        "_agent_note":  "When syncing from inventory.csv: keep dispenser SKUs (SOA-2010, SOA-2011, SOA-2020, SOA-4530) at price 0 if blank; skip other rows with blank prices; remove Bad Debt, NONSTOCK, Pack and Ship, and Services."
     },
     {
         "name":  "BAR-2000",
@@ -441,49 +441,59 @@
         "price":  118.45
     },
     {
-        "name":  "FLO-1255",
-        "description":  "Brush Buffer 20\u0027 Polyprop",
-        "price":  70.05
+        "name":  "FLO-1620",
+        "description":  "Wet Floor Sign",
+        "price":  19.3
     },
     {
         "name":  "FLO-1725",
-        "description":  "Dust Mop Frame 18\u0027",
-        "price":  5.67
+        "description":  "Dust Mop Frame 18X5 IN 1/Each",
+        "price":  5.94
     },
     {
         "name":  "FLO-1730",
-        "description":  "Dust Mop Frame 24\u0027",
-        "price":  6.18
+        "description":  "Dust Mop Frame 24X5 IN 1/Each",
+        "price":  14.13
     },
     {
         "name":  "FLO-1737",
-        "description":  "Dust Mop Frame 36\u0027 x 5\u0027",
-        "price":  6.7
+        "description":  "Dust Mop Frame 48X5 IN 1/Each",
+        "price":  16.21
     },
     {
         "name":  "FLO-1745",
-        "description":  "Dust Mop Handle Clip On Hardwood",
-        "price":  14.94
+        "description":  "Dust Mop Handle 60 IN Natural Wood Swivel Clip 1/Each",
+        "price":  16.41
     },
     {
         "name":  "FLO-1755",
-        "description":  "Dust Mop Head 18\u0027 Launderable",
-        "price":  12.88
+        "description":  "Bristles Dust Mop 18X5 IN White Synthetic Fiber 4PLY Loop End Disposable 1/Each",
+        "price":  9.93
+    },
+    {
+        "name":  "FLO-1760",
+        "description":  "Bristles Dust Mop 24X5 IN Natural Cotton Loop End Launderable 1/Each",
+        "price":  11.68
     },
     {
         "name":  "FLO-1765",
-        "description":  "Dust Mop Head 36\u0027 Launderable",
-        "price":  21.44
+        "description":  "Bristles Dust Mop 48X5 IN Natural Cotton Loop End Launderable 1/Each",
+        "price":  23.44
     },
     {
         "name":  "FLO-1875",
-        "description":  "Dust Pan Metal 12\u0027",
-        "price":  8.94
+        "description":  "Dust Pan 12x11 IN Charcoal Plastic Heavy Duty 1/Each",
+        "price":  6.55
+    },
+    {
+        "name":  "FLO-1876",
+        "description":  "Broom 56IN Gray Metal PP Vinyl Coated With 10.5IN Head Angled 1/Each",
+        "price":  15.11
     },
     {
         "name":  "FLO-2210",
-        "description":  "Mop Bucket Combo 26 Quart Includes Side Wringer",
-        "price":  63.65
+        "description":  "Mop Bucket \u0026 Wringer Combo with Splash Guard, 26 qt, Yellow\nHOS9Y26263Y",
+        "price":  114.01
     },
     {
         "name":  "FLO-2211",
@@ -506,24 +516,29 @@
         "price":  82.63
     },
     {
-        "name":  "FLO-3300",
-        "description":  "Plastic Head Wet Mop Handle - 60\"",
-        "price":  13.38
+        "name":  "FLO-3305",
+        "description":  "Mop Head, Cut End, Cotton, 5\" Band, 20 oz, White",
+        "price":  5.99
     },
     {
         "name":  "FLO-3306",
-        "description":  "Microfiber Looped-End Wet Mop Head, Medium, Blue",
-        "price":  25.61
+        "description":  "Blue Mop Head, Looped End, Blended, 5\" Band, 24 oz, Blue",
+        "price":  7.79
     },
     {
-        "name":  "FLO-3310",
-        "description":  "Mop Head Replacement Commercial Mop Head Yellow Cotton String Mop Replacement Head,6 Inch Heavy",
-        "price":  18.3
+        "name":  "FLO-3309",
+        "description":  "Blue Mop Head, Looped End, Blended, 5\" Band, 32 oz, Blue",
+        "price":  7.99
     },
     {
         "name":  "FLO-3311",
-        "description":  "Rubbermaid Super Stitch® Red Cotton Synthetic Fiber M 20 OZ Cleaning Wet Mop 5IN Headband",
-        "price":  15.98
+        "description":  "Green Mop head",
+        "price":  16.73
+    },
+    {
+        "name":  "FLO-3313",
+        "description":  "Yellow Mop Head",
+        "price":  21.99
     },
     {
         "name":  "FLO-3315",
@@ -536,24 +551,24 @@
         "price":  159.99
     },
     {
-        "name":  "FLO-3320",
-        "description":  "Rubbermaid Super Stitch® Green Cotton Synthetic Fiber Cleaning Wet Mop 5IN Headband",
-        "price":  13.82
+        "name":  "FLO-3411",
+        "description":  "Mop Handle Metal, 57\"L Handle, Plastic Side Release",
+        "price":  15.99
     },
     {
-        "name":  "FLO-3325",
-        "description":  "Large Orange Blended Looped End Mop Head..32oz",
-        "price":  15.92
+        "name":  "FLO-3412",
+        "description":  "Mop Handle, Vinyl-Covered Aluminum, Gripper 60\", Gray/Yellow",
+        "price":  39.99
     },
     {
-        "name":  "FLO-3346",
-        "description":  "Cotton Deck Mop single",
-        "price":  9.24
+        "name":  "FLO-3520",
+        "description":  "Floor Squeegee, 18\" Wide Blade, Black Rubber, Insert Socket",
+        "price":  26.1
     },
     {
-        "name":  "FLO-3347",
-        "description":  "Janitorial 12\" Black unflagged angled broom head",
-        "price":  14.03
+        "name":  "FLO-3546",
+        "description":  "Tapered-Tip Wood Broom/Sweep Handle, 60\", Natural",
+        "price":  12.49
     },
     {
         "name":  "FLO-5275",
@@ -798,81 +813,81 @@
     {
         "name":  "GLO-5104",
         "description":  "Gloves Vinyl Powder Free S 1000/cs",
-        "price":  45
+        "price":  41.5
     },
     {
         "name":  "GLO-5105",
         "description":  "Gloves Vinyl Powder Free M 1000/cs",
-        "price":  45
+        "price":  41.5
     },
     {
         "name":  "GLO-5110",
         "description":  "Gloves Vinyl Powder Free L 1000/cs",
-        "price":  45
+        "price":  41.5
     },
     {
         "name":  "GLO-5220",
         "description":  "Gloves Vinyl Powder Free XL 1000/cs",
-        "price":  45
+        "price":  41.5
     },
     {
         "name":  "LIN-1035",
-        "description":  "Liner Low Density Heavy 33 x 39 1.5mil Black 33gal 100/Case",
+        "description":  "Liner Low Density Heavy 33gal (33 x 39 1.5mil) Black 100/Case",
         "price":  28.75
     },
     {
         "name":  "LIN-1045",
-        "description":  "Liner Low Density Extra Heavy 38 x 58 2.0mil Black 60gal 100/Case",
-        "price":  61.65
+        "description":  "Liner Low Density Extra Heavy 60gal (38 x 58 2.0mil) Black 100/Case",
+        "price":  63.65
     },
     {
         "name":  "LIN-2065",
-        "description":  "Liner Low Density Extra Heavy 38 x 58 3.0mil Black 60gal 100/Case",
-        "price":  47.5
+        "description":  "Liner Low Density Extra Heavy 60gal (38 x 58 3.0mil) Black 100/Case",
+        "price":  79.58
     },
     {
         "name":  "LIN-2090",
-        "description":  "Liner Low Density Extra Heavy 42 x 52 3.0mil Black 55gal 50/Case",
-        "price":  49.79
+        "description":  "Liner Low Density Extra Heavy 55gal (42 x 52 3.0mil) Black 50/Case",
+        "price":  49.84
     },
     {
         "name":  "LIN-3015",
-        "description":  "Liner Hi Density 17 x 18 6mic 3-4 gal 2000/Case",
-        "price":  19.98
+        "description":  "Liner Hi Density 3-4 gal (17 x 18 6mic)  2000/Case",
+        "price":  28.13
     },
     {
         "name":  "LIN-3025",
-        "description":  "Liner Hi Density 24 x 24 6mic Clear 7-10gal 20 x 50 Rolls/Case",
-        "price":  28.8
+        "description":  "Liner Hi Density 7-10gal (24 x 24 6mic) Clear 1000/Case",
+        "price":  31.96
     },
     {
         "name":  "LIN-4010",
-        "description":  "Liner Low Density 24 x 27 .7mil White Pull Tie 13gal 60/Case",
-        "price":  18.99
+        "description":  "Liner Low Density 13gal (24 x 27 .7mil) White Pull Tie 60/Case",
+        "price":  20.85
     },
     {
         "name":  "LIN-4025",
-        "description":  "Liner Low Density 24 x 32 .5mil White 15gal 500/Case",
-        "price":  40.74
+        "description":  "Liner Low Density 15gal (24 x 32 .5mil) White 500/Case",
+        "price":  52.3
     },
     {
         "name":  "LIN-4035",
-        "description":  "Liner Low Density 30 x 36 .8mil White 20-30gal 200/Case",
-        "price":  41.21
+        "description":  "Liner Low Density 20-30gal (30 x 36 .8mil) White 200/Case",
+        "price":  42.21
     },
     {
         "name":  "LIN-4045",
-        "description":  "Liner Low Density 33 x 39 .8mil White 33gal 150/Case",
-        "price":  30.88
+        "description":  "Liner Low Density 33gal (33 x 39 .8mil) White 150/Case",
+        "price":  28.26
     },
     {
         "name":  "LIN-4055",
-        "description":  "Liner Low Density 40 x 46 .75mil White 40gal 100/Case",
-        "price":  33.12
+        "description":  "Liner Low Density 40gal (40 x 46 .75mil) White 100/Case",
+        "price":  32
     },
     {
         "name":  "LIN-4065",
-        "description":  "Liner Low Density 38 x 58 .8mil White 60gal 100/Case",
+        "description":  "Liner Low Density 60gal (38 x 58 .8mil) White100/Case",
         "price":  45.71
     },
     {
@@ -1246,31 +1261,6 @@
         "price":  2.2
     },
     {
-        "name":  "PAP-1965",
-        "description":  "Dispenser 619 Wagon Wheel 3 Rolls",
-        "price":  46.35
-    },
-    {
-        "name":  "PAP-1975",
-        "description":  "Dispenser 713/714 Pull \u0026 Tear Black Silhouette",
-        "price":  55.62
-    },
-    {
-        "name":  "PAP-2005",
-        "description":  "Dispenser Covers Toilet Seat",
-        "price":  13.39
-    },
-    {
-        "name":  "PAP-2025",
-        "description":  "Dispenser Hardwound Roll Towels Lever Type Smoke Black",
-        "price":  47.33
-    },
-    {
-        "name":  "PAP-2075",
-        "description":  "Dispenser Jr. Jumbo 9\u0027 Single Roll",
-        "price":  30.89
-    },
-    {
         "name":  "PAP-2100",
         "description":  "Dispenser Toilet Tissue 2 Rolls Vertical",
         "price":  15.45
@@ -1326,49 +1316,39 @@
         "price":  51.45
     },
     {
-        "name":  "PAP-5985",
-        "description":  "Towels C-Fold 10.125\u0027 x 12.75\u0027 1 Ply Bleached 2400/Case",
-        "price":  50.47
-    },
-    {
-        "name":  "PAP-6025",
-        "description":  "Towels Centerpull 2 Ply 660\u0027/Roll 6 Rolls/Case..CP600",
-        "price":  57.45
-    },
-    {
-        "name":  "PAP-6125",
-        "description":  "Towels Multifold 483 9.125\u0027 x 9.5\u0027 Bleached 4000/Case",
-        "price":  62.99
-    },
-    {
-        "name":  "PAP-6135",
-        "description":  "Towels Multifold 480 9.125\u0027 x 9.5\u0027 Natural 4000/Case",
-        "price":  59.99
-    },
-    {
-        "name":  "PAP-6220",
+        "name":  "PAP-5978",
         "description":  "Blue Spunlace Jumbo Roll 12\u0027 x 13\u0027 955 sheets/Roll",
         "price":  74.16
     },
     {
-        "name":  "PAP-6225",
-        "description":  "Towels Roll 713 7.5\" x 800\u0027 Brown 6 Rolls/Case",
-        "price":  95.99
+        "name":  "PAP-6213",
+        "description":  "Towels C-Fold 10.125\u0027 x 12.75\u0027 1 Ply 2400/Case",
+        "price":  42.99
+    },
+    {
+        "name":  "PAP-6215",
+        "description":  "Towels Multifold 1-Ply, 9.125\u0027 x 9.5\u0027 4000/Case",
+        "price":  40.69
+    },
+    {
+        "name":  "PAP-6221",
+        "description":  "Towels Centerpull 2 Ply 660\u0027/Roll 6 Rolls/Case..CP600",
+        "price":  57.45
+    },
+    {
+        "name":  "PAP-6224",
+        "description":  "Hard Wound Paper Towels Marcal 7.88\" x 800\u0027 6 Rolls/Case",
+        "price":  44.99
     },
     {
         "name":  "PAP-6226",
-        "description":  "Paper Towels Tork H71 7.5\" x 800\u0027 White 6 Rolls/Case",
-        "price":  95.99
+        "description":  "Hard Wound Paper Towels Tork 7.5\" x 800\u0027 6 Rolls/Case",
+        "price":  85.94
     },
     {
         "name":  "PAP-6227",
-        "description":  "Towels Ultra Roll  7.8\" x 1150\u0027 White 6 Rolls/Case",
-        "price":  109.19
-    },
-    {
-        "name":  "PAP-6230",
-        "description":  "Towels Roll 8031400 8\u0027 x 800\u0027 Natural 6 Rolls/Case",
-        "price":  74.38
+        "description":  "Hard Wound Paper Towels Tork 8\" x 800\u0027 6 Rolls/Case",
+        "price":  88.49
     },
     {
         "name":  "PAP-6335",
@@ -1399,11 +1379,6 @@
         "name":  "PAP-6370",
         "description":  "Towels Roll Hardwound Premium 7.5\" x 600\u0027 White 6 Rolls/Case BW 70620",
         "price":  70.89
-    },
-    {
-        "name":  "PAP-6375",
-        "description":  "Towels Roll Hardwound 8\u0027 x 800\u0027 Brown 6 Rolls/Case",
-        "price":  52.6
     },
     {
         "name":  "PAP-6380",
@@ -1713,7 +1688,7 @@
     {
         "name":  "SAF-1500",
         "description":  "Coverall Breathable Water Resistant XXL 25/Case",
-        "price":  101.68
+        "price":  79
     },
     {
         "name":  "SAF-2265",
