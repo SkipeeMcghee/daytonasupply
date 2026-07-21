@@ -48,12 +48,12 @@
     {
         "name":  "BMA-1000",
         "description":  "Bubble Mailers Self Seal #000 4\" X 8\" 250/Case",
-        "price":  62.04
+        "price":  49.99
     },
     {
         "name":  "BMA-1100",
         "description":  "Bubble Mailers Self Seal #00 5\" x 10\" 250/Case",
-        "price":  63.28
+        "price":  56.99
     },
     {
         "name":  "BMA-1101",
@@ -63,7 +63,7 @@
     {
         "name":  "BMA-1200",
         "description":  "Bubble Mailers Self Seal #0 6\" x 10\" 250/Case",
-        "price":  70.48
+        "price":  60.78
     },
     {
         "name":  "BMA-1201",
@@ -73,22 +73,22 @@
     {
         "name":  "BMA-1300",
         "description":  "Bubble Mailers Self Seal #1 7.25\" x 12\" 100/Case",
-        "price":  37.37
+        "price":  30.6
     },
     {
         "name":  "BMA-1400",
         "description":  "Bubble Mailers Self Seal #2 8.5\" X 12\" 100/Case",
-        "price":  52.46
+        "price":  35.4
     },
     {
         "name":  "BMA-1500",
         "description":  "Bubble Mailers Self Seal #3 8.5\" X 14.5\" 100/Case",
-        "price":  50.66
+        "price":  42.99
     },
     {
         "name":  "BMA-1600",
         "description":  "Bubble Mailers Self Seal #4 9.5\" x 14.5\" 100/Case",
-        "price":  70.6
+        "price":  45.07
     },
     {
         "name":  "BMA-1601",
@@ -98,22 +98,22 @@
     {
         "name":  "BMA-1700",
         "description":  "Bubble Mailers Self Seal #5 10.5\" X 16\" 100/Case",
-        "price":  66.72
+        "price":  50.99
     },
     {
         "name":  "BMA-1705",
-        "description":  "Bubble Mailers Self Seal #5 10.5\" X 16\"",
+        "description":  "Bubble Mailers Self Seal #5 10.5\" X 16\" Single",
         "price":  0.67
     },
     {
         "name":  "BMA-1800",
-        "description":  "Ecolite Bubble Lined Self-Seal Mailers, #6, 12-1/2 in x 19 in, 3/16 in Bubble Lined, Kraft, 50/Case",
-        "price":  60.74
+        "description":  "Bubble Mailers Self Seal, #6, 12-1/2 in x 19 in, 50/Case",
+        "price":  39.99
     },
     {
         "name":  "BMA-1900",
         "description":  "Bubble Mailers Self Seal #7 14.25\" X 20\" 50/Case",
-        "price":  48.47
+        "price":  43.99
     },
     {
         "name":  "BPA-1100",
@@ -158,16 +158,11 @@
     {
         "name":  "BPA-1310",
         "description":  "Bubble 1/2\" x 250LF x 24\" Perf 12\" Roll",
-        "price":  69.99
+        "price":  64.99
     },
     {
         "name":  "BPA-1350",
         "description":  "Bubble 1/2\" x 250LF x 48\" NS Perf 12\" 1 roll/Bundle Industrial",
-        "price":  119.99
-    },
-    {
-        "name":  "BPA-1400",
-        "description":  "Bubble 1/2\" x 250LF x 48\" Slit 12\" Perf 12\" Anti Static 4 rolls/Bundle Industrial",
         "price":  119.99
     },
     {
@@ -177,7 +172,7 @@
     },
     {
         "name":  "BPA-3125",
-        "description":  "Bubble 3/16\" x 300LF x 48\" NS Perf 12\" 1 roll/Bundle",
+        "description":  "Bubble 3/16\" x 300LF x 48\" NS Perf 12\" 1 roll/Bundle Industrial",
         "price":  104.99
     },
     {
@@ -188,11 +183,6 @@
     {
         "name":  "BPA-3250",
         "description":  "Bubble 3/16\" x 300LF x 48\" Slit 24\" Perf 12\" 2 rolls/Bundle Industrial",
-        "price":  104.99
-    },
-    {
-        "name":  "BPA-3275",
-        "description":  "Bubble 3/16\" x 300LF x 48\" Slit 24\" Perf 12\" Anti Static 2 rolls/Bundle Industrial",
         "price":  104.99
     },
     {
@@ -346,9 +336,19 @@
         "price":  47.6
     },
     {
+        "name":  "CLD-5275",
+        "description":  "High Active Floor Stripper 4 Gallon/Case",
+        "price":  94
+    },
+    {
         "name":  "CLD-5656",
         "description":  "Stainless Steel Cleaner/Polish 4 Gallons/Case",
         "price":  135
+    },
+    {
+        "name":  "CLD-6256",
+        "description":  "Wax Floor Finish 20% Solids 4 Gallon/case",
+        "price":  100
     },
     {
         "name":  "CLD-6504",
@@ -382,8 +382,8 @@
     },
     {
         "name":  "DEO-3115",
-        "description":  "Deodorizer Nilosorb Moisture Absorbent 6 per case",
-        "price":  7.15
+        "description":  "Victoria Bay Absorbent 12 OZ Lemon Granules Instant 6/Box",
+        "price":  100.31
     },
     {
         "name":  "DEO-3120",
@@ -413,7 +413,7 @@
     {
         "name":  "DIS-2000",
         "description":  "Victoria Bay Food Service Sanitizer - 5 Gallons",
-        "price":  211.74
+        "price":  236.74
     },
     {
         "name":  "DIS-5515",
@@ -438,147 +438,7 @@
     {
         "name":  "DIS-6559",
         "description":  "Disinfectant Wipes 800/Pack 4/Case",
-        "price":  118.45
-    },
-    {
-        "name":  "FLO-1620",
-        "description":  "Wet Floor Sign",
-        "price":  19.3
-    },
-    {
-        "name":  "FLO-1725",
-        "description":  "Dust Mop Frame 18X5 IN 1/Each",
-        "price":  5.94
-    },
-    {
-        "name":  "FLO-1730",
-        "description":  "Dust Mop Frame 24X5 IN 1/Each",
-        "price":  14.13
-    },
-    {
-        "name":  "FLO-1737",
-        "description":  "Dust Mop Frame 48X5 IN 1/Each",
-        "price":  16.21
-    },
-    {
-        "name":  "FLO-1745",
-        "description":  "Dust Mop Handle 60 IN Natural Wood Swivel Clip 1/Each",
-        "price":  16.41
-    },
-    {
-        "name":  "FLO-1755",
-        "description":  "Bristles Dust Mop 18X5 IN White Synthetic Fiber 4PLY Loop End Disposable 1/Each",
-        "price":  9.93
-    },
-    {
-        "name":  "FLO-1760",
-        "description":  "Bristles Dust Mop 24X5 IN Natural Cotton Loop End Launderable 1/Each",
-        "price":  11.68
-    },
-    {
-        "name":  "FLO-1765",
-        "description":  "Bristles Dust Mop 48X5 IN Natural Cotton Loop End Launderable 1/Each",
-        "price":  23.44
-    },
-    {
-        "name":  "FLO-1875",
-        "description":  "Dust Pan 12x11 IN Charcoal Plastic Heavy Duty 1/Each",
-        "price":  6.55
-    },
-    {
-        "name":  "FLO-1876",
-        "description":  "Broom 56IN Gray Metal PP Vinyl Coated With 10.5IN Head Angled 1/Each",
-        "price":  15.11
-    },
-    {
-        "name":  "FLO-2210",
-        "description":  "Mop Bucket \u0026 Wringer Combo with Splash Guard, 26 qt, Yellow\nHOS9Y26263Y",
-        "price":  114.01
-    },
-    {
-        "name":  "FLO-2211",
-        "description":  "Mop Bucket Combo 35 Quart Green  Includes Side Wringer",
-        "price":  82.63
-    },
-    {
-        "name":  "FLO-2212",
-        "description":  "Mop Bucket Combo 35 Quart Red  Includes Side Wringer",
-        "price":  82.63
-    },
-    {
-        "name":  "FLO-2213",
-        "description":  "Mop Bucket Combo 35 Quart Blue  Includes Side Wringer",
-        "price":  82.63
-    },
-    {
-        "name":  "FLO-2214",
-        "description":  "Mop Bucket Combo 35 Quart Yellow Includes Side Wringer",
-        "price":  82.63
-    },
-    {
-        "name":  "FLO-3305",
-        "description":  "Mop Head, Cut End, Cotton, 5\" Band, 20 oz, White",
-        "price":  5.99
-    },
-    {
-        "name":  "FLO-3306",
-        "description":  "Blue Mop Head, Looped End, Blended, 5\" Band, 24 oz, Blue",
-        "price":  7.79
-    },
-    {
-        "name":  "FLO-3309",
-        "description":  "Blue Mop Head, Looped End, Blended, 5\" Band, 32 oz, Blue",
-        "price":  7.99
-    },
-    {
-        "name":  "FLO-3311",
-        "description":  "Green Mop head",
-        "price":  16.73
-    },
-    {
-        "name":  "FLO-3313",
-        "description":  "Yellow Mop Head",
-        "price":  21.99
-    },
-    {
-        "name":  "FLO-3315",
-        "description":  "ABCO Looped End Mop, Wide Band, Blended with Blue Mesh Mop Tape, Large, Single",
-        "price":  18.21
-    },
-    {
-        "name":  "FLO-3316",
-        "description":  "ABCO Looped End Mop, Wide Band, Blended with Blue Mesh Mop Tape, Large, 12/Carton",
-        "price":  159.99
-    },
-    {
-        "name":  "FLO-3411",
-        "description":  "Mop Handle Metal, 57\"L Handle, Plastic Side Release",
-        "price":  15.99
-    },
-    {
-        "name":  "FLO-3412",
-        "description":  "Mop Handle, Vinyl-Covered Aluminum, Gripper 60\", Gray/Yellow",
-        "price":  39.99
-    },
-    {
-        "name":  "FLO-3520",
-        "description":  "Floor Squeegee, 18\" Wide Blade, Black Rubber, Insert Socket",
-        "price":  26.1
-    },
-    {
-        "name":  "FLO-3546",
-        "description":  "Tapered-Tip Wood Broom/Sweep Handle, 60\", Natural",
-        "price":  12.49
-    },
-    {
-        "name":  "FLO-5275",
-        "description":  "High Active Floor Stripper 4 Gallon/Case",
-        "price":  94
-    },
-    {
-        "name":  "FLO-6256",
-        "description":  "Wax Floor Finish 20% Solids 4 Gallon/case",
-        "price":  100
+        "price":  132.09
     },
     {
         "name":  "FOA-3155",
@@ -597,28 +457,23 @@
     },
     {
         "name":  "FOA-7525",
-        "description":  "Foam PE Roll 1/16\" 72\" x 1250\u0027 SLIT AT 60\u0027\" AND 1) 12\" DROP PERFED 12",
-        "price":  383.61
+        "description":  "Foam PE Roll 1/16\u0027 72\u0027 x 1250\u0027 Slit 12\u0027 Perf 12\u0027 6/Rolls",
+        "price":  364.62
     },
     {
         "name":  "FOA-7530",
-        "description":  "Foam PE Roll 1/16\" 72\" x 1250\u0027 No Slit PERFED 12",
-        "price":  383.61
+        "description":  "Foam PE Roll 1/16\" 72\" x 1250\u0027 NS Perf 12",
+        "price":  364.62
     },
     {
-        "name":  "FOA-7531",
-        "description":  "Foam PE Roll 1/16\" 60\" x 1250\u0027 No Slit PERFED 12",
+        "name":  "FOA-7533",
+        "description":  "Foam PE Roll 1/16\" 60\" x 1250\u0027 NS Perf 12",
         "price":  353.62
-    },
-    {
-        "name":  "FOA-7535",
-        "description":  "Foam PE Roll 1/16\u0027 72\u0027 x 1250\u0027 Slit 12\u0027 Perf 12\u0027 6/Rolls",
-        "price":  368.61
     },
     {
         "name":  "FOA-7536",
         "description":  "Foam PE Roll 1/16\" 48\"  x 1250\u0027 NS Perf 12\u0027",
-        "price":  331.43
+        "price":  272.2
     },
     {
         "name":  "FOA-7540",
@@ -636,119 +491,14 @@
         "price":  200.53
     },
     {
-        "name":  "FOA-7550",
-        "description":  "Foam PE Roll 1/4\" 72\" x 250\" Slit 24\" Perf 12\" 3/rolls",
-        "price":  311.99
-    },
-    {
         "name":  "FOA-7555",
         "description":  "Foam PE Roll 1/4\" 72\" x 250\" Slit 12\" Perf 12\" 6/rolls",
-        "price":  298.51
+        "price":  290
     },
     {
-        "name":  "FOA-7560",
-        "description":  "Foam PE Roll 1/8\u0027 72\u0027 x 550\u0027 Slit 36\u0027 Perf 12\u0027",
-        "price":  298.28
-    },
-    {
-        "name":  "FOO-1300",
-        "description":  "T-Shirt Bags, 21\" W x 11-1/2\" H, Polyethylene, White, 900/Carton",
-        "price":  44.99
-    },
-    {
-        "name":  "FOO-1305",
-        "description":  "Bags Fruit \u0026 Veggies 12x20 875 Bags/Roll 4 Rolls/Case",
-        "price":  45.6
-    },
-    {
-        "name":  "FOO-2325",
-        "description":  "Cup Bistro 12oz Solo 1000/Case",
-        "price":  108.27
-    },
-    {
-        "name":  "FOO-2425",
-        "description":  "Cup Coffee 12oz 1000/Case71.30",
-        "price":  86.61
-    },
-    {
-        "name":  "FOO-2925",
-        "description":  "Cup Plastic 5oz 2500/Case",
-        "price":  67.94
-    },
-    {
-        "name":  "FOO-2950",
-        "description":  "Cup Plastic Clear 12oz 1000/Case",
-        "price":  102.8
-    },
-    {
-        "name":  "FOO-3005",
-        "description":  "Cup Portion 1oz Solo 5000/Case",
-        "price":  82.27
-    },
-    {
-        "name":  "FOO-3820",
-        "description":  "Cutlery Fork Black 1000/Case",
-        "price":  9.53
-    },
-    {
-        "name":  "FOO-4250",
-        "description":  "Film Produce Wrap 17\u0027x5000\u0027 Clear",
-        "price":  68.7
-    },
-    {
-        "name":  "FOO-4350",
-        "description":  "Lid 1oz Portion Cup 2500/Case",
-        "price":  62.41
-    },
-    {
-        "name":  "FOO-4500",
-        "description":  "Lid 12oz Straw Slot 1000/Case",
-        "price":  46.92
-    },
-    {
-        "name":  "FOO-4550",
-        "description":  "Lid 12oz Tear Tab Plastic White 1000/Case",
-        "price":  46.97
-    },
-    {
-        "name":  "FOO-5325",
-        "description":  "Pad Soaker 4.5x7x40Grm White 2000/Case",
-        "price":  35.63
-    },
-    {
-        "name":  "FOO-5345",
-        "description":  "Pan Liner Baking 1/2 Size 12 x 16 2000/Case",
-        "price":  78.8
-    },
-    {
-        "name":  "FOO-5350",
-        "description":  "Pan Liner Baking 16.375 x 24.5 1000/Case",
-        "price":  51.22
-    },
-    {
-        "name":  "FOO-6805",
-        "description":  "NJoy Pure Cane Sugar, 22 oz. Canisters, 3/Pack",
-        "price":  7.64
-    },
-    {
-        "name":  "FOO-6810",
-        "description":  "Coffee-mate®  Original Powdered Coffee Creamer, 22 oz. Canister",
-        "price":  4.79
-    },
-    {
-        "name":  "FOO-6950",
-        "description":  "Tooth Picks Individually Wrapped 1000/box",
-        "price":  3.89
-    },
-    {
-        "name":  "FOO-8020",
-        "description":  "Tray Market Foam 8.25 x 5.75 x 7/8\u0027 White 4/125 Case",
-        "price":  47.38
-    },
-    {
-        "name":  "FOO-8025",
-        "description":  "Tray Market Foam 9 1/8x7.25x1/2\u0027 Rose 4/125/Case",
-        "price":  49.85
+        "name":  "FOA-7556",
+        "description":  "Foam PE Roll 1/4\" 72\" x 250\" Slit 24\" Perf 12\" 3/rolls",
+        "price":  279
     },
     {
         "name":  "GLO-2010",
@@ -891,19 +641,29 @@
         "price":  45.71
     },
     {
-        "name":  "MAT- 1250",
-        "description":  "Absorbent Mat Pad Blue",
-        "price":  92.7
+        "name":  "MAT-1245",
+        "description":  "Antifatigue Mat, Guardian Air Step, Polypropylene, 24 x 36, Black",
+        "price":  41.99
     },
     {
-        "name":  "MAT- 1255",
-        "description":  "Absorbent Mat Pad White (Oil)",
-        "price":  108.97
+        "name":  "MAT-1246",
+        "description":  "Anti-Fatigue Mat,Gray Vinyl,Crown Ribbed 36\" x 60\"",
+        "price":  83.99
+    },
+    {
+        "name":  "MAT-1250",
+        "description":  "Aborbent Mat Pad,Gray, Anchor, 15\" x 17\", Heavyweight, 100/Box",
+        "price":  82.59
+    },
+    {
+        "name":  "MAT-1255",
+        "description":  "Absorbent Pad, White, Oil Only, Anchor, 15\"x17\", Heavyweight. 100/Box",
+        "price":  82.19
     },
     {
         "name":  "MDC-2010",
-        "description":  "Mailer DC C 4 x 4 x 2 White",
-        "price":  0.47
+        "description":  "Mailer DC C 4 x 4 x 2 White 50/Bundle",
+        "price":  0.6
     },
     {
         "name":  "MDC-2020",
@@ -916,19 +676,19 @@
         "price":  0.52
     },
     {
+        "name":  "MDC-2999",
+        "description":  "Mailer DC, 6 x 4 x 2, White, 50/Bundle",
+        "price":  0.72
+    },
+    {
         "name":  "MDC-3000",
         "description":  "Mailer DC 6 x 3 x 3 White 50/Bundle",
-        "price":  0.54
+        "price":  0.68
     },
     {
         "name":  "MDC-3010",
         "description":  "Mailer DC 6 x 6 x 3 White 50/Bundle",
         "price":  2.4
-    },
-    {
-        "name":  "MDC-3020",
-        "description":  "Mailer DC 6 x 6 x 3 Kraft 50/Bundle",
-        "price":  2.28
     },
     {
         "name":  "MDC-4000",
@@ -959,6 +719,16 @@
         "name":  "NONSTOCK-1",
         "description":  "",
         "price":  0.01
+    },
+    {
+        "name":  "OFC-1010",
+        "description":  "Copy Paper, 8 1/2 x 11, White, 5000/CT",
+        "price":  46.34
+    },
+    {
+        "name":  "OFC-1015",
+        "description":  "Premium Copy Paper, 92 Bright, 20 lb., 11 x 17, White, 2500/CT",
+        "price":  64.66
     },
     {
         "name":  "OFF-1715",
@@ -1039,21 +809,6 @@
         "name":  "PAC-2252",
         "description":  "Film Stretch 5\" 80 Gauge 1000\u0027 12 Rolls/Case With Handle",
         "price":  91.95
-    },
-    {
-        "name":  "PAC-2260",
-        "description":  "Film Stretch 15\" 30 Gauge 1968LF Pre-stretched 4 Rolls/Case",
-        "price":  67.98
-    },
-    {
-        "name":  "PAC-2275",
-        "description":  "Film Stretch 18\" 70 Gauge 1500\u0027 4 Rolls/Case",
-        "price":  93.59
-    },
-    {
-        "name":  "PAC-2280",
-        "description":  "Film Stretch 18\" 70 Gauge 1500\u0027 Single Roll",
-        "price":  25.9
     },
     {
         "name":  "PAC-2284",
@@ -1261,64 +1016,49 @@
         "price":  2.2
     },
     {
-        "name":  "PAP-2100",
-        "description":  "Dispenser Toilet Tissue 2 Rolls Vertical",
-        "price":  15.45
-    },
-    {
-        "name":  "PAP-2200",
-        "description":  "Copy Paper, 8 1/2 x 11, White, 5000/CT",
-        "price":  46.34
-    },
-    {
-        "name":  "PAP-2300",
-        "description":  "Premium Copy Paper, 92 Bright, 20 lb., 11 x 17, White, 2500/CT",
-        "price":  64.66
-    },
-    {
         "name":  "PAP-5825",
-        "description":  "Tissue Facial Kleenex 100/Box",
-        "price":  85.49
-    },
-    {
-        "name":  "PAP-5827",
-        "description":  "Tissue Facial Livi 100/Box 30 Boxes/Case",
-        "price":  34.2
+        "description":  "Facial Tissue Victoria Bay 2PLY White Flat Box 100 Sheets/Pack 30 Packs",
+        "price":  49.99
     },
     {
         "name":  "PAP-5925",
-        "description":  "Toilet Paper, 2-Ply, White, 865 Sheets/Roll, 36 Rolls/Carton",
-        "price":  91.99
+        "description":  "Toilet Paper, White, 2-Ply, Alliance, 865 Sheets/Roll, 36 Rolls/Carton (Opticore)",
+        "price":  82.99
     },
     {
         "name":  "PAP-5950",
-        "description":  "Toilet Paper 100% Recycled, 4\"x3\", 2-Ply, White, 500 Sheets/Roll, 96 Rolls/Carton",
-        "price":  82.3
+        "description":  "Toilet Paper, White, 2PLY White Tork 2000 Sheets/Roll 12 Rolls/Case (Opticore)",
+        "price":  82.5
+    },
+    {
+        "name":  "PAP-5970",
+        "description":  "Toilet Paper, Household, 2ply Embossed, Papernet, 400 sheets/roll 96 rolls/case",
+        "price":  71.32
     },
     {
         "name":  "PAP-5971",
-        "description":  "Toilet Paper Heavenly Soft 3.5in x117ft 2ply Embossed 1.61in Core Diameter 400 sheets/roll 96 rolls/case",
-        "price":  63.95
+        "description":  "Toilet Paper, Household, Victoria Bay, 2PLY, 500 Sheets/Roll 96 Rolls/Case",
+        "price":  72.99
     },
     {
         "name":  "PAP-5972",
-        "description":  "Toilet Paper 3.5in x146ft 1ply white embossed 4.33in roll 1.61in core diameter 96 rolls/case",
-        "price":  94.99
+        "description":  "Toilet Paper, Household,Tork T24, 2-Ply, 500 Sheets/Roll, 96 Rolls/Carton",
+        "price":  73.99
     },
     {
         "name":  "PAP-5975",
-        "description":  "Tissue Toilet Jr. Jumbo 3\u0027 Core 800\u0027 Roll 2 Ply 12 Rolls/Case",
-        "price":  60.96
+        "description":  "Bath Tissue, Victoria Bay Embossed Jr Jumbo, 2PLY, 1000FT/Roll, 12 Rolls/Case",
+        "price":  59.25
+    },
+    {
+        "name":  "PAP-5976",
+        "description":  "Bath Tissue, Tork, Mini Jumbo 12 Rolls/Case ",
+        "price":  96.13
     },
     {
         "name":  "PAP-5977",
-        "description":  "Tissue Toilet Mini Jumbo 751\u0027 Roll 2 Ply 12 Rolls/Case",
-        "price":  51.45
-    },
-    {
-        "name":  "PAP-5978",
-        "description":  "Blue Spunlace Jumbo Roll 12\u0027 x 13\u0027 955 sheets/Roll",
-        "price":  74.16
+        "description":  "Bath Tissue, Tork Mini Jumbo,1200FT 1PLY 12 Rolls/Case (T2 Systems)",
+        "price":  110.88
     },
     {
         "name":  "PAP-6213",
@@ -1332,8 +1072,8 @@
     },
     {
         "name":  "PAP-6221",
-        "description":  "Towels Centerpull 2 Ply 660\u0027/Roll 6 Rolls/Case..CP600",
-        "price":  57.45
+        "description":  "Centerpull Paper Towel, 2Ply White 8\" x 600\u0027 6 Rolls/Case",
+        "price":  58.69
     },
     {
         "name":  "PAP-6224",
@@ -1342,63 +1082,43 @@
     },
     {
         "name":  "PAP-6226",
-        "description":  "Hard Wound Paper Towels Tork 7.5\" x 800\u0027 6 Rolls/Case",
-        "price":  85.94
+        "description":  "Hard Wound Paper Towels Tork 7.5\" x 800\u0027 6 Rolls/Case (H71 Systems)",
+        "price":  90.94
     },
     {
         "name":  "PAP-6227",
-        "description":  "Hard Wound Paper Towels Tork 8\" x 800\u0027 6 Rolls/Case",
-        "price":  88.49
+        "description":  "Hard Wound Paper Towels Tork 8\" x 800\u0027 6 Rolls/Case ( H80 Systems)",
+        "price":  93.49
     },
     {
         "name":  "PAP-6335",
-        "description":  "Household \u0026 Kitchen Roll Paper Towel Tork 8.625x11 in 60.375 ft 2ply white standard perforated embossed 84 sheets/roll 30 rolls/case",
-        "price":  55.99
+        "description":  "Paper Towel, Household, Tork, 2PLY, 84 Sheets/Roll 30 Rolls/Case",
+        "price":  56.63
     },
     {
         "name":  "PAP-6341",
-        "description":  "Towels Roll 11\" x 7.8\" 2 Ply 85 Sheets/Roll 30 Rolls/Case",
-        "price":  45.99
+        "description":  "Paper Towel, Household, Papernet, 2PLY 85 Sheets/Roll 30 Rolls/Case",
+        "price":  51.11
     },
     {
         "name":  "PAP-6345",
-        "description":  "Towels Roll Hardwound 8\u0027 x 350\u0027 Brown 12 Rolls/Case",
-        "price":  60.87
-    },
-    {
-        "name":  "PAP-6356",
-        "description":  "Universal Hand Towel Roll, Notched, 8\" x 800 ft, Natural, 6 Rolls/Carton",
-        "price":  94.99
+        "description":  "Paper Towel, Household, Victoria Bay, 2PLY, 85 Sheets/Roll 30 Rolls/Case",
+        "price":  44.99
     },
     {
         "name":  "PAP-6365",
-        "description":  "Kitchen Roll Towel Premium 100% Recycled, 2-Ply, White, 85 Sheets/Roll, 30 Rolls/Carton (2,550 Sheets)",
+        "description":  "Paper Towel, Household, Marcal PRO 100% Recycled, 2-Ply, 85 Sheets/Roll, 30 Rolls/Case",
         "price":  49.99
     },
     {
-        "name":  "PAP-6370",
-        "description":  "Towels Roll Hardwound Premium 7.5\" x 600\u0027 White 6 Rolls/Case BW 70620",
-        "price":  70.89
-    },
-    {
-        "name":  "PAP-6380",
-        "description":  "Towels Roll Hardwound 10\u0027 x 800\u0027 White 6 Rolls/Case",
-        "price":  77.65
-    },
-    {
-        "name":  "PAP-6385",
-        "description":  "Towels Singlefold 475 9\u0027 x 10\u0027 Natural 250/Pack 16 Packs/Case",
-        "price":  63.45
-    },
-    {
         "name":  "PAP-6625",
-        "description":  "Wipes Kimtex 33352 All Purpose Blue",
-        "price":  56.65
+        "description":  "MDI Super Rag® Industrial Cleaning Wipe 12\" x 13\" Blue Spunlace 500/Case",
+        "price":  89.99
     },
     {
         "name":  "PAP-6725",
-        "description":  "Kimtech™ Kimwipes, Delicate Task Wipers, 4 2/5\" x 8 2/5\", 280/Box, 60 Boxes/Carton",
-        "price":  226.07
+        "description":  "WypAll® X60 Cleaning Wipe, HydroKnit White Pop-Up Box 118 Count/Pack 10 Packs/Case 1180 Count/Case",
+        "price":  155.99
     },
     {
         "name":  "PCO-7355",
@@ -1714,11 +1434,6 @@
         "name":  "SAN-2010",
         "description":  "DISPENSER FOR PURELL CARTRIDGESBlack and chrome",
         "price":  4.08
-    },
-    {
-        "name":  "SAN-2015",
-        "description":  "Dispenser, GoJo, ADX-12, Wht/Wht",
-        "price":  11.83
     },
     {
         "name":  "SAN-2020",
@@ -2992,7 +2707,7 @@
     },
     {
         "name":  "TAP-2035",
-        "description":  "Tape Carton Sealing Clear 2\" x 110yd 1.9mil 36 Rolls/Case",
+        "description":  "Tape Carton Sealing 2\" x 110yd 1.9mil 36 Rolls/Case",
         "price":  72
     },
     {
@@ -3136,33 +2851,143 @@
         "price":  88.77
     },
     {
+        "name":  "TEQ-1620",
+        "description":  "Wet Floor Sign",
+        "price":  19.3
+    },
+    {
+        "name":  "TEQ-1725",
+        "description":  "Dust Mop Frame 18X5 IN 1/Each",
+        "price":  5.94
+    },
+    {
+        "name":  "TEQ-1730",
+        "description":  "Dust Mop Frame 24X5 IN 1/Each",
+        "price":  14.13
+    },
+    {
+        "name":  "TEQ-1737",
+        "description":  "Dust Mop Frame 48X5 IN 1/Each",
+        "price":  16.21
+    },
+    {
+        "name":  "TEQ-1745",
+        "description":  "Dust Mop Handle 60 IN Natural Wood Swivel Clip 1/Each",
+        "price":  16.41
+    },
+    {
+        "name":  "TEQ-1755",
+        "description":  "Bristles Dust Mop 18X5 IN White Synthetic Fiber 4PLY Loop End Disposable 1/Each",
+        "price":  9.93
+    },
+    {
+        "name":  "TEQ-1760",
+        "description":  "Bristles Dust Mop 24X5 IN Natural Cotton Loop End Launderable 1/Each",
+        "price":  11.68
+    },
+    {
+        "name":  "TEQ-1765",
+        "description":  "Bristles Dust Mop 48X5 IN Natural Cotton Loop End Launderable 1/Each",
+        "price":  23.44
+    },
+    {
+        "name":  "TEQ-1875",
+        "description":  "Dust Pan 12x11 IN Charcoal Plastic Heavy Duty 1/Each",
+        "price":  6.55
+    },
+    {
+        "name":  "TEQ-1876",
+        "description":  "Broom 56IN Gray Metal PP Vinyl Coated With 10.5IN Head Angled 1/Each",
+        "price":  15.11
+    },
+    {
+        "name":  "TEQ-2210",
+        "description":  "Mop Bucket \u0026 Wringer Combo with Splash Guard, 26 qt, Yellow\nHOS9Y26263Y",
+        "price":  114.01
+    },
+    {
+        "name":  "TEQ-2211",
+        "description":  "Mop Bucket Combo 35 Quart Green  Includes Side Wringer",
+        "price":  82.63
+    },
+    {
+        "name":  "TEQ-2212",
+        "description":  "Mop Bucket Combo 35 Quart Red  Includes Side Wringer",
+        "price":  82.63
+    },
+    {
+        "name":  "TEQ-2213",
+        "description":  "Mop Bucket Combo 35 Quart Blue  Includes Side Wringer",
+        "price":  82.63
+    },
+    {
+        "name":  "TEQ-2214",
+        "description":  "Mop Bucket Combo 35 Quart Yellow Includes Side Wringer",
+        "price":  82.63
+    },
+    {
+        "name":  "TEQ-3305",
+        "description":  "Mop Head, Cut End, Cotton, 5\" Band, 20 oz, White",
+        "price":  5.99
+    },
+    {
+        "name":  "TEQ-3308",
+        "description":  "Blue Mop Head, Looped End, Blended, 5\" Band, 24 oz, Blue",
+        "price":  7.79
+    },
+    {
+        "name":  "TEQ-3309",
+        "description":  "Blue Mop Head, Looped End, Blended, 5\" Band, 32 oz, Blue",
+        "price":  7.99
+    },
+    {
+        "name":  "TEQ-3311",
+        "description":  "Green Mop head",
+        "price":  16.73
+    },
+    {
+        "name":  "TEQ-3313",
+        "description":  "Yellow Mop Head",
+        "price":  21.99
+    },
+    {
+        "name":  "TEQ-3315",
+        "description":  "ABCO Looped End Mop, Wide Band, Blended with Blue Mesh Mop Tape, Large, Single",
+        "price":  18.21
+    },
+    {
+        "name":  "TEQ-3316",
+        "description":  "ABCO Looped End Mop, Wide Band, Blended with Blue Mesh Mop Tape, Large, 12/Carton",
+        "price":  159.99
+    },
+    {
+        "name":  "TEQ-3411",
+        "description":  "Mop Handle Metal, 57\"L Handle, Plastic Side Release",
+        "price":  15.99
+    },
+    {
+        "name":  "TEQ-3412",
+        "description":  "Mop Handle, Vinyl-Covered Aluminum, Gripper 60\", Gray/Yellow",
+        "price":  39.99
+    },
+    {
+        "name":  "TEQ-3519",
+        "description":  "Window Squeegee, Winco, Telescopic Handle, 15\"",
+        "price":  24.99
+    },
+    {
+        "name":  "TEQ-3520",
+        "description":  "Floor Squeegee, 24\" Wide Blade, Black Rubber, Insert Socket",
+        "price":  24.28
+    },
+    {
+        "name":  "TEQ-3546",
+        "description":  "Tapered-Tip Wood Broom/Sweep Handle, 60\", Natural",
+        "price":  12.49
+    },
+    {
         "name":  "TEQ-5515",
-        "description":  "Scraper Window 4\"",
-        "price":  18.54
-    },
-    {
-        "name":  "TEQ-5600",
-        "description":  "Sign Wet Floor",
-        "price":  50.67
-    },
-    {
-        "name":  "TEQ-5610",
-        "description":  "Squeegee 12\" Handle, Channel \u0026 Rubber",
-        "price":  10.29
-    },
-    {
-        "name":  "TEQ-5615",
-        "description":  "Squeegee 18\u0027 Handle, Channel \u0026 Rubber",
-        "price":  18.54
-    },
-    {
-        "name":  "TEQ-5630",
-        "description":  "Squeegee Floor 24\u0027 Hard Rubber",
-        "price":  18.03
-    },
-    {
-        "name":  "TEQ-5655",
-        "description":  "Squeegee Roller Absorbent Replacement 36\u0027",
-        "price":  71.59
+        "description":  "Slice Utility Scraper, Auto-Retractable",
+        "price":  28.04
     }
 ]
