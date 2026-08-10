@@ -9,6 +9,7 @@
 session_start();
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/categories.php';
 // Only proceed if admin is authenticated
 if (!isset($_SESSION['admin'])) {
     // Use relative path to manager portal when redirecting from within admin
@@ -217,6 +218,14 @@ try {
     }
 
     $db->commit();
+    $categoryStatus = getCategoryAssignmentStatus();
+    $newSkuCount = count(array_diff(array_keys($newProducts), array_keys($oldProducts)));
+    $_SESSION['inventory_category_notice'] = sprintf(
+        'Inventory updated. %d new SKU(s), %d unassigned SKU(s), and %d stale category assignment(s) need review.',
+        $newSkuCount,
+        count($categoryStatus['unassigned']),
+        count($categoryStatus['stale'])
+    );
     // Invalidate any cached product listings so the portal/catalogue reflect updates
     invalidateProductsCache();
     // Redirect back to the manager portal once done

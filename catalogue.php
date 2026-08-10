@@ -45,6 +45,7 @@ if (php_sapi_name() === 'cli' || $remote === '127.0.0.1' || $remote === '::1' ||
 try {
     require __DIR__ . '/includes/db.php';
     require __DIR__ . '/includes/functions.php';
+    require __DIR__ . '/includes/categories.php';
 } catch (Exception $e) {
     $errorRef = bin2hex(random_bytes(6));
     $msg = '[' . date('c') . '] catalogue.php bootstrap error (' . $errorRef . '): ' . $e->getMessage() . "\n" . $e->getTraceAsString() . "\n";
@@ -200,6 +201,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['product_id'],
     $params = [];
     $src = function($k){ return $_POST[$k] ?? ($_GET[$k] ?? null); };
     $sv = $src('search'); if ($sv !== null && $sv !== '') { $params['search'] = (string)$sv; }
+    $catV = $src('cat'); if ($catV !== null && $catV !== '') { $params['cat'] = (string)$catV; }
     $skuV = $src('sku'); if ($skuV !== null && $skuV !== '') { $params['sku'] = (string)$skuV; }
     $subV = $src('sub'); if ($subV !== null && $subV !== '') { $params['sub'] = (string)$subV; }
     $favV = $src('favorites'); if ($favV !== null && $favV !== '' && (int)$favV === 1) { $params['favorites'] = 1; }
@@ -230,46 +232,27 @@ elseif (isset($_GET['show']) && $_GET['show'] === 'favorites') { $favoritesOn = 
 if (isset($_GET['onsale'])) { $onSaleOn = (bool)((int)$_GET['onsale']); }
 elseif (isset($_GET['sale'])) { $onSaleOn = (bool)((int)$_GET['sale']); }
 elseif (isset($_GET['show']) && $_GET['show'] === 'onsale') { $onSaleOn = true; }
-// SKU/type filter key
-// Accept either `sku` (short code or label) or `cat` (slug from index.php) so
-// links like catalogue.php?cat=foam work as expected. We map a slug to the
-// nearest SKU filter label and populate $skuKey with that label so the
-// UI renders the corresponding button as active.
+// Resolve current and legacy category parameters to a database category.
 $skuKey = normalizeScalar($_GET['sku'] ?? '', 64, '');
 $catParam = normalizeScalar($_GET['cat'] ?? '', 64, '');
 $subParam = normalizeScalar($_GET['sub'] ?? '', 64, '');
-if ($skuKey === '' && $catParam !== '') {
-    // Deterministic slug -> SKU filter label map for the homepage category tiles.
-    $slugMap = [
-        'corrugated' => 'CORRUGATED BOXES',
-        'tape' => 'TAPE',
-        'packaging-supplies' => 'PACKAGING SUPPLIES',
-        'paper-products' => 'PAPER PRODUCTS',
-        'bubble-products' => 'BUBBLE PRODUCTS',
-        'foam' => 'FOAM'
-    ];
-    $lowerSlug = strtolower($catParam);
-    if (isset($slugMap[$lowerSlug])) {
-        $skuKey = $slugMap[$lowerSlug];
-    } else {
-        // Fallback to best-effort heuristics when a slug isn't in the map
-        $catToken = strtoupper(str_replace(['-', '_'], ' ', $catParam));
-        $matched = null;
-        foreach ($skuFilters as $label => $codes) {
-            $labelNorm = strtoupper($label);
-            if ($labelNorm === $catToken) {
-                $matched = $label;
-                break;
-            }
-            if (strpos($labelNorm, $catToken) !== false || strpos($catToken, str_replace(' ', '_', $labelNorm)) !== false) {
-                $matched = $label;
-                break;
-            }
+$categoryGroups = getCategoryTree(false);
+$activeCategory = null;
+$activeSubcategory = null;
+$requestedCategory = strtolower($catParam !== '' ? $catParam : $skuKey);
+if ($requestedCategory === 'corrugated-boxes') $requestedCategory = 'corrugated';
+foreach ($categoryGroups as $group) {
+    foreach ($group['categories'] as $category) {
+        if ($requestedCategory !== '' && ($category['slug'] === $requestedCategory || strcasecmp($category['name'], $requestedCategory) === 0)) {
+            $activeCategory = $category;
         }
-        if ($matched !== null) {
-            $skuKey = $matched;
-        } else {
-            $skuKey = $catParam;
+    }
+}
+if ($activeCategory && $subParam !== '') {
+    foreach ($activeCategory['children'] as $subcategory) {
+        if ($subcategory['slug'] === strtolower($subParam) || strcasecmp($subcategory['name'], $subParam) === 0) {
+            $activeSubcategory = $subcategory;
+            break;
         }
     }
 }
@@ -370,82 +353,12 @@ if ($onSaleOn) {
     $products = array_values(array_filter($products, function($p){ return !empty($p['deal']); }));
 }
 
-// Load shared SKU filters and grouping from includes/sku_filters.php
-$skuData = @include __DIR__ . '/includes/sku_filters.php';
-$skuFilters = is_array($skuData) && isset($skuData['filters']) ? $skuData['filters'] : [];
-$skuSubcategories = is_array($skuData) && isset($skuData['subcategories']) ? $skuData['subcategories'] : [];
-
-
-// Apply SKU/type filter if provided
-$matchedKey = null;
-if ($skuKey !== '') {
-    // normalize incoming key to uppercase and match against keys
-    $skuKeyNorm = strtoupper($skuKey);
-    // find matching filter entry by key or by value
-    $matchedKey = null;
-    foreach ($skuFilters as $label => $codes) {
-        if (strtoupper($label) === $skuKeyNorm || strtoupper($label) === strtoupper(str_replace(' ', '_', $skuKey))) {
-            $matchedKey = $label;
-            break;
-        }
-    }
-    // also allow user to pass a short code directly (e.g., sku=BAR)
-    $codesToMatch = [];
-    if ($matchedKey) {
-        $codesToMatch = $skuFilters[$matchedKey];
-    } else {
-        // treat skuKey as a single code
-        $codesToMatch = [$skuKey];
-    }
-    $products = array_values(array_filter($products, function($p) use ($codesToMatch) {
-        $name = strtoupper($p['name'] ?? '');
-        foreach ($codesToMatch as $c) {
-            if ($c === '') continue;
-            $cUp = strtoupper($c);
-            if (strpos($name, $cUp) === 0) return true; // SKU prefix match
-        }
-        return false;
+if ($activeCategory) {
+    $filterCategory = $activeSubcategory ?: $activeCategory;
+    $assignedSkus = array_fill_keys(getCategoryAssignments((int)$filterCategory['id'], !$activeSubcategory), true);
+    $products = array_values(array_filter($products, function($product) use ($assignedSkus) {
+        return isset($assignedSkus[(string)($product['name'] ?? '')]);
     }));
-}
-
-// Optional subcategory filter driven by include rules. This supports
-// category-specific custom associations that are more complex than prefix/deal.
-if ($subParam !== '') {
-    $subKey = strtolower($subParam);
-    $activeCategory = null;
-    if ($skuKey !== '') {
-        $activeCategory = strtoupper((string)($matchedKey ?: $skuKey));
-    } elseif ($catParam !== '') {
-        $catMap = [
-            'corrugated' => 'CORRUGATED BOXES',
-            'corrugated-boxes' => 'CORRUGATED BOXES',
-            'tape' => 'TAPE',
-            'packaging-supplies' => 'PACKAGING SUPPLIES',
-            'paper-products' => 'PAPER PRODUCTS',
-            'bubble-products' => 'BUBBLE PRODUCTS',
-            'foam' => 'FOAM',
-        ];
-        $activeCategory = $catMap[strtolower($catParam)] ?? null;
-    }
-
-    $subcategoryMatchers = [
-        'cube_dimensions' => function(array $p): bool {
-            $name = (string)($p['name'] ?? '');
-            $desc = (string)($p['description'] ?? '');
-            $hay = $name . ' ' . $desc;
-            // Match dimensions like 4 x 4 x 4 (allow spaces and x/×).
-            return (bool)preg_match('/\b(\d{1,3})\s*[x×]\s*\1\s*[x×]\s*\1\b/i', $hay);
-        }
-    ];
-
-    if ($activeCategory && isset($skuSubcategories[$activeCategory][$subKey])) {
-        $rule = $skuSubcategories[$activeCategory][$subKey];
-        $matcherKey = (string)($rule['matcher'] ?? '');
-        if ($matcherKey !== '' && isset($subcategoryMatchers[$matcherKey])) {
-            $matcher = $subcategoryMatchers[$matcherKey];
-            $products = array_values(array_filter($products, $matcher));
-        }
-    }
 }
 
 include __DIR__ . '/includes/header.php';
@@ -573,13 +486,13 @@ body.theme-dark .catalogue-table tr.sale-row td { background: transparent !impor
     <div style="font-weight:700;">View:</div>
     <?php
         // Active states: Show All is active when no specific category is selected
-        $showAllActive = ($skuKey === '');
+        $showAllActive = !$activeCategory;
         $favActive = $favoritesOn;
         $saleActive = $onSaleOn;
         // Helper to build URLs preserving current context
         $baseParams = [];
         if ($search !== '') { $baseParams['search'] = $search; }
-        if ($skuKey !== '') { $baseParams['sku'] = $skuKey; }
+        if ($activeCategory) { $baseParams['cat'] = $activeCategory['slug']; }
         if ($subParam !== '') { $baseParams['sub'] = $subParam; }
         if ($favoritesOn) { $baseParams['favorites'] = 1; }
         if ($onSaleOn) { $baseParams['onsale'] = 1; }
@@ -589,7 +502,7 @@ body.theme-dark .catalogue-table tr.sale-row td { background: transparent !impor
         };
         // Show All: clear the category (and sub), keep search and toggles
         $allParams = $baseParams;
-        unset($allParams['sku'], $allParams['sub']);
+        unset($allParams['cat'], $allParams['sku'], $allParams['sub']);
         $allUrl = $buildUrl($allParams);
         // Favorites toggle: flip favorites flag but preserve everything else
         $favParams = $baseParams;
@@ -610,49 +523,45 @@ body.theme-dark .catalogue-table tr.sale-row td { background: transparent !impor
     <select id="catalogueCategorySelect" style="padding:8px 10px;border:1px solid #d7e1ea;border-radius:8px;min-width:280px;max-width:100%;">
         <?php
             // Build dropdown option URLs preserving search and toggle filters
-            $skuData = @include __DIR__ . '/includes/sku_filters.php';
-            $skuGroups = is_array($skuData) && isset($skuData['groups']) ? $skuData['groups'] : [];
             $optBase = [];
             if ($search !== '') { $optBase['search'] = $search; }
             if ($favoritesOn) { $optBase['favorites'] = 1; }
             if ($onSaleOn) { $optBase['onsale'] = 1; }
             $allUrl = 'catalogue.php' . (!empty($optBase) ? ('?' . http_build_query($optBase)) : '');
         ?>
-        <option value="<?= htmlspecialchars($allUrl) ?>"<?= $skuKey === '' ? ' selected' : '' ?>>All categories</option>
-        <?php foreach ($skuGroups as $groupLabel => $labels): ?>
-            <optgroup label="<?= htmlspecialchars($groupLabel) ?>">
-                <?php foreach ($labels as $label): if (!isset($skuFilters[$label])) continue; 
-                    $key = urlencode($label);
+        <option value="<?= htmlspecialchars($allUrl) ?>"<?= !$activeCategory ? ' selected' : '' ?>>All categories</option>
+        <?php foreach ($categoryGroups as $group): ?>
+            <optgroup label="<?= htmlspecialchars($group['name']) ?>">
+                <?php foreach ($group['categories'] as $category):
                     $params = $optBase;
-                    $params['sku'] = $label;
+                    $params['cat'] = $category['slug'];
                     $url = 'catalogue.php?' . http_build_query($params);
-                    $isActiveSku = (strtoupper($skuKey) === strtoupper($label));
+                    $isActiveSku = $activeCategory && (int)$activeCategory['id'] === (int)$category['id'];
                 ?>
-                    <option value="<?= htmlspecialchars($url) ?>"<?= $isActiveSku ? ' selected' : '' ?>><?= htmlspecialchars($label) ?></option>
+                    <option value="<?= htmlspecialchars($url) ?>"<?= $isActiveSku ? ' selected' : '' ?>><?= htmlspecialchars($category['name']) ?></option>
                 <?php endforeach; ?>
             </optgroup>
         <?php endforeach; ?>
     </select>
 </div>
 <div class="catalogue-cats-buttons" style="margin-bottom:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-    <?php foreach ($skuFilters as $label => $codes):
+    <?php foreach ($categoryGroups as $group): foreach ($group['categories'] as $category):
         // build a URL preserving search and toggles
-        $key = urlencode($label);
         $params = [];
         if ($search !== '') { $params['search'] = $search; }
         if ($favoritesOn) { $params['favorites'] = 1; }
         if ($onSaleOn) { $params['onsale'] = 1; }
-        $params['sku'] = $label;
+        $params['cat'] = $category['slug'];
         $url = 'catalogue.php?' . http_build_query($params);
-        $isActiveSku = (strtoupper($skuKey) === strtoupper($label));
+        $isActiveSku = $activeCategory && (int)$activeCategory['id'] === (int)$category['id'];
     ?>
-        <a href="<?= htmlspecialchars($url) ?>" class="sku-btn<?= $isActiveSku ? ' active' : '' ?>" data-sku="<?= htmlspecialchars($label) ?>"><?= htmlspecialchars($label) ?></a>
-    <?php endforeach; ?>
+        <a href="<?= htmlspecialchars($url) ?>" class="sku-btn<?= $isActiveSku ? ' active' : '' ?>" data-sku="<?= htmlspecialchars($category['slug']) ?>"><?= htmlspecialchars($category['name']) ?></a>
+    <?php endforeach; endforeach; ?>
 </div>
 <form method="get" action="catalogue.php" style="margin-bottom:1em;">
     <input type="text" name="search" value="<?= htmlspecialchars($search) ?>" placeholder="Search products...">
-    <?php if ($skuKey !== ''): ?>
-        <input type="hidden" name="sku" value="<?= htmlspecialchars($skuKey) ?>">
+    <?php if ($activeCategory): ?>
+        <input type="hidden" name="cat" value="<?= htmlspecialchars($activeCategory['slug']) ?>">
     <?php endif; ?>
     <?php if ($subParam !== ''): ?>
         <input type="hidden" name="sub" value="<?= htmlspecialchars($subParam) ?>">
@@ -667,7 +576,7 @@ body.theme-dark .catalogue-table tr.sale-row td { background: transparent !impor
     <?php if ($search !== ''): ?>
         <?php
             $clearParams = [];
-            if ($skuKey !== '') { $clearParams['sku'] = $skuKey; }
+            if ($activeCategory) { $clearParams['cat'] = $activeCategory['slug']; }
             if ($subParam !== '') { $clearParams['sub'] = $subParam; }
             if ($favoritesOn) { $clearParams['favorites'] = 1; }
             if ($onSaleOn) { $clearParams['onsale'] = 1; }
@@ -753,8 +662,8 @@ body.theme-dark .catalogue-table tr.sale-row td { background: transparent !impor
                     <?php if ($search !== ''): ?>
                         <input type="hidden" name="search" value="<?= htmlspecialchars($search) ?>">
                     <?php endif; ?>
-                    <?php if ($skuKey !== ''): ?>
-                        <input type="hidden" name="sku" value="<?= htmlspecialchars($skuKey) ?>">
+                    <?php if ($activeCategory): ?>
+                        <input type="hidden" name="cat" value="<?= htmlspecialchars($activeCategory['slug']) ?>">
                     <?php endif; ?>
                     <?php if ($subParam !== ''): ?>
                         <input type="hidden" name="sub" value="<?= htmlspecialchars($subParam) ?>">

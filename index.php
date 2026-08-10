@@ -4,6 +4,8 @@
 // Set page meta before including header
 $title = 'Daytona Supply — Packaging & Janitorial Supplies';
 $metaDescription = 'Daytona Supply is your local B2B partner for packaging, janitorial, and cleaning supplies. Fast local delivery, competitive pricing, and easy account management.';
+require_once __DIR__ . '/includes/categories.php';
+$featuredCategories = getTopLevelCategories(true);
 require_once __DIR__ . '/includes/header.php'; 
 ?>
 	<!-- Hero Carousel -->
@@ -87,48 +89,15 @@ require_once __DIR__ . '/includes/header.php';
 	<section class="categories container" aria-label="Shop by category">
 		<h2 class="sr-only">Shop by category</h2>
 		<div class="grid categories-grid">
-			<a class="category-card" href="products.php?cat=corrugated">
-				<img src="assets/images/boxes.png" alt="Corrugated Boxes" loading="lazy">
-				<div class="cat-body">
-					<h3>Corrugated Boxes</h3>
-					<button class="shop-btn">Shop Category</button>
-				</div>
-			</a>
-			<a class="category-card" href="products.php?cat=tape">
-				<img src="assets/images/tape.png" alt="Tape" loading="lazy">
-				<div class="cat-body">
-					<h3>Tape</h3>
-					<button class="shop-btn">Shop Category</button>
-				</div>
-			</a>
-			<a class="category-card" href="products.php?cat=packaging-supplies">
-				<img src="assets/images/stretchfilm.png" alt="Packaging Supplies" loading="lazy">
-				<div class="cat-body">
-					<h3>Packaging Supplies</h3>
-					<button class="shop-btn">Shop Category</button>
-				</div>
-			</a>
-			<a class="category-card" href="products.php?cat=paper-products">
-				<img src="assets/images/paper.png" alt="Paper Products" loading="lazy">
-				<div class="cat-body">
-					<h3>Paper Products</h3>
-					<button class="shop-btn">Shop Category</button>
-				</div>
-			</a>
-			<a class="category-card" href="products.php?cat=bubble-products">
-				<img src="assets/images/bubble.png" alt="Bubble Products" loading="lazy">
-				<div class="cat-body">
-					<h3>Bubble Products</h3>
-					<button class="shop-btn">Shop Category</button>
-				</div>
-			</a>
-			<a class="category-card" href="products.php?cat=foam">
-				<img src="assets/images/foam.png" alt="Foam" loading="lazy">
-				<div class="cat-body">
-					<h3>Foam</h3>
-					<button class="shop-btn">Shop Category</button>
-				</div>
-			</a>
+			<?php foreach ($featuredCategories as $category): ?>
+				<a class="category-card" href="products.php?cat=<?= urlencode($category['slug']) ?>">
+					<img src="<?= htmlspecialchars(resolveCategoryImage($category)) ?>" alt="<?= htmlspecialchars($category['name']) ?>" loading="lazy">
+					<div class="cat-body">
+						<h3><?= htmlspecialchars($category['name']) ?></h3>
+						<button class="shop-btn">Shop Category</button>
+					</div>
+				</a>
+			<?php endforeach; ?>
 		</div>
 	</section>
 

@@ -230,21 +230,19 @@ if ($loggedIn) {
                 <div id="nav-menu" class="nav-menu" hidden>
                     <ul class="nav-cats">
                         <?php
-                        // Load shared SKU filters and groups. returns ['filters'=>..., 'groups'=>...]
-                        $skuData = @include __DIR__ . '/sku_filters.php';
-                        $skuFilters = is_array($skuData) && isset($skuData['filters']) ? $skuData['filters'] : [];
-                        $skuGroups = is_array($skuData) && isset($skuData['groups']) ? $skuData['groups'] : [];
+                        if (!function_exists('getCategoryTree')) require_once __DIR__ . '/categories.php';
+                        $navCategoryGroups = getCategoryTree(false);
                         ?>
                         <li class="has-mega products-item"><a class="cat-btn" href="products.php">Products</a>
                             <div class="mega" role="menu">
                                 <button type="button" class="mega-close" aria-label="Close products menu">×</button>
-                                <?php foreach ($skuGroups as $groupLabel => $labels): ?>
+                                <?php foreach ($navCategoryGroups as $group): ?>
                                     <div class="mega-col">
-                                        <h4><?php echo htmlspecialchars($groupLabel); ?></h4>
+                                        <h4><?php echo htmlspecialchars($group['name']); ?></h4>
                                         <ul>
-                                            <?php foreach ($labels as $label): if (!isset($skuFilters[$label])) continue; ?>
-                                                <?php $slug = strtolower(preg_replace('/[^a-z0-9]+/i', '-', $label)); $url = 'products.php?cat=' . urlencode($slug); ?>
-                                                <li><a href="<?php echo htmlspecialchars($url); ?>"><?php echo htmlspecialchars($label); ?></a></li>
+                                            <?php foreach ($group['categories'] as $category): ?>
+                                                <?php $url = 'products.php?cat=' . urlencode($category['slug']); ?>
+                                                <li><a href="<?php echo htmlspecialchars($url); ?>"><?php echo htmlspecialchars($category['name']); ?></a></li>
                                             <?php endforeach; ?>
                                         </ul>
                                     </div>

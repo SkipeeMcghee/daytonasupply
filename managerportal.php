@@ -4,6 +4,7 @@
 
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/categories.php';
 
 // Start the session if it hasn't been started yet
 if (session_status() === PHP_SESSION_NONE) {
@@ -56,6 +57,10 @@ if (!isset($_SESSION['admin'])) {
 }
 
 // Admin is logged in: handle all state-changing actions BEFORE sending any HTML
+if (empty($_SESSION['manager_csrf'])) {
+    $_SESSION['manager_csrf'] = bin2hex(random_bytes(24));
+}
+
 // Handle bulk verify/unverify/delete for customers
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Bulk verify selected unverified customers
@@ -394,6 +399,26 @@ if (isset($_GET['updated']) || isset($_GET['nocache'])) {
 // Use a fresh DB read to ensure UI reflects the latest data immediately
 $products = getAllProductsFresh();
 error_log('managerportal: loaded ' . count($products) . ' products');
+
+$categoryTree = getCategoryTree(true);
+$categoryStatus = getCategoryAssignmentStatus();
+$inventoryCategoryNotice = (string)($_SESSION['inventory_category_notice'] ?? '');
+unset($_SESSION['inventory_category_notice']);
+$assignmentRows = $db->query('SELECT category_id, product_sku FROM category_product_assignments ORDER BY category_id, product_sku')->fetchAll(PDO::FETCH_ASSOC);
+$categoryAssignments = [];
+foreach ($assignmentRows as $assignmentRow) {
+    $categoryAssignments[(int)$assignmentRow['category_id']][] = (string)$assignmentRow['product_sku'];
+}
+$categoryManagerData = [
+    'groups' => $categoryTree,
+    'products' => array_map(function (array $product): array {
+        return ['name' => (string)$product['name'], 'description' => (string)($product['description'] ?? '')];
+    }, $products),
+    'assignments' => $categoryAssignments,
+    'unassigned' => array_map(function (array $product): string { return (string)$product['name']; }, $categoryStatus['unassigned']),
+    'stale' => $categoryStatus['stale'],
+    'csrf' => (string)$_SESSION['manager_csrf'],
+];
 
 // Whether we're showing archived orders (used by the toggle link below)
 $showArchived = ($filter === 'archived');
@@ -983,6 +1008,7 @@ require_once __DIR__ . '/includes/header.php';
     <p><button type="submit" class="proceed-btn">Add Product</button></p>
     </form>
 </section>
+<?php include __DIR__ . '/includes/manager_categories.php'; ?>
     <!-- Back to top -->
     <div id="backToTopWrap" class="back-to-top-wrap" aria-hidden="true">
         <span class="back-to-top-label">Return To Top</span>

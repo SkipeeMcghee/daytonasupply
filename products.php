@@ -1,25 +1,18 @@
 <?php
-// Products landing page with full category grid and subcategories for Corrugated Boxes
-$title = 'Products — Shop by Category';
+$title = 'Products - Shop by Category';
+require_once __DIR__ . '/includes/categories.php';
+require_once __DIR__ . '/includes/functions.php';
+
+$categoryGroups = getCategoryTree(false);
+$allProducts = getAllProducts();
+$dealSkus = [];
+foreach ($allProducts as $product) {
+    if (!empty($product['deal'])) $dealSkus[(string)($product['name'] ?? '')] = true;
+}
+
 require_once __DIR__ . '/includes/header.php';
-
-// Load SKU filters and groups
-$skuData = @include __DIR__ . '/includes/sku_filters.php';
-$skuFilters = is_array($skuData) && isset($skuData['filters']) ? $skuData['filters'] : [];
-$skuGroups = is_array($skuData) && isset($skuData['groups']) ? $skuData['groups'] : [];
-
-// Map known homepage categories to their images; use DS logo as placeholder for others
-$imgMap = [
-    'CORRUGATED BOXES' => 'assets/images/boxes.png',
-    'TAPE' => 'assets/images/tape.png',
-    'PACKAGING SUPPLIES' => 'assets/images/stretchfilm.png',
-    'PAPER PRODUCTS' => 'assets/images/paper.png',
-    'BUBBLE PRODUCTS' => 'assets/images/bubble.png',
-    'FOAM' => 'assets/images/foam.png',
-];
-$placeholder = 'assets/images/DaytonaSupplyDSlogo.png';
 ?>
-    <div class="container"><div class="form-card">
+<div class="container"><div class="form-card">
     <section class="page-hero centered">
         <h1>Products</h1>
         <p class="lead">Browse all categories, or go directly to <a href="catalogue.php" class="proceed-btn btn-catalog">All Products</a></p>
@@ -27,302 +20,99 @@ $placeholder = 'assets/images/DaytonaSupplyDSlogo.png';
 
     <section class="categories" aria-label="Shop by category">
         <div id="allCategories">
-            <?php foreach ($skuGroups as $groupLabel => $labels): ?>
+            <?php foreach ($categoryGroups as $group): ?>
                 <div class="group-block">
-                    <h2 class="group-title"><?php echo htmlspecialchars($groupLabel); ?></h2>
+                    <h2 class="group-title"><?= htmlspecialchars($group['name']) ?></h2>
                     <div class="grid categories-grid">
-                        <?php foreach ($labels as $label): if (!isset($skuFilters[$label])) continue; ?>
-                            <?php
-                                $slug = strtolower(preg_replace('/[^a-z0-9]+/i', '-', $label));
-                                // Resolve image for this category
-                                if (isset($imgMap[$label])) {
-                                    $img = $imgMap[$label];
-                                } else {
-                                    $baseDir = __DIR__ . '/assets/images/';
-                                    $webBase = 'assets/images/';
-                                    $candidates = [];
-                                    $noSpaces = str_replace(' ', '', $label);
-                                    $candidates[] = $noSpaces . '.png';
-                                    $alnum = preg_replace('/[^A-Za-z0-9]/', '', $label);
-                                    if ($alnum !== $noSpaces) $candidates[] = $alnum . '.png';
-                                    $candidates[] = strtolower($noSpaces) . '.png';
-                                    $candidates[] = strtolower($alnum) . '.png';
-                                    $img = $placeholder;
-                                    foreach ($candidates as $file) {
-                                        if (is_readable($baseDir . $file)) { $img = $webBase . $file; break; }
-                                    }
-                                }
-                                $url = 'catalogue.php?sku=' . urlencode($label);
-                                // All categories now have subcategories panels
-                                $hasSub = true;
-                                $targetId = (strtoupper($label) === 'CORRUGATED BOXES') ? 'subcats-corrugated' : ('subcats-' . $slug);
-                            ?>
-                            <a class="category-card" href="<?php echo htmlspecialchars($url); ?>" data-has-subcats="1" data-subcats-target="<?php echo htmlspecialchars($targetId); ?>">
-                                <img src="<?php echo htmlspecialchars($img); ?>" alt="<?php echo htmlspecialchars($label); ?>" loading="lazy">
-                                <div class="cat-body">
-                                    <h3><?php echo htmlspecialchars($label); ?></h3>
-                                    <button class="shop-btn">Shop<br>Category</button>
-                                </div>
+                        <?php foreach ($group['categories'] as $category): ?>
+                            <a class="category-card" href="catalogue.php?cat=<?= urlencode($category['slug']) ?>" data-subcats-target="subcats-<?= htmlspecialchars($category['slug']) ?>">
+                                <img src="<?= htmlspecialchars(resolveCategoryImage($category)) ?>" alt="<?= htmlspecialchars($category['name']) ?>" loading="lazy">
+                                <div class="cat-body"><h3><?= htmlspecialchars($category['name']) ?></h3><button class="shop-btn">Shop<br>Category</button></div>
                             </a>
                         <?php endforeach; ?>
                     </div>
                 </div>
             <?php endforeach; ?>
         </div>
-        
-        <!-- Subcategory panel for Corrugated Boxes (hidden by default) -->
-        <?php 
-            $corrLabel = 'CORRUGATED BOXES';
-            $allCorrUrl = 'catalogue.php?sku=' . urlencode($corrLabel);
-            $cubeUrl = $allCorrUrl . '&sub=cube';
-            $corrSaleUrl = $allCorrUrl . '&show=onsale';
-            $corrImg = $imgMap[$corrLabel] ?? $placeholder;
-            // Resolve images for subcategories with same logic (no spaces/alnum/lowercase)
-            $baseDir = __DIR__ . '/assets/images/';
-            $webBase = 'assets/images/';
-            // Cube Boxes image
-            $cubeLabel = 'Cube Boxes';
-            $cubeCandidates = [];
-            $cubeNoSpaces = str_replace(' ', '', $cubeLabel);
-            $cubeCandidates[] = $cubeNoSpaces . '.png';
-            $cubeAlnum = preg_replace('/[^A-Za-z0-9]/', '', $cubeLabel);
-            if ($cubeAlnum !== $cubeNoSpaces) $cubeCandidates[] = $cubeAlnum . '.png';
-            $cubeCandidates[] = strtolower($cubeNoSpaces) . '.png';
-            $cubeCandidates[] = strtolower($cubeAlnum) . '.png';
-            $cubeImg = $corrImg; // fallback to corrugated image if none found
-            foreach ($cubeCandidates as $f) { if (is_readable($baseDir . $f)) { $cubeImg = $webBase . $f; break; } }
-            // All Corrugated Boxes image (likely falls back)
-            $allCorrLabelText = 'All Corrugated Boxes';
-            $allCandidates = [];
-            $allNoSpaces = str_replace(' ', '', $allCorrLabelText);
-            $allCandidates[] = $allNoSpaces . '.png';
-            $allAlnum = preg_replace('/[^A-Za-z0-9]/', '', $allCorrLabelText);
-            if ($allAlnum !== $allNoSpaces) $allCandidates[] = $allAlnum . '.png';
-            $allCandidates[] = strtolower($allNoSpaces) . '.png';
-            $allCandidates[] = strtolower($allAlnum) . '.png';
-            $allCorrImg = $corrImg; // fallback to corrugated image if none found
-            foreach ($allCandidates as $f) { if (is_readable($baseDir . $f)) { $allCorrImg = $webBase . $f; break; } }
-        ?>
-        <div class="subcategory-panel" id="subcats-corrugated" hidden>
-            <div class="subcats-head">
-                <button type="button" class="back-to-cats" aria-label="Back to all categories">← All Categories</button>
-                <h2 class="subcats-title">Corrugated Boxes</h2>
-            </div>
-            <div class="grid categories-grid">
-                <a class="category-card" href="<?php echo htmlspecialchars($allCorrUrl); ?>">
-                    <img src="<?php echo htmlspecialchars($allCorrImg); ?>" alt="All Corrugated Boxes" loading="lazy">
-                    <div class="cat-body">
-                        <h3>All Corrugated Boxes</h3>
-                        <button class="shop-btn">Shop<br>Subcategory</button>
-                    </div>
-                </a>
-                <a class="category-card" href="<?php echo htmlspecialchars($cubeUrl); ?>">
-                    <img src="<?php echo htmlspecialchars($cubeImg); ?>" alt="Cube Boxes" loading="lazy">
-                    <div class="cat-body">
-                        <h3>Cube Corrugated Boxes</h3>
-                        <button class="shop-btn">Shop<br>Subcategory</button>
-                    </div>
-                </a>
-                <a class="category-card" href="<?php echo htmlspecialchars($corrSaleUrl); ?>">
-                    <img src="<?php echo htmlspecialchars($corrImg); ?>" alt="Corrugated Boxes Deals" loading="lazy">
-                    <div class="cat-body">
-                        <h3>Corrugated Boxes Deals</h3>
-                        <button class="shop-btn">Shop<br>Subcategory</button>
-                    </div>
-                </a>
-            </div>
-        </div>
 
-        <?php
-        // Generate subcategory panels for all other categories: "All X" and "On Sale"
-        foreach ($skuGroups as $groupLabel => $labels) {
-            foreach ($labels as $label) {
-                if (!isset($skuFilters[$label])) continue;
-                if (strtoupper($label) === 'CORRUGATED BOXES') continue; // corrugated handled above
-                $slug = strtolower(preg_replace('/[^a-z0-9]+/i', '-', $label));
-                $baseDir = __DIR__ . '/assets/images/';
-                $webBase = 'assets/images/';
-                // Use category image or DS logo
-                if (isset($imgMap[$label])) { $catImg = $imgMap[$label]; }
-                else {
-                    $candidates = [];
-                    $noSpaces = str_replace(' ', '', $label);
-                    $candidates[] = $noSpaces . '.png';
-                    $alnum = preg_replace('/[^A-Za-z0-9]/', '', $label);
-                    if ($alnum !== $noSpaces) $candidates[] = $alnum . '.png';
-                    $candidates[] = strtolower($noSpaces) . '.png';
-                    $candidates[] = strtolower($alnum) . '.png';
-                    $catImg = $placeholder;
-                    foreach ($candidates as $file) { if (is_readable($baseDir . $file)) { $catImg = $webBase . $file; break; } }
+        <?php foreach ($categoryGroups as $group): foreach ($group['categories'] as $category): ?>
+            <?php
+                $categorySkus = array_fill_keys(getCategoryAssignments((int)$category['id'], true), true);
+                $hasDeals = false;
+                foreach ($dealSkus as $sku => $_) {
+                    if (isset($categorySkus[$sku])) { $hasDeals = true; break; }
                 }
-                $allUrl = 'catalogue.php?sku=' . urlencode($label);
-                $saleUrl = $allUrl . '&show=onsale';
-                $allHeading = 'All ' . ucwords(strtolower($label));
-                $dealsHeading = ucwords(strtolower($label)) . ' Deals';
-                ?>
-                <div class="subcategory-panel" id="subcats-<?php echo htmlspecialchars($slug); ?>" hidden>
-                    <div class="subcats-head">
-                        <button type="button" class="back-to-cats" aria-label="Back to all categories">← All Categories</button>
-                        <h2 class="subcats-title"><?php echo htmlspecialchars($label); ?></h2>
-                    </div>
-                    <div class="grid categories-grid">
-                        <a class="category-card" href="<?php echo htmlspecialchars($allUrl); ?>">
-                            <img src="<?php echo htmlspecialchars($catImg); ?>" alt="<?php echo htmlspecialchars($allHeading); ?>" loading="lazy">
-                            <div class="cat-body">
-                                <h3><?php echo htmlspecialchars($allHeading); ?></h3>
-                                <button class="shop-btn">Shop<br>Subcategory</button>
-                            </div>
-                        </a>
-                        <a class="category-card" href="<?php echo htmlspecialchars($saleUrl); ?>">
-                            <img src="<?php echo htmlspecialchars($catImg); ?>" alt="<?php echo htmlspecialchars($dealsHeading); ?>" loading="lazy">
-                            <div class="cat-body">
-                                <h3><?php echo htmlspecialchars($dealsHeading); ?></h3>
-                                <button class="shop-btn">Shop<br>Subcategory</button>
-                            </div>
-                        </a>
-                    </div>
+                $categoryImage = resolveCategoryImage($category);
+            ?>
+            <div class="subcategory-panel" id="subcats-<?= htmlspecialchars($category['slug']) ?>" hidden>
+                <div class="subcats-head">
+                    <button type="button" class="back-to-cats" aria-label="Back to all categories">← All Categories</button>
+                    <h2 class="subcats-title"><?= htmlspecialchars($category['name']) ?></h2>
                 </div>
-                <?php
-            }
-        }
-        ?>
+                <div class="grid categories-grid">
+                    <a class="category-card" href="catalogue.php?cat=<?= urlencode($category['slug']) ?>">
+                        <img src="<?= htmlspecialchars($categoryImage) ?>" alt="All <?= htmlspecialchars($category['name']) ?>" loading="lazy">
+                        <div class="cat-body"><h3>All <?= htmlspecialchars($category['name']) ?></h3><button class="shop-btn">Shop<br>Category</button></div>
+                    </a>
+                    <?php foreach ($category['children'] as $subcategory): ?>
+                        <a class="category-card" href="catalogue.php?cat=<?= urlencode($category['slug']) ?>&amp;sub=<?= urlencode($subcategory['slug']) ?>">
+                            <img src="<?= htmlspecialchars(resolveCategoryImage($subcategory, $category)) ?>" alt="<?= htmlspecialchars($subcategory['name']) ?>" loading="lazy">
+                            <div class="cat-body"><h3><?= htmlspecialchars($subcategory['name']) ?></h3><button class="shop-btn">Shop<br>Subcategory</button></div>
+                        </a>
+                    <?php endforeach; ?>
+                    <?php if ($hasDeals): ?>
+                        <a class="category-card" href="catalogue.php?cat=<?= urlencode($category['slug']) ?>&amp;onsale=1">
+                            <img src="<?= htmlspecialchars($categoryImage) ?>" alt="<?= htmlspecialchars($category['name']) ?> Deals" loading="lazy">
+                            <div class="cat-body"><h3><?= htmlspecialchars($category['name']) ?> Deals</h3><button class="shop-btn">Shop<br>Deals</button></div>
+                        </a>
+                    <?php endif; ?>
+                </div>
+            </div>
+        <?php endforeach; endforeach; ?>
     </section>
-
-    <!-- Back to top -->
-    <div id="backToTopWrap" class="back-to-top-wrap" aria-hidden="true">
-        <span class="back-to-top-label">Return To Top</span>
-        <button id="backToTop" class="back-to-top" aria-label="Back to top">↑</button>
-    </div>
-    </div></div>
-
-<?php include __DIR__ . '/includes/footer.php'; ?>
+</div></div>
 
 <style>
-/* Products page grid: 3 per row with equal spacing */
-.categories-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px; /* equal spacing between columns and rows */
-}
-/* Group blocks for Packaging / Janitorial / Safety */
-.group-block { margin-bottom: 28px; }
-.group-title { 
-    margin: 18px 0 14px; 
-    font-size: clamp(1.6rem, 2.2vw, 1.95rem); 
-    font-weight: 800; 
-    letter-spacing: .5px; 
-    line-height: 1.15; 
-    color: #0b5ed7; 
-    display: flex; 
-    align-items: center; 
-    gap: .65rem; 
-    position: relative;
-}
-/* Vertical accent bar */
-.group-title::before { 
-    content: ""; 
-    width: 6px; 
-    height: 1.05em; 
-    background: linear-gradient(180deg,#0b5ed7,#3d8bfd); 
-    border-radius: 3px; 
-    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-}
-/* Dark mode adjustments for readability */
-html.theme-dark .group-title, body.theme-dark .group-title { 
-    color: #58b4ff; 
-    text-shadow: 0 2px 8px rgba(0,0,0,0.55); 
-}
-html.theme-dark .group-title::before, body.theme-dark .group-title::before { 
-    background: linear-gradient(180deg,#1d6fd7,#56a5ff); 
-    box-shadow: 0 2px 10px rgba(0,0,0,0.6); 
-}
-@media (max-width: 900px) {
-    .categories-grid { grid-template-columns: repeat(2, 1fr); }
-}
-@media (max-width: 520px) {
-    /* Keep a minimum of 2 buttons per row even on narrow displays */
-    .categories-grid { grid-template-columns: repeat(2, 1fr); }
-    /* Hide Shop buttons on very narrow displays for a cleaner look */
-    .categories .category-card .cat-body .shop-btn { display: none; }
-}
-.subcategory-panel[hidden] { display: none !important; }
-.subcats-head { display:flex; align-items:center; gap:12px; margin: 4px 0 12px; }
-.back-to-cats { appearance:none; border:1px solid #d7e1ea; background:#fff; color:#0a2a43; padding:6px 10px; border-radius:6px; cursor:pointer; }
+.categories-grid { grid-template-columns:repeat(3,1fr); gap:20px; }
+.group-block { margin-bottom:28px; }
+.group-title { margin:18px 0 14px; font-size:1.8rem; font-weight:800; color:#0b5ed7; display:flex; align-items:center; gap:.65rem; }
+.group-title::before { content:''; width:6px; height:1.4em; background:#0b5ed7; border-radius:3px; }
+.subcategory-panel[hidden] { display:none !important; }
+.subcats-head { display:flex; align-items:center; gap:12px; margin:4px 0 12px; }
+.subcats-title { margin:0; font-size:1.5rem; }
+.back-to-cats { border:1px solid #d7e1ea; background:#fff; color:#0b2238; padding:8px 12px; border-radius:6px; font-weight:700; cursor:pointer; }
 html.theme-dark .back-to-cats, body.theme-dark .back-to-cats { background:#0f1722; color:#e6edf3; border-color:#2a3847; }
+@media (max-width:760px) { .categories-grid { grid-template-columns:repeat(2,1fr); gap:12px; } }
+@media (max-width:420px) { .categories-grid { grid-template-columns:1fr; } }
 </style>
-
 <script>
-// Toggle between all categories and subcategories for categories that have subcats
 document.addEventListener('DOMContentLoaded', function(){
-    var allCats = document.getElementById('allCategories');
-    function scrollToHero(){
-        try { window.scrollTo({ top: 0, behavior: 'smooth' }); }
-        catch(e) { window.scrollTo(0,0); }
+    var allCategories = document.getElementById('allCategories');
+    if (!allCategories) return;
+    function openPanel(id){
+        var panel = document.getElementById(id);
+        if (!panel) return false;
+        document.querySelectorAll('.subcategory-panel').forEach(function(item){ item.hidden = true; });
+        allCategories.hidden = true;
+        panel.hidden = false;
+        window.scrollTo({top:0, behavior:'smooth'});
+        return true;
     }
-    if (!allCats) return;
-    allCats.addEventListener('click', function(e){
-        var card = e.target.closest && e.target.closest('.category-card');
+    allCategories.addEventListener('click', function(event){
+        var card = event.target.closest('.category-card[data-subcats-target]');
         if (!card) return;
-        var hasSub = card.getAttribute('data-has-subcats');
-        var targetId = card.getAttribute('data-subcats-target');
-        if (hasSub && targetId) {
-            e.preventDefault();
-            var panel = document.getElementById(targetId);
-            if (!panel) return;
-            allCats.style.display = 'none';
-            panel.hidden = false;
-            // scroll to the Products heading at the top
-            scrollToHero();
-        }
-        // else: normal navigation occurs
+        if (openPanel(card.getAttribute('data-subcats-target'))) event.preventDefault();
     });
-    // Back buttons for all subcategory panels
-    document.querySelectorAll('.back-to-cats').forEach(function(backBtn){
-        backBtn.addEventListener('click', function(){
-            var openPanels = document.querySelectorAll('.subcategory-panel:not([hidden])');
-            openPanels.forEach(function(p){ p.hidden = true; });
-            allCats.style.display = '';
-            // scroll to the Products heading at the top
-            scrollToHero();
+    document.querySelectorAll('.back-to-cats').forEach(function(button){
+        button.addEventListener('click', function(){
+            document.querySelectorAll('.subcategory-panel').forEach(function(item){ item.hidden = true; });
+            allCategories.hidden = false;
+            window.history.replaceState({}, '', 'products.php');
+            window.scrollTo({top:0, behavior:'smooth'});
         });
     });
-
-    // If landing with ?cat=... from the homepage, auto-open that category's subcategories
-    try {
-        var params = new URLSearchParams(window.location.search);
-        var cat = (params.get('cat') || '').toLowerCase();
-        if (cat) {
-            // Map url slugs used on index.php to SKU labels used on products.php panels
-            var map = {
-                'corrugated': 'corrugated-boxes',
-                'tape': 'tape',
-                'packaging-supplies': 'packaging-supplies',
-                'paper-products': 'paper-products',
-                'bubble-products': 'bubble-products',
-                'foam': 'foam'
-            };
-            var slug = map[cat] || cat;
-            var targetId = (slug === 'corrugated-boxes') ? 'subcats-corrugated' : ('subcats-' + slug);
-            var panel = document.getElementById(targetId);
-            if (panel) {
-                allCats.style.display = 'none';
-                panel.hidden = false;
-                scrollToHero();
-            }
-        }
-    } catch (e) { /* no-op */ }
-
-    // If a ?cat=slug is present, auto-open that category's subcategories panel
-    var params = new URLSearchParams(window.location.search);
-    var slug = params.get('cat');
-    if (slug) {
-        var targetId = (slug === 'corrugated-boxes' || slug === 'corrugated' ? 'subcats-corrugated' : 'subcats-' + slug);
-        var panel = document.getElementById(targetId);
-        if (panel) {
-            allCats.style.display = 'none';
-            panel.hidden = false;
-            // scroll to the Products heading at the top
-            scrollToHero();
-        }
-    }
+    var slug = new URLSearchParams(window.location.search).get('cat');
+    if (slug) openPanel('subcats-' + slug.toLowerCase());
 });
 </script>
+<?php include __DIR__ . '/includes/footer.php'; ?>

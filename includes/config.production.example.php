@@ -19,6 +19,13 @@ putenv('DB_NAME=daytona_supply');
 // Username and password for connecting to the database
 putenv('DB_USER=username_here');
 putenv('DB_PASS=password_here');
+// Never silently fall back to the bundled SQLite database in production.
+putenv('DB_STRICT=1');
+
+// Persistent category image storage. CATEGORY_IMAGE_URL must be served by
+// the web server from CATEGORY_IMAGE_DIR (for example via an Alias or mount).
+putenv('CATEGORY_IMAGE_DIR=/var/www/daytona-shared/category-images');
+putenv('CATEGORY_IMAGE_URL=/category-images');
 
 // Company email address used as the sender for notifications
 putenv('COMPANY_EMAIL=orders@daytonasupply.com');

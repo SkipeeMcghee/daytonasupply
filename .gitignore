@@ -13,6 +13,7 @@ data/emails/
 
 # User uploads (if added in the future)
 uploads/
+assets/uploads/categories/
 
 # Operating system and IDE generated files
 .DS_Store

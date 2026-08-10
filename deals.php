@@ -2,6 +2,7 @@
 // Deals page: prominently display products flagged as deal=1
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/categories.php';
 
 if (session_status() === PHP_SESSION_NONE) session_start();
 $title = 'Deals';
@@ -11,35 +12,10 @@ $metaDescription = 'Current deals and specials from Daytona Supply.';
 $all = getAllProducts();
 $deals = array_values(array_filter($all, function($p){ return !empty($p['deal']); }));
 
-// Load category filters/groups and prepare category image resolution
-$skuData = @include __DIR__ . '/includes/sku_filters.php';
-$skuFilters = is_array($skuData) && isset($skuData['filters']) ? $skuData['filters'] : [];
-// Base image map to prefer for well-known categories
-$imgMap = [
-  'CORRUGATED BOXES' => 'assets/images/boxes.png',
-  'TAPE' => 'assets/images/tape.png',
-  'PACKAGING SUPPLIES' => 'assets/images/stretchfilm.png',
-  'PAPER PRODUCTS' => 'assets/images/paper.png',
-  'BUBBLE PRODUCTS' => 'assets/images/bubble.png',
-  'FOAM' => 'assets/images/foam.png',
-];
+$categoryImagesBySku = getCategoryImageMapBySku();
 $placeholder = 'assets/images/DaytonaSupplyDSlogo.png';
 
-function resolveCategoryForProduct(array $p, array $skuFilters): ?string {
-  $name = strtoupper((string)($p['name'] ?? ''));
-  if ($name === '') return null;
-  foreach ($skuFilters as $label => $codes) {
-    foreach ((array)$codes as $code) {
-      $c = strtoupper($code);
-      if ($c !== '' && strpos($name, $c) === 0) {
-        return (string)$label;
-      }
-    }
-  }
-  return null;
-}
-
-function resolveImageForProduct(array $p, array $skuFilters, array $imgMap, string $placeholder): string {
+function resolveImageForProduct(array $p, array $categoryImagesBySku, string $placeholder): string {
   // 1) Prefer uploaded per-product image from manager portal (assets/uploads/products/{slug}.{ext})
   $name = (string)($p['name'] ?? '');
   if ($name !== '') {
@@ -71,23 +47,7 @@ function resolveImageForProduct(array $p, array $skuFilters, array $imgMap, stri
       if ($f && is_readable($baseDir . $f)) return $webBase . $f;
     }
   }
-  // 3) Fallback to parent category image based on SKU prefix mapping
-  $cat = resolveCategoryForProduct($p, $skuFilters);
-  if ($cat) {
-    if (isset($imgMap[$cat])) return $imgMap[$cat];
-    // Attempt deterministic filename from category label
-    $noSpaces = str_replace(' ', '', $cat);
-    $alnum = preg_replace('/[^A-Za-z0-9]/', '', $cat);
-    $catCandidates = [$noSpaces . '.png'];
-    if ($alnum !== $noSpaces) $catCandidates[] = $alnum . '.png';
-    $catCandidates[] = strtolower($noSpaces) . '.png';
-    $catCandidates[] = strtolower($alnum) . '.png';
-    foreach ($catCandidates as $f) {
-      if ($f && is_readable($baseDir . $f)) return $webBase . $f;
-    }
-  }
-  // 4) Final fallback
-  return $placeholder;
+  return $categoryImagesBySku[$name] ?? $placeholder;
 }
 
 require __DIR__ . '/includes/header.php';
@@ -100,7 +60,7 @@ require __DIR__ . '/includes/header.php';
     <?php else: ?>
   <div class="categories-grid deals-grid">
         <?php $dealsLoggedIn = !empty($_SESSION['customer']); ?>
-        <?php foreach ($deals as $p): $pid=(int)$p['id']; $name=getProductDisplayName($p); $desc=getProductDescription($p); $price=getProductPrice($p); $img=resolveImageForProduct($p, $skuFilters, $imgMap, $placeholder); ?>
+        <?php foreach ($deals as $p): $pid=(int)$p['id']; $name=getProductDisplayName($p); $desc=getProductDescription($p); $price=getProductPrice($p); $img=resolveImageForProduct($p, $categoryImagesBySku, $placeholder); ?>
           <div class="category-card deal-card" data-product-id="<?= $pid ?>" data-product-url="productinfo.php?id=<?= $pid ?>" tabindex="0" role="button" aria-label="View details for <?= htmlspecialchars($name) ?>" style="position:relative; cursor:pointer;">
             <div class="cat-img-wrap" style="position:relative; overflow:hidden; border-radius:12px;">
               <img src="<?= htmlspecialchars($img) ?>" alt="<?= htmlspecialchars($name) ?>" style="width:100%; height:220px; object-fit:cover; display:block;">

@@ -75,6 +75,7 @@ function getDb(): PDO
                 ensureMySQLOrderSnapshotSchema($db);
                 ensureMySQLFavoritesSchema($db);
                 ensureMySQLDealsSchema($db);
+                ensureCategorySchema($db);
             } catch (Exception $schemaEx) {
                 // Log but allow connection to proceed; createOrder will fail if
                 // schema is not suitable. We log to help diagnostics.
@@ -126,6 +127,7 @@ function getDb(): PDO
     // Best-effort ensure for SQLite-specific schema like new columns and favorites PK
     try { ensureSQLiteDealsSchema($db); } catch (Exception $_) {}
     try { ensureSQLiteFavoritesSchema($db); } catch (Exception $_) {}
+    try { ensureCategorySchema($db); } catch (Exception $e) { error_log('ensureCategorySchema error: ' . $e->getMessage()); }
     // Run migrations only when the DB was just created, or when explicitly
     // requested via RUN_MIGRATIONS=1. Avoiding migrations on every request
     // prevents repeated PRAGMA/ALTER operations that slow response times.
@@ -415,6 +417,74 @@ function ensureMySQLDealsSchema(PDO $db): void
         try { $db->exec('ALTER TABLE products ADD COLUMN deal_price DECIMAL(12,2) NULL'); }
         catch (Exception $e) { error_log('ensureMySQLDealsSchema add deal_price failed: ' . $e->getMessage()); }
     }
+}
+
+/** Ensure the editable category taxonomy exists for both supported databases. */
+function ensureCategorySchema(PDO $db): void
+{
+    $driver = strtolower((string)$db->getAttribute(PDO::ATTR_DRIVER_NAME));
+    if ($driver === 'mysql') {
+        $db->exec("CREATE TABLE IF NOT EXISTS category_groups (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(128) NOT NULL,
+            sort_order INT NOT NULL DEFAULT 0,
+            active TINYINT(1) NOT NULL DEFAULT 1,
+            UNIQUE KEY uq_category_groups_name (name),
+            KEY idx_category_groups_order (active, sort_order, id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        $db->exec("CREATE TABLE IF NOT EXISTS categories (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            group_id INT NOT NULL,
+            parent_id INT NULL,
+            name VARCHAR(128) NOT NULL,
+            slug VARCHAR(160) NOT NULL,
+            image_path VARCHAR(255) NULL,
+            sort_order INT NOT NULL DEFAULT 0,
+            active TINYINT(1) NOT NULL DEFAULT 1,
+            featured_homepage TINYINT(1) NOT NULL DEFAULT 0,
+            UNIQUE KEY uq_categories_slug (slug),
+            KEY idx_categories_tree (group_id, parent_id, active, sort_order, id),
+            CONSTRAINT fk_categories_group FOREIGN KEY (group_id) REFERENCES category_groups(id),
+            CONSTRAINT fk_categories_parent FOREIGN KEY (parent_id) REFERENCES categories(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        $db->exec("CREATE TABLE IF NOT EXISTS category_product_assignments (
+            category_id INT NOT NULL,
+            product_sku VARCHAR(255) NOT NULL,
+            PRIMARY KEY (category_id, product_sku),
+            KEY idx_category_assignments_sku (product_sku),
+            CONSTRAINT fk_category_assignments_category FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        return;
+    }
+
+    $db->exec('CREATE TABLE IF NOT EXISTS category_groups (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        active INTEGER NOT NULL DEFAULT 1
+    )');
+    $db->exec('CREATE TABLE IF NOT EXISTS categories (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        group_id INTEGER NOT NULL,
+        parent_id INTEGER NULL,
+        name TEXT NOT NULL,
+        slug TEXT NOT NULL UNIQUE,
+        image_path TEXT NULL,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        active INTEGER NOT NULL DEFAULT 1,
+        featured_homepage INTEGER NOT NULL DEFAULT 0,
+        FOREIGN KEY(group_id) REFERENCES category_groups(id),
+        FOREIGN KEY(parent_id) REFERENCES categories(id) ON DELETE CASCADE
+    )');
+    $db->exec('CREATE TABLE IF NOT EXISTS category_product_assignments (
+        category_id INTEGER NOT NULL,
+        product_sku TEXT NOT NULL,
+        PRIMARY KEY (category_id, product_sku),
+        FOREIGN KEY(category_id) REFERENCES categories(id) ON DELETE CASCADE
+    )');
+    $db->exec('CREATE INDEX IF NOT EXISTS idx_category_groups_order ON category_groups(active, sort_order, id)');
+    $db->exec('CREATE INDEX IF NOT EXISTS idx_categories_tree ON categories(group_id, parent_id, active, sort_order, id)');
+    $db->exec('CREATE INDEX IF NOT EXISTS idx_category_assignments_sku ON category_product_assignments(product_sku)');
 }
 
 
