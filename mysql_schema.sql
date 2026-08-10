@@ -115,7 +115,7 @@ CREATE TABLE IF NOT EXISTS categories (
 
 CREATE TABLE IF NOT EXISTS category_product_assignments (
     category_id INT NOT NULL,
-    product_sku VARCHAR(255) NOT NULL,
+    product_sku VARCHAR(190) NOT NULL,
     PRIMARY KEY (category_id, product_sku),
     KEY idx_category_assignments_sku (product_sku),
     CONSTRAINT fk_category_assignments_category FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE

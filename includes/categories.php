@@ -344,7 +344,8 @@ function replaceCategoryAssignments(int $categoryId, array $skus): void
     $normalized = [];
     foreach ($skus as $sku) {
         $sku = trim((string)$sku);
-        if ($sku !== '' && strlen($sku) <= 255) $normalized[$sku] = true;
+        if (strlen($sku) > 190) throw new InvalidArgumentException('Assigned SKUs must be 190 characters or fewer.');
+        if ($sku !== '') $normalized[$sku] = true;
     }
     $db = getDb();
     $db->beginTransaction();

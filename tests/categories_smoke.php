@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/../includes/categories.php';
+require_once __DIR__ . '/../includes/category_baseline.php';
 
 function assertCategoryTest(bool $condition, string $message): void
 {
@@ -33,6 +34,11 @@ foreach ($groups as $group) {
 
 $status = getCategoryAssignmentStatus();
 assertCategoryTest(isset($status['unassigned'], $status['stale']), 'Assignment status must include unassigned and stale lists.');
+$baseline = restoreCategoryBaseline(false);
+assertCategoryTest($baseline['version'] === 1, 'Expected category baseline version 1.');
+assertCategoryTest($baseline['groups'] === 4, 'Baseline must contain four groups.');
+assertCategoryTest($baseline['categories'] === 27, 'Baseline must contain 27 categories.');
+assertCategoryTest($baseline['stale'] === 0, 'Baseline must not create stale assignments.');
 
 echo sprintf(
     "Category smoke test passed: %d groups, %d categories, %d direct assignments, %d unassigned, %d stale.\n",

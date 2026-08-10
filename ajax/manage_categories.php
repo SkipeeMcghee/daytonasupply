@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 header('Content-Type: application/json');
 require_once __DIR__ . '/../includes/categories.php';
+require_once __DIR__ . '/../includes/category_baseline.php';
 
 if (session_status() === PHP_SESSION_NONE) session_start();
 if (empty($_SESSION['admin'])) {
@@ -50,10 +51,15 @@ try {
         $decoded = json_decode((string)($_POST['skus'] ?? '[]'), true);
         if (!is_array($decoded)) throw new InvalidArgumentException('Invalid SKU selection.');
         replaceCategoryAssignments((int)($_POST['id'] ?? 0), $decoded);
+    } elseif ($action === 'restore_baseline') {
+        if ((string)($_POST['confirmation'] ?? '') !== 'RESET CATEGORIES') {
+            throw new InvalidArgumentException('Type RESET CATEGORIES exactly to confirm the baseline restore.');
+        }
+        $result = restoreCategoryBaseline(true);
     } else {
         throw new InvalidArgumentException('Unknown category action.');
     }
-    echo json_encode(['success' => true, 'id' => $result]);
+    echo json_encode(['success' => true, 'id' => is_int($result) ? $result : null, 'summary' => is_array($result) ? $result : null]);
 } catch (InvalidArgumentException $e) {
     http_response_code(422);
     echo json_encode(['success' => false, 'error' => $e->getMessage()]);

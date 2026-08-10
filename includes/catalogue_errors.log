@@ -7669,3 +7669,68 @@
 #2 C:\xampp\htdocs\daytonasupply\includes\categories.php(58): getCategoryGroups(false)
 #3 C:\xampp\htdocs\daytonasupply\tests\categories_smoke.php(10): getCategoryTree(false)
 #4 {main}
+[2026-08-10T15:29:01+02:00] getDb mysql connection failed (537144c5ef54): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\includes\categories.php(49): getDb()
+#2 C:\xampp\htdocs\daytonasupply\includes\categories.php(58): getCategoryGroups(false)
+#3 C:\xampp\htdocs\daytonasupply\tests\categories_smoke.php(10): getCategoryTree(false)
+#4 {main}
+[2026-08-10T15:37:12+02:00] getDb mysql connection failed (11ac4876584c): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\includes\categories.php(387): getDb()
+#2 Command line code(1): getCategoryAssignmentStatus()
+#3 {main}
+[2026-08-10T15:38:05+02:00] getDb mysql connection failed (cada1e714c83): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\tools\migrate_categories.php(14): getDb()
+#2 {main}
+[2026-08-10T15:38:09+02:00] getDb mysql connection failed (62c0c5807058): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\tools\migrate_categories.php(14): getDb()
+#2 {main}
+[2026-08-10T15:38:55+02:00] getDb mysql connection failed (85a754250bb6): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\includes\category_baseline.php(70): getDb()
+#2 C:\xampp\htdocs\daytonasupply\ajax\manage_categories.php(58): restoreCategoryBaseline(true)
+#3 Command line code(1): include('C:\\xampp\\htdocs...')
+#4 {main}
+[2026-08-10T15:39:00+02:00] getDb mysql connection failed (4378a3259b8f): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\includes\categories.php(49): getDb()
+#2 C:\xampp\htdocs\daytonasupply\includes\categories.php(58): getCategoryGroups(false)
+#3 C:\xampp\htdocs\daytonasupply\tests\categories_smoke.php(10): getCategoryTree(false)
+#4 {main}
+[2026-08-10T09:39:31-04:00] getDb mysql connection failed (73461249d00c): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\includes\functions.php(1144): getDb()
+#2 C:\xampp\htdocs\daytonasupply\managerportal.php(370): getAllOrders(false, false)
+#3 Command line code(1): include('C:\\xampp\\htdocs...')
+#4 {main}
+[2026-08-10T15:39:36+02:00] getDb mysql connection failed (d035b5e15618): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\includes\categories.php(49): getDb()
+#2 C:\xampp\htdocs\daytonasupply\includes\categories.php(58): getCategoryGroups(false)
+#3 C:\xampp\htdocs\daytonasupply\tests\categories_smoke.php(11): getCategoryTree(false)
+#4 {main}
+[2026-08-10T16:18:08+02:00] getDb mysql connection failed (441ac56ecec2): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\includes\categories.php(49): getDb()
+#2 C:\xampp\htdocs\daytonasupply\includes\categories.php(58): getCategoryGroups(false)
+#3 C:\xampp\htdocs\daytonasupply\tests\categories_smoke.php(11): getCategoryTree(false)
+#4 {main}
+[2026-08-10T16:42:20+02:00] getDb mysql connection failed (57c6aee40931): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 Command line code(1): getDb()
+#2 {main}
+[2026-08-10T16:42:54+02:00] getDb mysql connection failed (feec4df7907b): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\includes\categories.php(49): getDb()
+#2 C:\xampp\htdocs\daytonasupply\includes\categories.php(58): getCategoryGroups(false)
+#3 C:\xampp\htdocs\daytonasupply\tests\categories_smoke.php(11): getCategoryTree(false)
+#4 {main}
+[2026-08-10T18:29:41+02:00] getDb mysql connection failed (ec966874ca8c): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\includes\categories.php(49): getDb()
+#2 C:\xampp\htdocs\daytonasupply\includes\categories.php(58): getCategoryGroups(false)
+#3 C:\xampp\htdocs\daytonasupply\tests\categories_smoke.php(11): getCategoryTree(false)
+#4 {main}

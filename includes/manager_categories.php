@@ -5,7 +5,10 @@
             <h3>Categories</h3>
             <p class="category-manager-summary"><?= count($categoryStatus['unassigned']) ?> unassigned SKUs · <?= count($categoryStatus['stale']) ?> stale assignments</p>
         </div>
-        <button type="button" class="proceed-btn" id="categoryAdd">Add Category</button>
+        <div class="category-manager-heading-actions">
+            <button type="button" class="mgr-btn mgr-delete" id="categoryRestoreBaseline">Restore Baseline</button>
+            <button type="button" class="proceed-btn" id="categoryAdd">Add Category</button>
+        </div>
     </div>
     <div id="categoryNotice" class="category-manager-notice" role="status"<?= $inventoryCategoryNotice === '' ? ' hidden' : '' ?>><?= htmlspecialchars($inventoryCategoryNotice) ?></div>
     <div class="category-manager-layout">
@@ -31,14 +34,6 @@
                     <button type="button" class="mgr-btn mgr-delete" id="categoryDelete" hidden>Delete</button>
                 </div>
             </form>
-
-            <div class="category-image-editor" id="categoryImageEditor" hidden>
-                <img id="categoryImagePreview" src="/assets/images/DaytonaSupplyDSlogo.png" alt="Category preview">
-                <div>
-                    <label class="proceed-btn category-image-pick">Choose Image<input type="file" id="categoryImageFile" accept="image/jpeg,image/png,image/webp,image/gif" hidden></label>
-                    <button type="button" class="mgr-btn mgr-delete" id="categoryImageRemove">Remove Image</button>
-                </div>
-            </div>
 
             <div class="category-assignment-editor" id="categoryAssignments" hidden>
                 <div class="category-assignment-head">
@@ -67,6 +62,7 @@
     var data = JSON.parse(source.textContent || '{}');
     var selectedId = 0;
     var flat = [];
+    var categoryPlaceholder = '/assets/images/DaytonaSupplyDSlogo.png';
     var unassigned = new Set(data.unassigned || []);
     (data.groups || []).forEach(function(group){
         (group.categories || []).forEach(function(category){
@@ -76,6 +72,7 @@
     });
     function byId(id){ return flat.find(function(category){ return Number(category.id) === Number(id); }); }
     function escapeHtml(value){ var node = document.createElement('div'); node.textContent = String(value || ''); return node.innerHTML; }
+    function escapeAttribute(value){ return escapeHtml(value).replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
     function notice(message, error){
         var box = document.getElementById('categoryNotice');
         box.hidden = false;
@@ -99,8 +96,69 @@
         var row = document.createElement('div');
         row.className = 'category-tree-row' + (child ? ' is-child' : '') + (Number(category.id) === selectedId ? ' is-selected' : '');
         row.dataset.categoryId = category.id;
-        row.innerHTML = '<button type="button" class="category-tree-select"><span>' + escapeHtml(category.name) + '</span><small>' + Number(category.direct_product_count || 0) + '</small></button><span class="category-tree-actions"><button type="button" title="Move up" data-category-move="up">↑</button><button type="button" title="Move down" data-category-move="down">↓</button></span>';
+        var hasOwnImage = String(category.image_path || '') !== '';
+        var imageState = hasOwnImage ? 'Custom' : (category.parent_id ? 'Inherited' : 'Default');
+        var imageUrl = category.image_url || categoryPlaceholder;
+        row.innerHTML = '<div class="category-row-image"><div class="manager-dropzone category-image-dropzone" data-category-image-dropzone title="Drop image here or click to upload"><div class="dz-preview"><img src="' + escapeAttribute(imageUrl) + '" alt="' + escapeAttribute(category.name) + ' image"></div><div class="dz-instructions">Drop or click</div><input type="file" accept="image/jpeg,image/png,image/webp,image/gif" class="dz-file"></div><div class="category-image-row-controls"><small data-category-image-state>' + imageState + '</small><button type="button" class="mgr-btn mgr-delete" data-category-image-remove' + (hasOwnImage ? '' : ' disabled') + '>Remove</button></div></div><button type="button" class="category-tree-select"><span>' + escapeHtml(category.name) + '</span><small>' + Number(category.direct_product_count || 0) + '</small></button><span class="category-tree-actions"><button type="button" title="Move up" data-category-move="up">↑</button><button type="button" title="Move down" data-category-move="down">↓</button></span>';
         return row;
+    }
+    function fallbackImage(category){
+        var parent = category && category.parent_id ? byId(category.parent_id) : null;
+        return parent && parent.image_url ? parent.image_url : categoryPlaceholder;
+    }
+    function refreshCategoryImageRow(category){
+        var row = document.querySelector('.category-tree-row[data-category-id="' + Number(category.id) + '"]');
+        if (!row) return;
+        var hasOwnImage = String(category.image_path || '') !== '';
+        var image = row.querySelector('.category-image-dropzone img');
+        var remove = row.querySelector('[data-category-image-remove]');
+        var state = row.querySelector('[data-category-image-state]');
+        if (image) image.src = category.image_url || categoryPlaceholder;
+        if (remove) remove.disabled = !hasOwnImage;
+        if (state) state.textContent = hasOwnImage ? 'Custom' : (category.parent_id ? 'Inherited' : 'Default');
+    }
+    function refreshInheritedChildren(category){
+        flat.forEach(function(child){
+            if (Number(child.parent_id) !== Number(category.id) || String(child.image_path || '') !== '') return;
+            child.image_url = category.image_url || categoryPlaceholder;
+            refreshCategoryImageRow(child);
+        });
+    }
+    function uploadCategoryImage(category, file, dropzone){
+        if (!category || !file) return;
+        var body = new FormData();
+        body.append('category_id', category.id);
+        body.append('csrf_token', data.csrf || '');
+        body.append('image', file);
+        dropzone.classList.add('dz-uploading');
+        fetch('/ajax/upload_category_image.php', {method:'POST', body:body, credentials:'same-origin'})
+            .then(function(response){ return response.json().catch(function(){ return {}; }).then(function(json){ if (!response.ok || !json.success) throw new Error(json.error || 'Upload failed.'); return json; }); })
+            .then(function(json){
+                category.image_path = 'category-upload:';
+                category.image_url = json.url;
+                refreshCategoryImageRow(category);
+                refreshInheritedChildren(category);
+                notice('Category image saved.', false);
+            })
+            .catch(function(error){ notice(error.message, true); })
+            .finally(function(){ dropzone.classList.remove('dz-uploading'); var input = dropzone.querySelector('.dz-file'); if (input) input.value = ''; });
+    }
+    function removeCategoryImage(category, dropzone){
+        var body = new FormData();
+        body.append('category_id', category.id);
+        body.append('csrf_token', data.csrf || '');
+        dropzone.classList.add('dz-uploading');
+        fetch('/ajax/remove_category_image.php', {method:'POST', body:body, credentials:'same-origin'})
+            .then(function(response){ return response.json().catch(function(){ return {}; }).then(function(json){ if (!response.ok || !json.success) throw new Error(json.error || 'Remove failed.'); }); })
+            .then(function(){
+                category.image_path = null;
+                category.image_url = fallbackImage(category);
+                refreshCategoryImageRow(category);
+                refreshInheritedChildren(category);
+                notice('Category image removed.', false);
+            })
+            .catch(function(error){ notice(error.message, true); })
+            .finally(function(){ dropzone.classList.remove('dz-uploading'); });
     }
     function renderTree(){
         var root = document.getElementById('categoryTree');
@@ -168,10 +226,8 @@
         document.getElementById('categoryFeatured').checked = !!category && Number(category.featured_homepage) === 1;
         document.getElementById('categoryFeatured').disabled = !!category && !!category.parent_id;
         document.getElementById('categoryDelete').hidden = !category;
-        document.getElementById('categoryImageEditor').hidden = !category;
         document.getElementById('categoryAssignments').hidden = !category;
         if (category) {
-            document.getElementById('categoryImagePreview').src = category.image_url || '/assets/images/DaytonaSupplyDSlogo.png';
             localStorage.setItem('managerCategoryId', String(category.id));
             renderSkuList();
         }
@@ -180,6 +236,16 @@
     document.getElementById('categoryTree').addEventListener('click', function(event){
         var groupBlock = event.target.closest('.category-tree-group');
         var row = event.target.closest('.category-tree-row');
+        var dropzone = event.target.closest('[data-category-image-dropzone]');
+        if (event.target.closest('[data-category-image-remove]') && row) {
+            var removeCategory = byId(row.dataset.categoryId);
+            if (removeCategory && confirm('Remove this category image?')) removeCategoryImage(removeCategory, row.querySelector('[data-category-image-dropzone]'));
+            return;
+        }
+        if (dropzone && row) {
+            if (!event.target.closest('.dz-file')) dropzone.querySelector('.dz-file').click();
+            return;
+        }
         if (event.target.closest('.category-tree-select') && row) return selectCategory(row.dataset.categoryId);
         var move = event.target.getAttribute('data-category-move');
         if (move && row) post('reorder_category', {id:row.dataset.categoryId, direction:move}).then(function(){ reload(row.dataset.categoryId); }).catch(function(error){ notice(error.message, true); });
@@ -188,8 +254,42 @@
         if (event.target.hasAttribute('data-group-save') && groupBlock) post('save_group', {id:groupBlock.dataset.groupId, name:groupBlock.querySelector('input').value, active:1}).then(function(){ reload(selectedId); }).catch(function(error){ notice(error.message, true); });
         if (event.target.hasAttribute('data-group-delete') && groupBlock && confirm('Delete this empty group?')) post('delete_group', {id:groupBlock.dataset.groupId}).then(function(){ reload(selectedId); }).catch(function(error){ notice(error.message, true); });
     });
+    document.getElementById('categoryTree').addEventListener('change', function(event){
+        if (!event.target.matches('.category-image-dropzone .dz-file') || !event.target.files[0]) return;
+        var row = event.target.closest('.category-tree-row');
+        uploadCategoryImage(byId(row.dataset.categoryId), event.target.files[0], event.target.closest('[data-category-image-dropzone]'));
+    });
+    document.getElementById('categoryTree').addEventListener('dragover', function(event){
+        var dropzone = event.target.closest('[data-category-image-dropzone]');
+        if (!dropzone) return;
+        event.preventDefault();
+        dropzone.classList.add('dz-over');
+    });
+    document.getElementById('categoryTree').addEventListener('dragleave', function(event){
+        var dropzone = event.target.closest('[data-category-image-dropzone]');
+        if (dropzone) dropzone.classList.remove('dz-over');
+    });
+    document.getElementById('categoryTree').addEventListener('drop', function(event){
+        var dropzone = event.target.closest('[data-category-image-dropzone]');
+        if (!dropzone) return;
+        event.preventDefault();
+        dropzone.classList.remove('dz-over');
+        var row = dropzone.closest('.category-tree-row');
+        var file = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
+        if (file) uploadCategoryImage(byId(row.dataset.categoryId), file, dropzone);
+    });
     document.getElementById('categoryGroupAdd').addEventListener('submit', function(event){ event.preventDefault(); post('save_group', {name:this.elements.name.value, active:1}).then(function(){ reload(selectedId); }).catch(function(error){ notice(error.message, true); }); });
     document.getElementById('categoryAdd').addEventListener('click', function(){ selectCategory(0); document.getElementById('categoryName').focus(); });
+    document.getElementById('categoryRestoreBaseline').addEventListener('click', function(){
+        var confirmation = prompt('This permanently replaces every category, subcategory, image selection, order, and SKU assignment with baseline version 1. Products are not deleted.\n\nType RESET CATEGORIES to continue.');
+        if (confirmation === null) return;
+        post('restore_baseline', {confirmation:confirmation}).then(function(json){
+            localStorage.removeItem('managerCategoryId');
+            var summary = json.summary || {};
+            alert('Baseline restored: ' + Number(summary.categories || 0) + ' categories and ' + Number(summary.assignments || 0) + ' assignments.');
+            reload(0);
+        }).catch(function(error){ notice(error.message, true); });
+    });
     document.getElementById('categoryForm').addEventListener('submit', function(event){
         event.preventDefault();
         post('save_category', {id:document.getElementById('categoryId').value, name:document.getElementById('categoryName').value, group_id:document.getElementById('categoryGroup').value, parent_id:document.getElementById('categoryParent').value, active:document.getElementById('categoryActive').checked ? 1 : 0, featured_homepage:document.getElementById('categoryFeatured').checked ? 1 : 0})
@@ -205,16 +305,6 @@
             ((data.assignments || {})[selectedId] || []).forEach(function(sku){ if (!visible.has(sku)) skus.push(sku); });
         }
         post('replace_assignments', {id:selectedId, skus:JSON.stringify(skus)}).then(function(){ reload(selectedId); }).catch(function(error){ notice(error.message, true); });
-    });
-    document.getElementById('categoryImageFile').addEventListener('change', function(){
-        if (!selectedId || !this.files[0]) return;
-        var body = new FormData(); body.append('category_id', selectedId); body.append('csrf_token', data.csrf || ''); body.append('image', this.files[0]);
-        fetch('/ajax/upload_category_image.php', {method:'POST', body:body, credentials:'same-origin'}).then(function(response){ return response.json().then(function(json){ if (!response.ok || !json.success) throw new Error(json.error || 'Upload failed.'); }); }).then(function(){ reload(selectedId); }).catch(function(error){ notice(error.message, true); });
-    });
-    document.getElementById('categoryImageRemove').addEventListener('click', function(){
-        if (!selectedId || !confirm('Remove this category image?')) return;
-        var body = new FormData(); body.append('category_id', selectedId); body.append('csrf_token', data.csrf || '');
-        fetch('/ajax/remove_category_image.php', {method:'POST', body:body, credentials:'same-origin'}).then(function(response){ return response.json().then(function(json){ if (!response.ok || !json.success) throw new Error(json.error || 'Remove failed.'); }); }).then(function(){ reload(selectedId); }).catch(function(error){ notice(error.message, true); });
     });
     document.getElementById('categoryParent').addEventListener('change', function(){ document.getElementById('categoryFeatured').disabled = !!this.value; if (this.value) document.getElementById('categoryFeatured').checked = false; });
     var initial = Number(localStorage.getItem('managerCategoryId') || 0);
