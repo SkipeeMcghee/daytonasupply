@@ -61,6 +61,16 @@ if (empty($_SESSION['manager_csrf'])) {
     $_SESSION['manager_csrf'] = bin2hex(random_bytes(24));
 }
 
+$managerSections = ['orders', 'customers', 'products', 'categories'];
+$requestedSection = strtolower(trim((string)($_POST['section'] ?? $_GET['section'] ?? 'orders')));
+$managerSection = in_array($requestedSection, $managerSections, true) ? $requestedSection : 'orders';
+
+function managerPortalUrl(string $section, array $params = [], string $fragment = ''): string
+{
+    $params = ['section' => $section] + $params;
+    return 'managerportal.php?' . http_build_query($params) . ($fragment !== '' ? '#' . rawurlencode($fragment) : '');
+}
+
 // Handle bulk verify/unverify/delete for customers
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Bulk verify selected unverified customers
@@ -68,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         foreach ($_POST['unverified_ids'] as $id) {
             setCustomerVerifiedStatus((int)$id, true);
         }
-        header('Location: managerportal.php');
+        header('Location: ' . managerPortalUrl('customers'));
         exit;
     }
     // Bulk unverify selected verified customers
@@ -76,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         foreach ($_POST['verified_ids'] as $id) {
             setCustomerVerifiedStatus((int)$id, false);
         }
-        header('Location: managerportal.php');
+        header('Location: ' . managerPortalUrl('customers'));
         exit;
     }
     // Bulk delete selected verified customers
@@ -86,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $in  = str_repeat('?,', count($ids) - 1) . '?';
         $stmt = $db->prepare("DELETE FROM customers WHERE id IN ($in) AND is_verified = 1");
         $stmt->execute($ids);
-        header('Location: managerportal.php');
+        header('Location: ' . managerPortalUrl('customers'));
         exit;
     }
 }
@@ -99,20 +109,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mass_delete_unverifie
         $stmt = $db->prepare("DELETE FROM customers WHERE id IN ($in) AND is_verified = 0");
         $stmt->execute($ids);
     }
-    header('Location: managerportal.php');
+    header('Location: ' . managerPortalUrl('customers'));
     exit;
 }
 // Handle customer verification/unverification
 if (isset($_GET['verify_customer'])) {
     $custId = (int)$_GET['verify_customer'];
     setCustomerVerifiedStatus($custId, true);
-    header('Location: managerportal.php');
+    header('Location: ' . managerPortalUrl('customers'));
     exit;
 }
 if (isset($_GET['unverify_customer'])) {
     $custId = (int)$_GET['unverify_customer'];
     setCustomerVerifiedStatus($custId, false);
-    header('Location: managerportal.php');
+    header('Location: ' . managerPortalUrl('customers'));
     exit;
 }
 
@@ -121,16 +131,16 @@ if (isset($_GET['approve_order'])) {
     $orderId = (int)$_GET['approve_order'];
     $note = isset($_GET['manager_note']) ? normalizeScalar($_GET['manager_note'], 1024, '') : null;
     updateOrderStatus($orderId, 'Approved', $note);
-    $filterRedirect = isset($_GET['filter']) ? '?filter=' . urlencode($_GET['filter']) : '';
-    header('Location: managerportal.php' . $filterRedirect . '#order-' . $orderId);
+    $filterParams = isset($_GET['filter']) ? ['filter' => (string)$_GET['filter']] : [];
+    header('Location: ' . managerPortalUrl('orders', $filterParams, 'order-' . $orderId));
     exit;
 }
 if (isset($_GET['reject_order'])) {
     $orderId = (int)$_GET['reject_order'];
     $note = isset($_GET['manager_note']) ? normalizeScalar($_GET['manager_note'], 1024, '') : null;
     updateOrderStatus($orderId, 'Rejected', $note);
-    $filterRedirect = isset($_GET['filter']) ? '?filter=' . urlencode($_GET['filter']) : '';
-    header('Location: managerportal.php' . $filterRedirect . '#order-' . $orderId);
+    $filterParams = isset($_GET['filter']) ? ['filter' => (string)$_GET['filter']] : [];
+    header('Location: ' . managerPortalUrl('orders', $filterParams, 'order-' . $orderId));
     exit;
 }
 
@@ -139,15 +149,15 @@ if (isset($_GET['archive_order'])) {
     $orderId = (int)$_GET['archive_order'];
     archiveOrder($orderId, true);
     // Preserve the view parameter when redirecting
-    $filterRedirect = isset($_GET['filter']) ? '?filter=' . urlencode($_GET['filter']) : '';
-    header('Location: managerportal.php' . $filterRedirect . '#order-' . $orderId);
+    $filterParams = isset($_GET['filter']) ? ['filter' => (string)$_GET['filter']] : [];
+    header('Location: ' . managerPortalUrl('orders', $filterParams, 'order-' . $orderId));
     exit;
 }
 if (isset($_GET['unarchive_order'])) {
     $orderId = (int)$_GET['unarchive_order'];
     archiveOrder($orderId, false);
-    $filterRedirect = isset($_GET['filter']) ? '?filter=' . urlencode($_GET['filter']) : '';
-    header('Location: managerportal.php' . $filterRedirect . '#order-' . $orderId);
+    $filterParams = isset($_GET['filter']) ? ['filter' => (string)$_GET['filter']] : [];
+    header('Location: ' . managerPortalUrl('orders', $filterParams, 'order-' . $orderId));
     exit;
 }
 
@@ -156,8 +166,8 @@ if (isset($_GET['delete_customer'])) {
     $custId = (int)$_GET['delete_customer'];
     deleteCustomer($custId);
     // After deletion stay on same view
-    $view = isset($_GET['view']) ? '&view=' . urlencode($_GET['view']) : '';
-    header('Location: managerportal.php' . ($view ? '?' . ltrim($view, '&') : ''));
+    $viewParams = isset($_GET['view']) ? ['view' => (string)$_GET['view']] : [];
+    header('Location: ' . managerPortalUrl('customers', $viewParams));
     exit;
 }
 
@@ -165,7 +175,7 @@ if (isset($_GET['delete_customer'])) {
 if (isset($_GET['delete_product'])) {
     $prodId = (int)$_GET['delete_product'];
     deleteProduct($prodId);
-    header('Location: managerportal.php');
+    header('Location: ' . managerPortalUrl('products'));
     exit;
 }
 
@@ -191,7 +201,7 @@ if (isset($_GET['toggle_deal'])) {
         error_log('toggle_deal error: ' . $e->getMessage());
     }
     invalidateProductsCache();
-    header('Location: managerportal.php#products');
+    header('Location: ' . managerPortalUrl('products'));
     exit;
 }
 
@@ -269,7 +279,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Cache-Control: no-cache, no-store, must-revalidate');
         header('Pragma: no-cache');
         header('Expires: 0');
-        header('Location: managerportal.php?updated=' . time() . '&nocache=' . mt_rand());
+        header('Location: ' . managerPortalUrl('products', ['updated' => time(), 'nocache' => mt_rand()]));
         exit;
     }
     // Add a new product
@@ -280,7 +290,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($name !== '') {
             saveProduct(['name' => $name, 'description' => $desc, 'price' => $price]);
         }
-    header('Location: managerportal.php');
+    header('Location: ' . managerPortalUrl('products'));
         exit;
     }
     // Save customer changes
@@ -326,7 +336,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ]);
             }
         }
-        header('Location: managerportal.php');
+        header('Location: ' . managerPortalUrl('customers'));
         exit;
     }
     // Save deal prices for active deals
@@ -354,61 +364,76 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             invalidateProductsCache();
         }
-        header('Location: managerportal.php?updated=' . time() . '#products');
+        header('Location: ' . managerPortalUrl('products', ['updated' => time()]));
         exit;
     }
 }
 
-// At this point all actions are complete. Determine which set of orders to display
-// Orders filter: all | pending | approved | rejected | archived
-$filter = isset($_GET['filter']) ? strtolower(trim($_GET['filter'])) : 'all';
-// Fetch archived-only when requested, otherwise fetch active orders only
-if ($filter === 'archived') {
-    $orders = getAllOrders(false, true);
-} else {
-    // active orders only (archived excluded)
-    $orders = getAllOrders(false, false);
-    if ($filter === 'pending') {
-        $orders = array_values(array_filter($orders, function($o) { return strcasecmp($o['status'] ?? '', 'Pending') === 0; }));
-    } elseif ($filter === 'approved') {
-        $orders = array_values(array_filter($orders, function($o) { return strcasecmp($o['status'] ?? '', 'Approved') === 0; }));
-    } elseif ($filter === 'rejected') {
-        $orders = array_values(array_filter($orders, function($o) { return strcasecmp($o['status'] ?? '', 'Rejected') === 0; }));
-    }
-}
-// Customers: separate lists for unverified and verified
-$unverifiedCustomers = getCustomersByVerified(false);
-$verifiedCustomers = getCustomersByVerified(true);
-
-// Debug: Check database driver and add timestamp
-$db = getDb();
-$driver = 'unknown';
-try { $driver = $db->getAttribute(PDO::ATTR_DRIVER_NAME); } catch (Exception $_) {}
-error_log('managerportal: loading products via driver=' . $driver . ' at ' . date('H:i:s'));
-
-// If we just updated products, force cache bypass
-if (isset($_GET['updated']) || isset($_GET['nocache'])) {
-    invalidateProductsCache();
-    $cacheFile = __DIR__ . '/data/cache_products.json';
-    if (file_exists($cacheFile)) {
-        unlink($cacheFile);
-    }
-    error_log('managerportal: forced cache clear due to updated parameter');
-}
-
-// Use a fresh DB read to ensure UI reflects the latest data immediately
-$products = getAllProductsFresh();
-error_log('managerportal: loaded ' . count($products) . ' products');
-
-$categoryTree = getCategoryTree(true);
-$categoryStatus = getCategoryAssignmentStatus();
-$inventoryCategoryNotice = (string)($_SESSION['inventory_category_notice'] ?? '');
-unset($_SESSION['inventory_category_notice']);
-$assignmentRows = $db->query('SELECT category_id, product_sku FROM category_product_assignments ORDER BY category_id, product_sku')->fetchAll(PDO::FETCH_ASSOC);
+// At this point all actions are complete. Load only the selected work area.
+$filter = isset($_GET['filter']) ? strtolower(trim((string)$_GET['filter'])) : 'all';
+if (!in_array($filter, ['all', 'pending', 'approved', 'rejected', 'archived'], true)) $filter = 'all';
+$orders = [];
+$unverifiedCustomers = [];
+$verifiedCustomers = [];
+$products = [];
+$categoryTree = [];
+$categoryStatus = ['unassigned' => [], 'stale' => []];
 $categoryAssignments = [];
-foreach ($assignmentRows as $assignmentRow) {
-    $categoryAssignments[(int)$assignmentRow['category_id']][] = (string)$assignmentRow['product_sku'];
+$inventoryCategoryNotice = '';
+$inventoryManagerNotice = '';
+$inventoryManagerNoticeError = false;
+$inventoryBackupAvailable = false;
+$inventoryBackupDate = '';
+
+if ($managerSection === 'orders') {
+    $orders = getAllOrders(false, $filter === 'archived');
+    if ($filter !== 'archived' && $filter !== 'all') {
+        $orders = array_values(array_filter($orders, function (array $order) use ($filter): bool {
+            return strcasecmp((string)($order['status'] ?? ''), $filter) === 0;
+        }));
+    }
+} elseif ($managerSection === 'customers') {
+    $unverifiedCustomers = getCustomersByVerified(false);
+    $verifiedCustomers = getCustomersByVerified(true);
+} elseif ($managerSection === 'products' || $managerSection === 'categories') {
+    $db = getDb();
+    if ($managerSection === 'products' && (isset($_GET['updated']) || isset($_GET['nocache']))) {
+        invalidateProductsCache();
+        $cacheFile = __DIR__ . '/data/cache_products.json';
+        if (file_exists($cacheFile)) unlink($cacheFile);
+    }
+    $products = getAllProductsFresh();
+
+    if ($managerSection === 'products') {
+        $inventoryManagerNotice = (string)($_SESSION['inventory_manager_notice'] ?? $_SESSION['inventory_category_notice'] ?? '');
+        $inventoryManagerNoticeError = !empty($_SESSION['inventory_manager_notice_error']);
+        unset($_SESSION['inventory_manager_notice'], $_SESSION['inventory_manager_notice_error'], $_SESSION['inventory_category_notice']);
+        $inventoryBackupPath = __DIR__ . '/data/inventory.previous.json';
+        $inventoryBackupAvailable = is_readable($inventoryBackupPath);
+        if ($inventoryBackupAvailable) {
+            $inventoryBackupTimestamp = filemtime($inventoryBackupPath);
+            $inventoryBackupDate = $inventoryBackupTimestamp === false ? '' : date('n/j/Y g:i A', $inventoryBackupTimestamp);
+        }
+    } elseif ($managerSection === 'categories') {
+        $inventoryCategoryNotice = (string)($_SESSION['inventory_category_notice'] ?? '');
+        unset($_SESSION['inventory_category_notice']);
+        $assignmentRows = [];
+        $categoryNoticeSuffix = 'Category controls are temporarily unavailable. Verify the category tables and database permissions.';
+        try {
+            $categoryTree = getCategoryTree(true);
+            $categoryStatus = getCategoryAssignmentStatus();
+            $assignmentRows = $db->query('SELECT category_id, product_sku FROM category_product_assignments ORDER BY category_id, product_sku')->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Throwable $e) {
+            try { $categoryErrorRef = bin2hex(random_bytes(4)); } catch (Throwable $_) { $categoryErrorRef = substr(md5(uniqid('', true)), 0, 8); }
+            error_log('managerportal category load error [' . $categoryErrorRef . ']: ' . $e->getMessage());
+            $inventoryCategoryNotice = trim($inventoryCategoryNotice . ' ' . $categoryNoticeSuffix . ' Error ' . $categoryErrorRef . ': ' . $e->getMessage());
+        }
+        foreach ($assignmentRows as $assignmentRow) {
+            $categoryAssignments[(int)$assignmentRow['category_id']][] = (string)$assignmentRow['product_sku'];
+        }
+    }
 }
+
 $categoryManagerData = [
     'groups' => $categoryTree,
     'products' => array_map(function (array $product): array {
@@ -427,16 +452,25 @@ $showArchived = ($filter === 'archived');
 require_once __DIR__ . '/includes/header.php';
 ?>
 
+<nav class="manager-subnav" aria-label="Manager portal sections">
+    <div class="manager-subnav-inner">
+        <?php foreach (['orders' => 'Orders', 'customers' => 'Customers', 'products' => 'Products', 'categories' => 'Categories'] as $sectionKey => $sectionLabel): ?>
+            <a href="<?= htmlspecialchars(managerPortalUrl($sectionKey)) ?>"<?= $managerSection === $sectionKey ? ' class="is-active" aria-current="page"' : '' ?>><?= htmlspecialchars($sectionLabel) ?></a>
+        <?php endforeach; ?>
+    </div>
+</nav>
+
 <h2>Manager Portal</h2>
 
 <!-- Toolbar removed; Update Inventory button moved to Products section -->
 
-<?php if (isset($_GET['updated'])): ?>
+<?php if ($managerSection === 'products' && isset($_GET['updated']) && !isset($_GET['inventory'])): ?>
     <div style="margin:10px 0; padding:10px; background:#e7f5ff; border:1px solid #b3e0ff; border-radius:6px; color:#0b5ed7;">
         Product changes saved at <?php echo htmlspecialchars(date('n/j/Y g:i:s A')); ?>.
     </div>
 <?php endif; ?>
 
+<?php if ($managerSection === 'orders'): ?>
 <section id="orders-section">
     <h3>Orders</h3>
     <?php
@@ -468,7 +502,7 @@ require_once __DIR__ . '/includes/header.php';
                 // Non-active buttons get a drop shadow to appear raised; active button looks "pressed" (no shadow + slight translate)
                 $shadow = $isActive ? '' : 'box-shadow:0 6px 18px rgba(0,0,0,0.12);';
                 $pressed = $isActive ? 'transform:translateY(1px);' : '';
-                $url = 'managerportal.php?filter=' . urlencode($key);
+                $url = managerPortalUrl('orders', ['filter' => $key]);
                 echo '<a href="' . htmlspecialchars($url) . '" style="padding:8px 12px;border-radius:6px;text-decoration:none;font-weight:600; background:' . $bg . '; color:' . $color . '; ' . $shadow . ' ' . $pressed . '">' . htmlspecialchars($meta['label']) . '</a>';
             }
         ?>
@@ -553,12 +587,12 @@ require_once __DIR__ . '/includes/header.php';
                         // Preserve the current filter in action links so returning view is consistent
                         $filterParam = $filter ? '&filter=' . urlencode($filter) : '';
                     ?>
-                    <a class="action-btn action-approve small" href="?approve_order=<?php echo $order['id']; ?><?php echo $filterParam; ?>">Approve</a>
-                    <a class="action-btn action-reject small" href="?reject_order=<?php echo $order['id']; ?><?php echo $filterParam; ?>">Reject</a>
+                    <a class="action-btn action-approve small" href="?section=orders&amp;approve_order=<?php echo $order['id']; ?><?php echo $filterParam; ?>">Approve</a>
+                    <a class="action-btn action-reject small" href="?section=orders&amp;reject_order=<?php echo $order['id']; ?><?php echo $filterParam; ?>">Reject</a>
                     <?php if (!empty($order['archived']) && $order['archived'] == 1): ?>
-                        <a class="action-btn action-unarchive small" href="?unarchive_order=<?php echo $order['id']; ?><?php echo $filterParam; ?>">Unarchive</a>
+                        <a class="action-btn action-unarchive small" href="?section=orders&amp;unarchive_order=<?php echo $order['id']; ?><?php echo $filterParam; ?>">Unarchive</a>
                     <?php else: ?>
-                        <a class="action-btn action-archive small" href="?archive_order=<?php echo $order['id']; ?><?php echo $filterParam; ?>">Archive</a>
+                        <a class="action-btn action-archive small" href="?section=orders&amp;archive_order=<?php echo $order['id']; ?><?php echo $filterParam; ?>">Archive</a>
                     <?php endif; ?>
                 </td>
             </tr>
@@ -606,12 +640,15 @@ require_once __DIR__ . '/includes/header.php';
         <p>No orders found.</p>
     <?php endif; ?>
 </section>
+<?php endif; ?>
 
-<section>
+<?php if ($managerSection === 'customers'): ?>
+<section id="customers">
     <h3>Customers</h3>
     <!-- Unverified/Pending Customers (top) -->
     <h4>Unverified / Pending Customers</h4>
     <form method="post" action="" id="bulkUnverifiedForm">
+        <input type="hidden" name="section" value="customers">
         <div style="margin-bottom:10px;display:flex;gap:10px;align-items:center;">
             <button type="submit" name="bulk_verify" onclick="return confirm('Verify all selected customers?');" style="background:#198754;color:#fff;padding:8px 16px;border:none;border-radius:4px;font-weight:600;">Verify Selected</button>
             <button type="submit" name="mass_delete_unverified" onclick="return confirmMassDelete();" style="background:#dc3545;color:#fff;padding:8px 16px;border:none;border-radius:4px;font-weight:600;">Delete Selected</button>
@@ -646,8 +683,8 @@ require_once __DIR__ . '/includes/header.php';
                     <td><?= htmlspecialchars($billDisplay) ?></td>
                     <td><?= htmlspecialchars($shipDisplay) ?></td>
                     <td>
-                        <a class="mgr-btn mgr-verify" href="?verify_customer=<?= $cust['id'] ?>">Verify</a>
-                        <a class="mgr-btn mgr-delete" href="?delete_customer=<?= $cust['id'] ?>" onclick="return confirm('Are you sure you want to delete this customer? This will remove all of their orders.');">Delete</a>
+                        <a class="mgr-btn mgr-verify" href="?section=customers&amp;verify_customer=<?= $cust['id'] ?>">Verify</a>
+                        <a class="mgr-btn mgr-delete" href="?section=customers&amp;delete_customer=<?= $cust['id'] ?>" onclick="return confirm('Are you sure you want to delete this customer? This will remove all of their orders.');">Delete</a>
                     </td>
                 </tr>
             <?php endforeach; ?>
@@ -740,6 +777,7 @@ require_once __DIR__ . '/includes/header.php';
     <!-- Verified Customers (below) -->
     <h4>Verified Customers</h4>
     <form method="post" action="" id="bulkVerifiedForm">
+        <input type="hidden" name="section" value="customers">
         <div style="margin-bottom:10px;display:flex;gap:10px;">
             <button type="submit" name="bulk_unverify" onclick="return confirm('Unverify all selected customers?');" style="background:#ffc107;color:#000;padding:8px 16px;border:none;border-radius:4px;font-weight:600;">Unverify Selected</button>
             <button type="submit" name="bulk_delete_verified" onclick="return confirm('Delete all selected verified customers? This cannot be undone.');" style="background:#dc3545;color:#fff;padding:8px 16px;border:none;border-radius:4px;font-weight:600;">Delete Selected</button>
@@ -774,8 +812,8 @@ require_once __DIR__ . '/includes/header.php';
                     <td><?= htmlspecialchars($billDisplay) ?></td>
                     <td><?= htmlspecialchars($shipDisplay) ?></td>
                     <td>
-                        <a class="mgr-btn mgr-unverify" href="?unverify_customer=<?= $cust['id'] ?>">Unverify</a>
-                        <a class="mgr-btn mgr-delete" href="?delete_customer=<?= $cust['id'] ?>" onclick="return confirm('Are you sure you want to delete this customer? This will remove all of their orders.');">Delete</a>
+                        <a class="mgr-btn mgr-unverify" href="?section=customers&amp;unverify_customer=<?= $cust['id'] ?>">Unverify</a>
+                        <a class="mgr-btn mgr-delete" href="?section=customers&amp;delete_customer=<?= $cust['id'] ?>" onclick="return confirm('Are you sure you want to delete this customer? This will remove all of their orders.');">Delete</a>
                     </td>
                 </tr>
             <?php endforeach; ?>
@@ -785,7 +823,9 @@ require_once __DIR__ . '/includes/header.php';
         </table>
     </form>
 </section>
+<?php endif; ?>
 
+<?php if ($managerSection === 'products'): ?>
 <section id="products">
     <h3>Products</h3>
     <?php
@@ -794,6 +834,7 @@ require_once __DIR__ . '/includes/header.php';
     ?>
     <h4>Active Deals</h4>
         <form method="post" action="" id="dealsForm">
+            <input type="hidden" name="section" value="products">
             <input type="hidden" name="save_deal_prices" value="1">
             <table class="admin-table">
                 <tr><th>ID</th><th>Name</th><th>Description</th><th>Base Price</th><th>Deal Price (override)</th><th>Actions</th></tr>
@@ -807,7 +848,7 @@ require_once __DIR__ . '/includes/header.php';
                             <input type="number" step="0.01" name="deal_price_<?= (int)$d['id'] ?>" value="<?= htmlspecialchars(isset($d['deal_price']) && $d['deal_price'] !== '' ? (string)$d['deal_price'] : '') ?>" placeholder="e.g. 9.99">
                         </td>
                         <td>
-                            <a class="mgr-btn" href="?toggle_deal=<?= (int)$d['id'] ?>" style="background:#dc3545;color:#fff;" onclick="return confirm('Remove this item from Deals? This will clear the deal price.');">Unset Deal</a>
+                            <a class="mgr-btn" href="?section=products&amp;toggle_deal=<?= (int)$d['id'] ?>" style="background:#dc3545;color:#fff;" onclick="return confirm('Remove this item from Deals? This will clear the deal price.');">Unset Deal</a>
                         </td>
                     </tr>
                 <?php endforeach; ?>
@@ -819,8 +860,8 @@ require_once __DIR__ . '/includes/header.php';
                 <p><button type="submit" class="proceed-btn">Save Deal Prices</button></p>
             <?php endif; ?>
         </form>
-    <!-- Update Inventory button moved below the products table to sit beside Save Product Changes -->
     <form method="post" action="" id="productsForm">
+        <input type="hidden" name="section" value="products">
         <input type="hidden" name="save_products" value="1">
         <input type="hidden" name="products_json" id="products_json" value="">
         <table class="admin-table">
@@ -877,9 +918,9 @@ require_once __DIR__ . '/includes/header.php';
                         </div>
                     </td>
                     <td>
-                        <a class="mgr-btn" href="?toggle_deal=<?php echo (int)$prod['id']; ?>" style="background: <?php echo $isDeal ? '#dc3545' : '#198754'; ?>; color:#fff;" onclick="return confirm('<?php echo $isDeal ? 'Unset this deal?' : 'Mark this item as a Deal?'; ?>');"><?php echo $isDeal ? 'Unset' : 'Set'; ?> Deal</a>
+                        <a class="mgr-btn" href="?section=products&amp;toggle_deal=<?php echo (int)$prod['id']; ?>" style="background: <?php echo $isDeal ? '#dc3545' : '#198754'; ?>; color:#fff;" onclick="return confirm('<?php echo $isDeal ? 'Unset this deal?' : 'Mark this item as a Deal?'; ?>');"><?php echo $isDeal ? 'Unset' : 'Set'; ?> Deal</a>
                         <button type="button" class="mgr-btn dz-remove" data-product-id="<?= (int)$prod['id'] ?>"<?php echo $imgUrl === '' ? ' disabled' : ''; ?>>Remove Picture</button>
-                        <a class="mgr-btn mgr-product-delete" href="?delete_product=<?php echo (int)$prod['id']; ?>" onclick="return confirm('Delete this product?');">Delete</a>
+                        <a class="mgr-btn mgr-product-delete" href="?section=products&amp;delete_product=<?php echo (int)$prod['id']; ?>" onclick="return confirm('Delete this product?');">Delete</a>
                     </td>
                 </tr>
             <?php endforeach; ?>
@@ -887,12 +928,88 @@ require_once __DIR__ . '/includes/header.php';
                 <tr><td colspan="7">No products found.</td></tr>
             <?php endif; ?>
         </table>
-    <p style="display:flex;gap:8px;align-items:center;">
+    <p>
         <button type="submit" class="proceed-btn">Save Product Changes</button>
-        <a href="admin/update_inventory.php" style="background:#0b5ed7; color:#fff; padding:8px 14px; border-radius:6px; text-decoration:none; font-weight:600;">Update Inventory</a>
     </p>
     </form>
+    <section class="inventory-manager" id="inventory-manager" aria-labelledby="inventory-manager-title">
+        <div class="inventory-manager-heading">
+            <div>
+                <h4 id="inventory-manager-title">Update Inventory from CSV</h4>
+                <p>Upload the latest export. The current inventory is kept as the single restore point.</p>
+            </div>
+            <?php if ($inventoryBackupAvailable): ?>
+                <span class="inventory-backup-status">Restore point available<?= $inventoryBackupDate !== '' ? ' from ' . htmlspecialchars($inventoryBackupDate) : '' ?></span>
+            <?php endif; ?>
+        </div>
+        <?php if ($inventoryManagerNotice !== ''): ?>
+            <div class="inventory-manager-notice<?= $inventoryManagerNoticeError ? ' is-error' : '' ?>" role="status">
+                <?= htmlspecialchars($inventoryManagerNotice) ?>
+            </div>
+        <?php endif; ?>
+        <div class="inventory-manager-actions">
+            <form method="post" action="admin/manage_inventory.php" enctype="multipart/form-data" class="inventory-upload-form" id="inventoryUploadForm">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars((string)$_SESSION['manager_csrf']) ?>">
+                <input type="hidden" name="inventory_action" value="upload">
+                <input type="hidden" name="MAX_FILE_SIZE" value="10485760">
+                <label class="inventory-csv-dropzone" id="inventoryCsvDropzone">
+                    <input type="file" name="inventory_csv" id="inventoryCsvFile" accept=".csv,text/csv" required>
+                    <strong>Drop inventory CSV here</strong>
+                    <span>or click to choose a file</span>
+                    <small id="inventoryCsvSelection">No file selected</small>
+                </label>
+                <button type="submit" class="proceed-btn" id="inventoryConfirmButton" disabled>Confirm Inventory Update</button>
+            </form>
+            <form method="post" action="admin/manage_inventory.php" class="inventory-restore-form">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars((string)$_SESSION['manager_csrf']) ?>">
+                <input type="hidden" name="inventory_action" value="restore">
+                <button type="submit" class="proceed-btn btn-danger"<?= $inventoryBackupAvailable ? '' : ' disabled' ?> onclick="return confirm('Restore the previous inventory? The current inventory will be replaced and this restore point will be removed.');">Restore Previous Inventory</button>
+                <small><?= $inventoryBackupAvailable ? 'Restores the state immediately before the latest CSV update.' : 'A restore point appears after the first CSV update.' ?></small>
+            </form>
+        </div>
+    </section>
     <script>
+    (function(){
+        var form = document.getElementById('inventoryUploadForm');
+        var dropzone = document.getElementById('inventoryCsvDropzone');
+        var input = document.getElementById('inventoryCsvFile');
+        var selection = document.getElementById('inventoryCsvSelection');
+        var confirmButton = document.getElementById('inventoryConfirmButton');
+        if (!form || !dropzone || !input || !selection || !confirmButton) return;
+
+        function showSelection(){
+            var file = input.files && input.files[0] ? input.files[0] : null;
+            selection.textContent = file ? file.name : 'No file selected';
+            confirmButton.disabled = !file;
+            dropzone.classList.toggle('has-file', !!file);
+        }
+        ['dragenter', 'dragover'].forEach(function(eventName){
+            dropzone.addEventListener(eventName, function(event){
+                event.preventDefault();
+                dropzone.classList.add('is-dragging');
+            });
+        });
+        ['dragleave', 'drop'].forEach(function(eventName){
+            dropzone.addEventListener(eventName, function(event){
+                event.preventDefault();
+                dropzone.classList.remove('is-dragging');
+            });
+        });
+        dropzone.addEventListener('drop', function(event){
+            var files = event.dataTransfer ? event.dataTransfer.files : null;
+            if (files && files.length) {
+                input.files = files;
+                showSelection();
+            }
+        });
+        input.addEventListener('change', showSelection);
+        form.addEventListener('submit', function(event){
+            var file = input.files && input.files[0] ? input.files[0] : null;
+            if (!file || !confirm('Replace the current inventory with ' + file.name + '? The current state will become the restore point.')) {
+                event.preventDefault();
+            }
+        });
+    })();
     // Serialize the products table into a single JSON payload to avoid hitting PHP max_input_vars
     (function(){
         var form = document.getElementById('productsForm');
@@ -1001,6 +1118,7 @@ require_once __DIR__ . '/includes/header.php';
     </script>
     <h4>Add Product</h4>
     <form method="post" action="">
+        <input type="hidden" name="section" value="products">
         <input type="hidden" name="add_product" value="1">
         <p>Name: <input type="text" name="name" required class="search-variant"></p>
         <p>Description: <input type="text" name="description" class="search-variant"></p>
@@ -1008,7 +1126,8 @@ require_once __DIR__ . '/includes/header.php';
     <p><button type="submit" class="proceed-btn">Add Product</button></p>
     </form>
 </section>
-<?php include __DIR__ . '/includes/manager_categories.php'; ?>
+<?php endif; ?>
+<?php if ($managerSection === 'categories') include __DIR__ . '/includes/manager_categories.php'; ?>
     <!-- Back to top -->
     <div id="backToTopWrap" class="back-to-top-wrap" aria-hidden="true">
         <span class="back-to-top-label">Return To Top</span>

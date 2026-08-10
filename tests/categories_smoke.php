@@ -40,6 +40,43 @@ assertCategoryTest($baseline['groups'] === 4, 'Baseline must contain four groups
 assertCategoryTest($baseline['categories'] === 27, 'Baseline must contain 27 categories.');
 assertCategoryTest($baseline['stale'] === 0, 'Baseline must not create stale assignments.');
 
+$fallbackCategory = null;
+$fallbackSku = null;
+foreach ($groups as $group) {
+    foreach ($group['categories'] as $category) {
+        foreach (array_merge([$category], $category['children']) as $candidate) {
+            if (!empty($candidate['image_path'])) continue;
+            $candidateSkus = getCategoryAssignments((int)$candidate['id'], empty($candidate['parent_id']));
+            if (!$candidateSkus) continue;
+            $hasProductImage = false;
+            foreach ($candidateSkus as $candidateSku) {
+                if (resolveUploadedProductImage($candidateSku) !== null) $hasProductImage = true;
+            }
+            if (!$hasProductImage) {
+                $fallbackCategory = $candidate;
+                $fallbackSku = $candidateSkus[0];
+                break 3;
+            }
+        }
+    }
+}
+assertCategoryTest($fallbackCategory !== null && $fallbackSku !== null, 'Expected an image-less category with assigned products for fallback testing.');
+$fallbackSlug = strtolower((string)preg_replace('/[^a-z0-9]+/i', '-', $fallbackSku));
+$fallbackSlug = trim((string)preg_replace('/-+/', '-', $fallbackSlug), '-');
+if ($fallbackSlug === '') $fallbackSlug = 'product';
+$uploadDirectory = __DIR__ . '/../assets/uploads/products';
+if (!is_dir($uploadDirectory)) mkdir($uploadDirectory, 0755, true);
+$temporaryImage = $uploadDirectory . '/' . $fallbackSlug . '.webp';
+file_put_contents($temporaryImage, 'category-fallback-test');
+try {
+    assertCategoryTest(
+        resolveCategoryImage($fallbackCategory) === '/assets/uploads/products/' . rawurlencode($fallbackSlug . '.webp'),
+        'An image-less category must use the first contained product image.'
+    );
+} finally {
+    if (is_file($temporaryImage)) unlink($temporaryImage);
+}
+
 echo sprintf(
     "Category smoke test passed: %d groups, %d categories, %d direct assignments, %d unassigned, %d stale.\n",
     count($groups),

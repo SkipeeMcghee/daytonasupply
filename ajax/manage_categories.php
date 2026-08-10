@@ -64,7 +64,8 @@ try {
     http_response_code(422);
     echo json_encode(['success' => false, 'error' => $e->getMessage()]);
 } catch (Throwable $e) {
-    error_log('manage_categories error: ' . $e->getMessage());
+    try { $errorRef = bin2hex(random_bytes(4)); } catch (Throwable $_) { $errorRef = substr(md5(uniqid('', true)), 0, 8); }
+    error_log('manage_categories error [' . $errorRef . ']: ' . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['success' => false, 'error' => 'Unable to save category changes.']);
+    echo json_encode(['success' => false, 'error' => 'Unable to save category changes. Error ' . $errorRef . ': ' . $e->getMessage()]);
 }

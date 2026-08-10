@@ -4,11 +4,6 @@ require_once __DIR__ . '/includes/categories.php';
 require_once __DIR__ . '/includes/functions.php';
 
 $categoryGroups = getCategoryTree(false);
-$allProducts = getAllProducts();
-$dealSkus = [];
-foreach ($allProducts as $product) {
-    if (!empty($product['deal'])) $dealSkus[(string)($product['name'] ?? '')] = true;
-}
 
 require_once __DIR__ . '/includes/header.php';
 ?>
@@ -37,11 +32,6 @@ require_once __DIR__ . '/includes/header.php';
 
         <?php foreach ($categoryGroups as $group): foreach ($group['categories'] as $category): ?>
             <?php
-                $categorySkus = array_fill_keys(getCategoryAssignments((int)$category['id'], true), true);
-                $hasDeals = false;
-                foreach ($dealSkus as $sku => $_) {
-                    if (isset($categorySkus[$sku])) { $hasDeals = true; break; }
-                }
                 $categoryImage = resolveCategoryImage($category);
             ?>
             <div class="subcategory-panel" id="subcats-<?= htmlspecialchars($category['slug']) ?>" hidden>
@@ -60,12 +50,10 @@ require_once __DIR__ . '/includes/header.php';
                             <div class="cat-body"><h3><?= htmlspecialchars($subcategory['name']) ?></h3><button class="shop-btn">Shop<br>Subcategory</button></div>
                         </a>
                     <?php endforeach; ?>
-                    <?php if ($hasDeals): ?>
-                        <a class="category-card" href="catalogue.php?cat=<?= urlencode($category['slug']) ?>&amp;onsale=1">
-                            <img src="<?= htmlspecialchars($categoryImage) ?>" alt="<?= htmlspecialchars($category['name']) ?> Deals" loading="lazy">
-                            <div class="cat-body"><h3><?= htmlspecialchars($category['name']) ?> Deals</h3><button class="shop-btn">Shop<br>Deals</button></div>
-                        </a>
-                    <?php endif; ?>
+                    <a class="category-card" href="catalogue.php?cat=<?= urlencode($category['slug']) ?>&amp;onsale=1">
+                        <img src="<?= htmlspecialchars($categoryImage) ?>" alt="<?= htmlspecialchars($category['name']) ?> Deals" loading="lazy">
+                        <div class="cat-body"><h3><?= htmlspecialchars($category['name']) ?> Deals</h3><button class="shop-btn">Shop<br>Deals</button></div>
+                    </a>
                 </div>
             </div>
         <?php endforeach; endforeach; ?>

@@ -11,6 +11,9 @@ assets/cache/
 # Development email output (written by sendEmail dev fallback)
 data/emails/
 
+# Manager-created inventory restore point
+data/inventory.previous.json
+
 # User uploads (if added in the future)
 uploads/
 assets/uploads/categories/

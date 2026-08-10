@@ -97,8 +97,8 @@
         row.className = 'category-tree-row' + (child ? ' is-child' : '') + (Number(category.id) === selectedId ? ' is-selected' : '');
         row.dataset.categoryId = category.id;
         var hasOwnImage = String(category.image_path || '') !== '';
-        var imageState = hasOwnImage ? 'Custom' : (category.parent_id ? 'Inherited' : 'Default');
         var imageUrl = category.image_url || categoryPlaceholder;
+        var imageState = hasOwnImage ? 'Custom' : (imageUrl.indexOf('/assets/uploads/products/') === 0 ? 'Product' : (category.parent_id ? 'Inherited' : 'Default'));
         row.innerHTML = '<div class="category-row-image"><div class="manager-dropzone category-image-dropzone" data-category-image-dropzone title="Drop image here or click to upload"><div class="dz-preview"><img src="' + escapeAttribute(imageUrl) + '" alt="' + escapeAttribute(category.name) + ' image"></div><div class="dz-instructions">Drop or click</div><input type="file" accept="image/jpeg,image/png,image/webp,image/gif" class="dz-file"></div><div class="category-image-row-controls"><small data-category-image-state>' + imageState + '</small><button type="button" class="mgr-btn mgr-delete" data-category-image-remove' + (hasOwnImage ? '' : ' disabled') + '>Remove</button></div></div><button type="button" class="category-tree-select"><span>' + escapeHtml(category.name) + '</span><small>' + Number(category.direct_product_count || 0) + '</small></button><span class="category-tree-actions"><button type="button" title="Move up" data-category-move="up">↑</button><button type="button" title="Move down" data-category-move="down">↓</button></span>';
         return row;
     }
@@ -115,7 +115,7 @@
         var state = row.querySelector('[data-category-image-state]');
         if (image) image.src = category.image_url || categoryPlaceholder;
         if (remove) remove.disabled = !hasOwnImage;
-        if (state) state.textContent = hasOwnImage ? 'Custom' : (category.parent_id ? 'Inherited' : 'Default');
+        if (state) state.textContent = hasOwnImage ? 'Custom' : (String(category.image_url || '').indexOf('/assets/uploads/products/') === 0 ? 'Product' : (category.parent_id ? 'Inherited' : 'Default'));
     }
     function refreshInheritedChildren(category){
         flat.forEach(function(child){
@@ -149,10 +149,10 @@
         body.append('csrf_token', data.csrf || '');
         dropzone.classList.add('dz-uploading');
         fetch('/ajax/remove_category_image.php', {method:'POST', body:body, credentials:'same-origin'})
-            .then(function(response){ return response.json().catch(function(){ return {}; }).then(function(json){ if (!response.ok || !json.success) throw new Error(json.error || 'Remove failed.'); }); })
-            .then(function(){
+            .then(function(response){ return response.json().catch(function(){ return {}; }).then(function(json){ if (!response.ok || !json.success) throw new Error(json.error || 'Remove failed.'); return json; }); })
+            .then(function(json){
                 category.image_path = null;
-                category.image_url = fallbackImage(category);
+                category.image_url = json.url || fallbackImage(category);
                 refreshCategoryImageRow(category);
                 refreshInheritedChildren(category);
                 notice('Category image removed.', false);

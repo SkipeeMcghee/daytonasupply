@@ -16,8 +16,9 @@ This repository contains a simple e‑commerce style website for Daytona Supply 
 * **catalogue.php** – Lists all available products with descriptions and prices.  Customers can add items to a cart.
 * **cart.php** – Shows the contents of the current customer’s cart and allows quantities to be updated or items removed.
 * **checkout.php** – Creates a purchase order from the items in the cart.  Orders are marked as “Pending” and must be approved by an office manager via the manager portal.  Upon submission an e‑mail notification is sent to the company e‑mail address configured via the `COMPANY_EMAIL` environment variable.
-* **managerportal.php** – Password protected portal for office managers.  Managers can view, approve or reject pending orders; view and edit customer details; view, add, edit and delete products.  A default manager password of `admin` is seeded into the database on first run.
-* **admin/update_inventory.php** – Reloads product data from `data/inventory.json`.  Accessible only to logged‑in managers.
+* **managerportal.php** – Password protected portal for office managers.  Managers can view, approve or reject pending orders; view and edit customer details; view, add, edit and delete products. The Products section accepts a CSV inventory export and keeps one pre-update restore point. A default manager password of `admin` is seeded into the database on first run.
+* **admin/manage_inventory.php** – Validates manager CSV uploads and restore requests before invoking the inventory updater. State-changing requests require the manager CSRF token.
+* **admin/update_inventory.php** – Applies inventory data prepared by the guarded manager workflow. Direct browser access does not update inventory.
 
 ## Data storage
 

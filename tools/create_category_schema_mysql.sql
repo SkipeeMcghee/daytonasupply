@@ -35,12 +35,17 @@ CREATE TABLE IF NOT EXISTS categories (
 
 CREATE TABLE IF NOT EXISTS category_product_assignments (
     category_id INT NOT NULL,
-    product_sku VARCHAR(190) NOT NULL,
+    product_sku VARCHAR(190) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
     PRIMARY KEY (category_id, product_sku),
     KEY idx_category_assignments_sku (product_sku),
     CONSTRAINT fk_category_assignments_category
         FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Production products.name uses utf8mb4_general_ci. Normalize existing
+-- assignment tables so SKU joins do not fail with error 1267.
+ALTER TABLE category_product_assignments
+    MODIFY product_sku VARCHAR(190) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL;
 
 -- Shared-hosting-compatible verification using ordinary SHOW statements.
 SHOW TABLES LIKE 'category_groups';

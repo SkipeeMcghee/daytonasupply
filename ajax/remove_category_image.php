@@ -32,4 +32,6 @@ foreach (['jpg', 'png', 'webp', 'gif'] as $ext) {
     if (is_file($path)) @unlink($path);
 }
 setCategoryImagePath($categoryId, null);
-echo json_encode(['success' => true]);
+$category = getCategoryById($categoryId);
+$parent = $category && !empty($category['parent_id']) ? getCategoryById((int)$category['parent_id']) : null;
+echo json_encode(['success' => true, 'url' => resolveCategoryImage($category ?: [], $parent)]);

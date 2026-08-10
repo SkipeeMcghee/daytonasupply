@@ -25,6 +25,40 @@ function categoryUploadReference(string $filename): string
     return 'category-upload:' . basename($filename);
 }
 
+function resolveUploadedProductImage(string $sku): ?string
+{
+    $slug = strtolower((string)preg_replace('/[^a-z0-9]+/i', '-', $sku));
+    $slug = trim((string)preg_replace('/-+/', '-', $slug), '-');
+    if ($slug === '') $slug = 'product';
+    foreach (['jpg', 'jpeg', 'png', 'webp', 'gif'] as $extension) {
+        $filename = $slug . '.' . $extension;
+        if (is_file(__DIR__ . '/../assets/uploads/products/' . $filename)) {
+            return '/assets/uploads/products/' . rawurlencode($filename);
+        }
+    }
+    return null;
+}
+
+function getFirstCategoryProductImage(int $categoryId, bool $includeChildren): ?string
+{
+    if ($categoryId <= 0) return null;
+    $sql = 'SELECT DISTINCT a.product_sku
+              FROM category_product_assignments a
+              JOIN categories c ON c.id = a.category_id
+             WHERE c.id = :category_id';
+    if ($includeChildren) $sql .= ' OR c.parent_id = :parent_id';
+    $sql .= ' ORDER BY a.product_sku';
+    $stmt = getDb()->prepare($sql);
+    $params = [':category_id' => $categoryId];
+    if ($includeChildren) $params[':parent_id'] = $categoryId;
+    $stmt->execute($params);
+    foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $sku) {
+        $image = resolveUploadedProductImage((string)$sku);
+        if ($image !== null) return $image;
+    }
+    return null;
+}
+
 function uniqueCategorySlug(PDO $db, string $name, ?int $excludeId = null): string
 {
     $base = categorySlugify($name);
@@ -386,14 +420,16 @@ function filterProductsByCategory(array $products, int $categoryId): array
 function getCategoryAssignmentStatus(): array
 {
     $db = getDb();
-    $unassigned = $db->query('SELECT p.name, p.description FROM products p LEFT JOIN category_product_assignments a ON a.product_sku = p.name WHERE a.product_sku IS NULL ORDER BY p.name')->fetchAll(PDO::FETCH_ASSOC);
-    $stale = $db->query('SELECT DISTINCT a.product_sku FROM category_product_assignments a LEFT JOIN products p ON p.name = a.product_sku WHERE p.id IS NULL ORDER BY a.product_sku')->fetchAll(PDO::FETCH_COLUMN);
+    $isMySql = strtolower((string)$db->getAttribute(PDO::ATTR_DRIVER_NAME)) === 'mysql';
+    $skuMatch = $isMySql ? 'BINARY a.product_sku = BINARY p.name' : 'a.product_sku = p.name';
+    $unassigned = $db->query('SELECT p.name, p.description FROM products p LEFT JOIN category_product_assignments a ON ' . $skuMatch . ' WHERE a.product_sku IS NULL ORDER BY p.name')->fetchAll(PDO::FETCH_ASSOC);
+    $stale = $db->query('SELECT DISTINCT a.product_sku FROM category_product_assignments a LEFT JOIN products p ON ' . $skuMatch . ' WHERE p.id IS NULL ORDER BY a.product_sku')->fetchAll(PDO::FETCH_COLUMN);
     return ['unassigned' => $unassigned, 'stale' => array_map('strval', $stale)];
 }
 
 function resolveCategoryImage(array $category, ?array $parent = null): string
 {
-    foreach ([$category['image_path'] ?? '', $parent['image_path'] ?? ''] as $path) {
+    foreach ([$category['image_path'] ?? ''] as $path) {
         if (strpos((string)$path, 'category-upload:') === 0) {
             $filename = basename(substr((string)$path, strlen('category-upload:')));
             if ($filename !== '' && is_file(getCategoryImageStorageDirectory() . DIRECTORY_SEPARATOR . $filename)) {
@@ -403,6 +439,20 @@ function resolveCategoryImage(array $category, ?array $parent = null): string
         }
         $path = ltrim((string)$path, '/');
         if ($path !== '' && is_file(__DIR__ . '/../' . $path)) return '/' . $path;
+    }
+    $productImage = getFirstCategoryProductImage((int)($category['id'] ?? 0), empty($category['parent_id']));
+    if ($productImage !== null) return $productImage;
+    if ($parent !== null) {
+        $parentPath = $parent['image_path'] ?? '';
+        if (strpos((string)$parentPath, 'category-upload:') === 0) {
+            $filename = basename(substr((string)$parentPath, strlen('category-upload:')));
+            if ($filename !== '' && is_file(getCategoryImageStorageDirectory() . DIRECTORY_SEPARATOR . $filename)) {
+                return getCategoryImageBaseUrl() . '/' . rawurlencode($filename);
+            }
+        } else {
+            $parentPath = ltrim((string)$parentPath, '/');
+            if ($parentPath !== '' && is_file(__DIR__ . '/../' . $parentPath)) return '/' . $parentPath;
+        }
     }
     return '/assets/images/DaytonaSupplyDSlogo.png';
 }

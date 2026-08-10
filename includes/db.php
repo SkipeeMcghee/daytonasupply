@@ -449,7 +449,7 @@ function ensureCategorySchema(PDO $db): void
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
         $db->exec("CREATE TABLE IF NOT EXISTS category_product_assignments (
             category_id INT NOT NULL,
-            product_sku VARCHAR(190) NOT NULL,
+            product_sku VARCHAR(190) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
             PRIMARY KEY (category_id, product_sku),
             KEY idx_category_assignments_sku (product_sku),
             CONSTRAINT fk_category_assignments_category FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE

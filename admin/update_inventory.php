@@ -6,16 +6,29 @@
 // JSON file should contain an array of objects with at least
 // "name", "description" and "price" keys.
 
-session_start();
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/functions.php';
 require_once __DIR__ . '/../includes/categories.php';
+require_once __DIR__ . '/../includes/inventory.php';
 // Only proceed if admin is authenticated
 if (!isset($_SESSION['admin'])) {
     // Use relative path to manager portal when redirecting from within admin
     header('Location: ../managerportal.php');
     exit;
 }
+if (!defined('INVENTORY_UPDATE_AUTHORIZED')) {
+    $_SESSION['inventory_manager_notice'] = 'Upload a CSV from the Products section to update inventory.';
+    $_SESSION['inventory_manager_notice_error'] = true;
+    header('Location: ../managerportal.php?section=products#inventory-manager');
+    exit;
+}
+
+$inventoryUpdateMode = (string)($_SESSION['inventory_update_mode'] ?? 'upload');
+unset($_SESSION['inventory_update_mode']);
+$restoreInventory = $inventoryUpdateMode === 'restore';
 
 $db = getDb();
 try {
@@ -127,8 +140,8 @@ try {
     $insNew = $db->prepare('INSERT INTO products_new(name, description, price, deal, deal_price) VALUES(:name, :description, :price, :deal, :deal_price)');
     foreach ($items as $it) {
         $n = $it['name'] ?? '';
-        $d = $oldDealsByName[$n] ?? 0; // preserve existing deal flag by product name
-        $dp = $GLOBALS['oldDealPricesByName'][$n] ?? null; // preserve existing deal price
+        $d = $restoreInventory ? (int)($it['deal'] ?? 0) : ($oldDealsByName[$n] ?? 0);
+        $dp = $restoreInventory ? ($it['deal_price'] ?? null) : ($GLOBALS['oldDealPricesByName'][$n] ?? null);
         $insNew->execute([':name' => $n, ':description' => $it['description'] ?? '', ':price' => isset($it['price']) ? (float)$it['price'] : 0.0, ':deal' => (int)$d, ':deal_price' => $dp]);
     }
     // Build mapping: name -> new_id
@@ -217,22 +230,42 @@ try {
     }
     }
 
-    $db->commit();
+    if ($db->inTransaction()) {
+        $db->commit();
+    }
+    if ($restoreInventory) {
+        @unlink(__DIR__ . '/../data/inventory.previous.json');
+    }
     $categoryStatus = getCategoryAssignmentStatus();
     $newSkuCount = count(array_diff(array_keys($newProducts), array_keys($oldProducts)));
-    $_SESSION['inventory_category_notice'] = sprintf(
-        'Inventory updated. %d new SKU(s), %d unassigned SKU(s), and %d stale category assignment(s) need review.',
-        $newSkuCount,
-        count($categoryStatus['unassigned']),
-        count($categoryStatus['stale'])
-    );
+    if ($restoreInventory) {
+        $_SESSION['inventory_category_notice'] = sprintf(
+            'Previous inventory restored. %d product(s), %d unassigned SKU(s), and %d stale category assignment(s).',
+            count($items),
+            count($categoryStatus['unassigned']),
+            count($categoryStatus['stale'])
+        );
+    } else {
+        $uploadSummary = $_SESSION['inventory_upload_summary'] ?? [];
+        unset($_SESSION['inventory_upload_summary']);
+        $_SESSION['inventory_category_notice'] = sprintf(
+            'Inventory updated from CSV. %d product(s) imported, %d new SKU(s), %d excluded service row(s), %d blank-price row(s) skipped, %d unassigned SKU(s), and %d stale category assignment(s).',
+            count($items),
+            $newSkuCount,
+            (int)($uploadSummary['excluded_count'] ?? 0),
+            (int)($uploadSummary['blank_price_count'] ?? 0),
+            count($categoryStatus['unassigned']),
+            count($categoryStatus['stale'])
+        );
+    }
     // Invalidate any cached product listings so the portal/catalogue reflect updates
     invalidateProductsCache();
     // Redirect back to the manager portal once done
-    header('Location: ../managerportal.php');
+    header('Location: ../managerportal.php?section=products&inventory=1&updated=' . time() . '#inventory-manager');
     exit;
-} catch (Exception $e) {
-    $db->rollBack();
-    echo '<p>Error updating inventory: ' . htmlspecialchars($e->getMessage()) . '</p>';
-    exit;
+} catch (Throwable $e) {
+    if ($db->inTransaction()) {
+        $db->rollBack();
+    }
+    throw $e;
 }
