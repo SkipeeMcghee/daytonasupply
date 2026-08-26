@@ -36,6 +36,15 @@ function insertProductImageFixture(PDO $db, string $sku, string $filename, int $
 }
 
 try {
+    $legacySku = 'LEGACY-100';
+    $legacyPath = $temporaryDirectory . '/' . productImageSlug($legacySku) . '.png';
+    file_put_contents($legacyPath, 'legacy-image-fixture');
+    $legacyImages = getProductImagesIncludingLegacy($legacySku, $db);
+    assertProductImageTest(count($legacyImages) === 1 && !empty($legacyImages[0]['is_legacy']), 'Legacy primary must appear in the manager gallery.');
+    assertProductImageTest($legacyImages[0]['is_primary'] && $legacyImages[0]['id'] === 0, 'Legacy primary must be protected and identified as the current primary.');
+    assertProductImageTest($legacyImages[0]['url'] === resolveLegacyProductImage($legacySku), 'Manager and storefront legacy image URLs must match.');
+    assertProductImageTest(is_file($legacyPath), 'Listing a legacy primary must never remove its file.');
+
     $firstId = insertProductImageFixture($db, 'TEST-100', 'stable-a.jpg', 0, true);
     $secondId = insertProductImageFixture($db, 'TEST-100', 'stable-b.jpg', 1, false);
     $thirdId = insertProductImageFixture($db, 'TEST-100', 'stable-c.jpg', 2, false);

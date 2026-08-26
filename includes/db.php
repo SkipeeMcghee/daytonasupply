@@ -76,11 +76,15 @@ function getDb(): PDO
                 ensureMySQLFavoritesSchema($db);
                 ensureMySQLDealsSchema($db);
                 ensureCategorySchema($db);
-                ensureProductImageSchema($db);
             } catch (Exception $schemaEx) {
                 // Log but allow connection to proceed; createOrder will fail if
                 // schema is not suitable. We log to help diagnostics.
                 error_log('ensureMySQLOrderSnapshotSchema error: ' . $schemaEx->getMessage());
+            }
+            try {
+                ensureProductImageSchema($db);
+            } catch (Exception $schemaEx) {
+                error_log('ensureProductImageSchema error: ' . $schemaEx->getMessage());
             }
             return $db;
         } catch (Exception $e) {
@@ -496,8 +500,8 @@ function ensureProductImageSchema(PDO $db): void
     if ($driver === 'mysql') {
         $db->exec("CREATE TABLE IF NOT EXISTS product_images (
             id INT AUTO_INCREMENT PRIMARY KEY,
-            product_sku VARCHAR(190) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-            filename VARCHAR(255) NOT NULL,
+            product_sku VARCHAR(180) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+            filename VARCHAR(255) CHARACTER SET ascii COLLATE ascii_general_ci NOT NULL,
             sort_order INT NOT NULL DEFAULT 0,
             is_primary TINYINT(1) NOT NULL DEFAULT 0,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

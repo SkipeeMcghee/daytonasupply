@@ -31,12 +31,16 @@ function productImageUrl(string $filename): string
 
 function resolveLegacyProductImage(string $sku): ?string
 {
+    $path = findLegacyProductImagePath($sku);
+    return $path !== null ? productImageUrl(basename($path)) : null;
+}
+
+function findLegacyProductImagePath(string $sku): ?string
+{
     $slug = productImageSlug($sku);
     foreach (['jpg', 'jpeg', 'png', 'webp', 'gif'] as $extension) {
-        $filename = $slug . '.' . $extension;
-        if (is_file(getProductImageStorageDirectory() . '/' . $filename)) {
-            return productImageUrl($filename);
-        }
+        $path = getProductImageStorageDirectory() . '/' . $slug . '.' . $extension;
+        if (is_file($path)) return $path;
     }
     return null;
 }
@@ -70,6 +74,24 @@ function getProductImages(string $sku, ?PDO $db = null): array
         $row['url'] = productImageUrl((string)$row['filename']);
         return $row;
     }, $rows);
+}
+
+function getProductImagesIncludingLegacy(string $sku, ?PDO $db = null): array
+{
+    $images = getProductImages($sku, $db);
+    if ($images) return $images;
+    $legacyPath = findLegacyProductImagePath($sku);
+    $legacyUrl = resolveLegacyProductImage($sku);
+    if ($legacyPath === null || $legacyUrl === null) return [];
+    return [[
+        'id' => 0,
+        'product_sku' => $sku,
+        'filename' => basename($legacyPath),
+        'sort_order' => 0,
+        'is_primary' => true,
+        'is_legacy' => true,
+        'url' => $legacyUrl,
+    ]];
 }
 
 function resolvePrimaryProductImage(string $sku, bool $includeLegacy = true, ?PDO $db = null): ?string

@@ -25,7 +25,7 @@ function absoluteProductImageUrl(string $url): string
 
 function productImageResponse(string $sku): array
 {
-    $images = getProductImages($sku);
+    $images = getProductImagesIncludingLegacy($sku);
     foreach ($images as &$image) $image['absolute_url'] = absoluteProductImageUrl((string)$image['url']);
     unset($image);
     return [
@@ -41,6 +41,13 @@ if (empty($_SESSION['admin'])) productImageJsonError('Not authorized.', 403);
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') productImageJsonError('POST required.', 405);
 if (empty($_SESSION['manager_csrf']) || !hash_equals((string)$_SESSION['manager_csrf'], (string)($_POST['csrf_token'] ?? ''))) {
     productImageJsonError('Your session expired. Refresh the manager portal and try again.', 403);
+}
+
+try {
+    ensureProductImageSchema(getDb());
+} catch (Throwable $error) {
+    error_log('manage_product_images schema error: ' . $error->getMessage());
+    productImageJsonError('Product image storage is not initialized. Run the product_images SQL migration or grant this database user CREATE TABLE permission.', 500);
 }
 
 $productId = (int)($_POST['product_id'] ?? 0);
@@ -59,6 +66,10 @@ try {
         if ($size <= 0 || $size > 5 * 1024 * 1024) productImageJsonError('Images must be 5 MB or smaller.');
         $temporaryPath = (string)($file['tmp_name'] ?? '');
         if ($temporaryPath === '' || !is_uploaded_file($temporaryPath)) productImageJsonError('The uploaded image could not be verified.');
+        if (!getProductImages($sku)) {
+            $legacyPath = findLegacyProductImagePath($sku);
+            if ($legacyPath !== null) addProductImageFromPath($sku, $legacyPath);
+        }
         addProductImageFromPath($sku, $temporaryPath);
     } elseif ($action === 'set_primary') {
         setPrimaryProductImage($sku, (int)($_POST['image_id'] ?? 0));

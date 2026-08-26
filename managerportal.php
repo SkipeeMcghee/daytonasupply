@@ -1077,16 +1077,17 @@ require_once __DIR__ . '/includes/header.php';
         function render(){
             list.innerHTML = ''; empty.hidden = images.length !== 0;
             images.forEach(function(image, index){
-                var card = document.createElement('article'); card.className = 'product-image-card' + (image.is_primary ? ' is-primary' : ''); card.draggable = true; card.dataset.imageId = image.id;
+                var legacy = !!image.is_legacy;
+                var card = document.createElement('article'); card.className = 'product-image-card' + (image.is_primary ? ' is-primary' : '') + (legacy ? ' is-legacy' : ''); card.draggable = !legacy; card.dataset.imageId = image.id;
                 var preview = document.createElement('img'); preview.src = image.url; preview.alt = sku.textContent + ' image ' + (index + 1); card.appendChild(preview);
-                var meta = document.createElement('div'); meta.className = 'product-image-card-meta'; meta.textContent = image.is_primary ? 'Primary image' : 'Image ' + (index + 1); card.appendChild(meta);
+                var meta = document.createElement('div'); meta.className = 'product-image-card-meta'; meta.textContent = legacy ? 'Current primary image' : (image.is_primary ? 'Primary image' : 'Image ' + (index + 1)); card.appendChild(meta);
                 var actions = document.createElement('div'); actions.className = 'product-image-card-actions';
                 function button(label, title, disabled, handler){ var control=document.createElement('button'); control.type='button'; control.textContent=label; control.title=title; control.disabled=disabled; control.addEventListener('click', handler); actions.appendChild(control); }
-                button('Primary', 'Set as primary image', !!image.is_primary, function(){ mutate('set_primary', {image_id:image.id}, 'Primary image updated.'); });
-                button('\u2191', 'Move image up', index === 0, function(){ move(index, index - 1); });
-                button('\u2193', 'Move image down', index === images.length - 1, function(){ move(index, index + 1); });
+                button('Primary', legacy ? 'This existing image will be preserved when you upload more images' : 'Set as primary image', legacy || !!image.is_primary, function(){ mutate('set_primary', {image_id:image.id}, 'Primary image updated.'); });
+                button('\u2191', 'Move image up', legacy || index === 0, function(){ move(index, index - 1); });
+                button('\u2193', 'Move image down', legacy || index === images.length - 1, function(){ move(index, index + 1); });
                 button('Copy URL', 'Copy marketplace image URL', false, function(){ navigator.clipboard.writeText(image.absolute_url).then(function(){ showNotice('Marketplace URL copied.', false); }).catch(function(){ showNotice('Unable to copy the URL.', true); }); });
-                button('Delete', 'Delete image', false, function(){ if (confirm('Delete this product image?')) mutate('delete', {image_id:image.id}, 'Image deleted.'); });
+                if (!legacy) button('Delete', 'Delete image', false, function(){ if (confirm('Delete this product image?')) mutate('delete', {image_id:image.id}, 'Image deleted.'); });
                 card.appendChild(actions); list.appendChild(card);
             });
         }
