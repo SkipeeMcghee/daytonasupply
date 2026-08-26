@@ -17,6 +17,14 @@ putenv('PRODUCT_IMAGE_URL=/test-product-images');
 $db = new PDO('sqlite::memory:');
 $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 $db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+
+$missingSchemaDb = new PDO('sqlite::memory:');
+$missingSchemaDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+assertProductImageTest(
+    getProductImages('MISSING-SCHEMA', $missingSchemaDb) === [],
+    'Missing gallery schema must fall back to an empty gallery instead of blanking public pages.'
+);
+
 ensureProductImageSchema($db);
 
 function insertProductImageFixture(PDO $db, string $sku, string $filename, int $sort, bool $primary): int

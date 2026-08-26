@@ -46,20 +46,30 @@ function getProductImages(string $sku, ?PDO $db = null): array
     $sku = trim($sku);
     if ($sku === '') return [];
     $db = $db ?? getDb();
-    $stmt = $db->prepare(
-        'SELECT id, product_sku, filename, sort_order, is_primary, created_at
-           FROM product_images
-          WHERE product_sku = :sku
-          ORDER BY is_primary DESC, sort_order ASC, id ASC'
-    );
-    $stmt->execute([':sku' => $sku]);
+    try {
+        $stmt = $db->prepare(
+            'SELECT id, product_sku, filename, sort_order, is_primary, created_at
+               FROM product_images
+              WHERE product_sku = :sku
+              ORDER BY is_primary DESC, sort_order ASC, id ASC'
+        );
+        $stmt->execute([':sku' => $sku]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Throwable $error) {
+        static $logged = false;
+        if (!$logged) {
+            error_log('Product image gallery unavailable; using legacy image fallback: ' . $error->getMessage());
+            $logged = true;
+        }
+        return [];
+    }
     return array_map(function (array $row): array {
         $row['id'] = (int)$row['id'];
         $row['sort_order'] = (int)$row['sort_order'];
         $row['is_primary'] = (int)$row['is_primary'] === 1;
         $row['url'] = productImageUrl((string)$row['filename']);
         return $row;
-    }, $stmt->fetchAll(PDO::FETCH_ASSOC));
+    }, $rows);
 }
 
 function resolvePrimaryProductImage(string $sku, bool $includeLegacy = true, ?PDO $db = null): ?string
