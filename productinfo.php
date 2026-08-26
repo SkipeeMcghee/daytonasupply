@@ -41,25 +41,30 @@ include __DIR__ . '/includes/header.php';
 <?php else: ?>
     <?php
         $name = (string)($prod['name'] ?? '');
-        $slug = strtolower(preg_replace('/[^a-z0-9]+/i', '-', $name));
-        $slug = trim(preg_replace('/-+/', '-', $slug), '-');
-        if ($slug === '') $slug = 'product';
-        $base = '/assets/uploads/products/' . $slug;
-        $exts = ['jpg','jpeg','png','webp','gif'];
-        $imgUrl = '';
-        foreach ($exts as $e) {
-            $path = __DIR__ . '/assets/uploads/products/' . $slug . '.' . $e;
-            if (is_file($path)) { $imgUrl = $base . '.' . $e; break; }
+        $productImages = getProductImages($name);
+        if (!$productImages) {
+            $legacyImage = resolveLegacyProductImage($name);
+            if ($legacyImage !== null) $productImages[] = ['url' => $legacyImage, 'is_primary' => true];
         }
         $placeholder = '/assets/DaytonaSupplyDSlogo.png';
         if (!is_file(__DIR__ . '/assets/DaytonaSupplyDSlogo.png')) { $placeholder = '/assets/images/DaytonaSupplyDSlogo.png'; }
-        $hero = $imgUrl ?: $placeholder;
+        if (!$productImages) $productImages[] = ['url' => $placeholder, 'is_primary' => true];
+        $hero = (string)$productImages[0]['url'];
     ?>
-    <div style="display:grid;grid-template-columns:1fr;gap:16px;align-items:start;">
-        <div style="text-align:center;">
-            <img src="<?= htmlspecialchars($hero) ?>" alt="<?= htmlspecialchars($prod['name']) ?>" style="max-width:420px;width:100%;height:auto;border-radius:12px;border:1px solid rgba(11,34,56,0.06);background:#fff;box-shadow:0 10px 30px rgba(11,34,56,0.06);">
+    <div class="product-detail-layout">
+        <div class="product-gallery" data-product-gallery>
+            <div class="product-gallery-thumbnails" aria-label="Product images">
+                <?php foreach ($productImages as $index => $image): ?>
+                    <button type="button" class="product-gallery-thumbnail<?= $index === 0 ? ' is-selected' : '' ?>" data-gallery-image="<?= htmlspecialchars((string)$image['url']) ?>" aria-label="View image <?= $index + 1 ?> of <?= count($productImages) ?>" aria-pressed="<?= $index === 0 ? 'true' : 'false' ?>">
+                        <img src="<?= htmlspecialchars((string)$image['url']) ?>" alt="">
+                    </button>
+                <?php endforeach; ?>
+            </div>
+            <div class="product-gallery-stage">
+                <img src="<?= htmlspecialchars($hero) ?>" alt="<?= htmlspecialchars($prod['name']) ?>" data-gallery-main>
+            </div>
         </div>
-        <div>
+        <div class="product-detail-content">
             <?php
                 $desc = (string)($prod['description'] ?? $prod['name']);
                 $dispName = getProductDisplayName($prod);
@@ -125,6 +130,7 @@ include __DIR__ . '/includes/header.php';
                 <a href="catalogue.php" class="proceed-btn btn-catalog">Back to Catalog</a>
             </p>
 
+        </div>
     </div>
     <style>
     /* Compact preset: hide displayed number in closed state, keep dropdown options readable */
@@ -139,6 +145,31 @@ include __DIR__ . '/includes/header.php';
     <script>
     // Sync preset dropdown to quantity input; same behavior as catalogue
     document.addEventListener('DOMContentLoaded', function(){
+        document.querySelectorAll('[data-product-gallery]').forEach(function(gallery){
+            var main = gallery.querySelector('[data-gallery-main]');
+            var stage = gallery.querySelector('.product-gallery-stage');
+            var thumbnails = gallery.querySelectorAll('.product-gallery-thumbnail');
+            if (!main || !stage) return;
+            thumbnails.forEach(function(thumbnail){
+                thumbnail.addEventListener('click', function(){
+                    main.src = thumbnail.getAttribute('data-gallery-image') || '';
+                    main.style.transform = '';
+                    main.style.transformOrigin = 'center';
+                    thumbnails.forEach(function(item){ var selected=item===thumbnail; item.classList.toggle('is-selected',selected); item.setAttribute('aria-pressed',selected?'true':'false'); });
+                });
+            });
+            var zoomAllowed = window.matchMedia('(hover:hover) and (pointer:fine)').matches && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (zoomAllowed) {
+                stage.classList.add('can-zoom');
+                stage.addEventListener('pointermove', function(event){
+                    var rect=stage.getBoundingClientRect();
+                    var x=Math.max(0,Math.min(100,((event.clientX-rect.left)/rect.width)*100));
+                    var y=Math.max(0,Math.min(100,((event.clientY-rect.top)/rect.height)*100));
+                    main.style.transformOrigin=x+'% '+y+'%'; main.style.transform='scale(2)';
+                });
+                stage.addEventListener('pointerleave', function(){ main.style.transform=''; main.style.transformOrigin='center'; });
+            }
+        });
         document.querySelectorAll('form.cart-add').forEach(function(form){
             var num = form.querySelector('input[name="quantity"]');
             var sel = form.querySelector('select.qty-preset');

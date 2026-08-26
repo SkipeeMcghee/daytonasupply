@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/product_images.php';
 
 function categorySlugify(string $name): string
 {
@@ -27,16 +28,7 @@ function categoryUploadReference(string $filename): string
 
 function resolveUploadedProductImage(string $sku): ?string
 {
-    $slug = strtolower((string)preg_replace('/[^a-z0-9]+/i', '-', $sku));
-    $slug = trim((string)preg_replace('/-+/', '-', $slug), '-');
-    if ($slug === '') $slug = 'product';
-    foreach (['jpg', 'jpeg', 'png', 'webp', 'gif'] as $extension) {
-        $filename = $slug . '.' . $extension;
-        if (is_file(__DIR__ . '/../assets/uploads/products/' . $filename)) {
-            return '/assets/uploads/products/' . rawurlencode($filename);
-        }
-    }
-    return null;
+    return resolvePrimaryProductImage($sku, true);
 }
 
 function getFirstCategoryProductImage(int $categoryId, bool $includeChildren): ?string

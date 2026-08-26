@@ -27,6 +27,11 @@ putenv('DB_STRICT=1');
 putenv('CATEGORY_IMAGE_DIR=/var/www/daytona-shared/category-images');
 putenv('CATEGORY_IMAGE_URL=/category-images');
 
+// Persistent, publicly served 2000px product image storage. Amazon must be
+// able to fetch PRODUCT_IMAGE_URL anonymously over HTTPS.
+putenv('PRODUCT_IMAGE_DIR=/var/www/daytona-shared/product-images');
+putenv('PRODUCT_IMAGE_URL=/product-images');
+
 // Company email address used as the sender for notifications
 putenv('COMPANY_EMAIL=orders@daytonasupply.com');
 

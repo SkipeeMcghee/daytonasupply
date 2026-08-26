@@ -606,16 +606,7 @@ body.theme-dark .catalogue-table tr.sale-row td { background: transparent !impor
         <tr id="product-<?= (int)$p['id'] ?>"<?= $onSale ? ' class="sale-row"' : '' ?>>
             <?php
                 $name = (string)($p['name'] ?? '');
-                $slug = strtolower(preg_replace('/[^a-z0-9]+/i', '-', $name));
-                $slug = trim(preg_replace('/-+/', '-', $slug), '-');
-                if ($slug === '') $slug = 'product';
-                $base = '/assets/uploads/products/' . $slug;
-                $exts = ['jpg','jpeg','png','webp','gif'];
-                $imgUrl = '';
-                foreach ($exts as $e) {
-                    $path = __DIR__ . '/assets/uploads/products/' . $slug . '.' . $e;
-                    if (is_file($path)) { $imgUrl = $base . '.' . $e; break; }
-                }
+                $imgUrl = resolvePrimaryProductImage($name, true) ?? '';
                 $placeholder = '/assets/DaytonaSupplyDSlogo.png';
                 if (!is_file(__DIR__ . '/assets/DaytonaSupplyDSlogo.png')) {
                     $placeholder = '/assets/images/DaytonaSupplyDSlogo.png';

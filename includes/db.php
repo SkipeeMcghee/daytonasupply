@@ -76,6 +76,7 @@ function getDb(): PDO
                 ensureMySQLFavoritesSchema($db);
                 ensureMySQLDealsSchema($db);
                 ensureCategorySchema($db);
+                ensureProductImageSchema($db);
             } catch (Exception $schemaEx) {
                 // Log but allow connection to proceed; createOrder will fail if
                 // schema is not suitable. We log to help diagnostics.
@@ -128,6 +129,7 @@ function getDb(): PDO
     try { ensureSQLiteDealsSchema($db); } catch (Exception $_) {}
     try { ensureSQLiteFavoritesSchema($db); } catch (Exception $_) {}
     try { ensureCategorySchema($db); } catch (Exception $e) { error_log('ensureCategorySchema error: ' . $e->getMessage()); }
+    try { ensureProductImageSchema($db); } catch (Exception $e) { error_log('ensureProductImageSchema error: ' . $e->getMessage()); }
     // Run migrations only when the DB was just created, or when explicitly
     // requested via RUN_MIGRATIONS=1. Avoiding migrations on every request
     // prevents repeated PRAGMA/ALTER operations that slow response times.
@@ -485,6 +487,37 @@ function ensureCategorySchema(PDO $db): void
     $db->exec('CREATE INDEX IF NOT EXISTS idx_category_groups_order ON category_groups(active, sort_order, id)');
     $db->exec('CREATE INDEX IF NOT EXISTS idx_categories_tree ON categories(group_id, parent_id, active, sort_order, id)');
     $db->exec('CREATE INDEX IF NOT EXISTS idx_category_assignments_sku ON category_product_assignments(product_sku)');
+}
+
+/** Ensure ordered product image metadata exists for both supported databases. */
+function ensureProductImageSchema(PDO $db): void
+{
+    $driver = strtolower((string)$db->getAttribute(PDO::ATTR_DRIVER_NAME));
+    if ($driver === 'mysql') {
+        $db->exec("CREATE TABLE IF NOT EXISTS product_images (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            product_sku VARCHAR(190) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+            filename VARCHAR(255) NOT NULL,
+            sort_order INT NOT NULL DEFAULT 0,
+            is_primary TINYINT(1) NOT NULL DEFAULT 0,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY uq_product_images_filename (filename),
+            KEY idx_product_images_gallery (product_sku, sort_order, id),
+            KEY idx_product_images_primary (product_sku, is_primary)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        return;
+    }
+
+    $db->exec('CREATE TABLE IF NOT EXISTS product_images (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        product_sku TEXT NOT NULL,
+        filename TEXT NOT NULL UNIQUE,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        is_primary INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )');
+    $db->exec('CREATE INDEX IF NOT EXISTS idx_product_images_gallery ON product_images(product_sku, sort_order, id)');
+    $db->exec('CREATE INDEX IF NOT EXISTS idx_product_images_primary ON product_images(product_sku, is_primary)');
 }
 
 

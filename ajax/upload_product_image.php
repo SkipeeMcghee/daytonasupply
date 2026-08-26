@@ -20,6 +20,14 @@ if (empty($_SESSION['admin'])) {
     exit;
 }
 
+http_response_code(410);
+echo json_encode([
+    'success' => false,
+    'error' => 'This upload route has been replaced by the product image manager.',
+    'replacement' => '/ajax/manage_product_images.php',
+]);
+exit;
+
 // Helper to slugify product name for filename use
 function ds_slug(string $name): string {
     $s = strtolower($name);

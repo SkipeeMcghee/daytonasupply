@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/product_images.php';
+
 /**
  * Set customer verification status and send notification email.
  * @param int $customerId
@@ -1062,6 +1064,7 @@ function saveProduct(array $data, ?int $id = null): void
         $newId = (int)$db->lastInsertId();
         error_log('saveProduct: insert id=' . $newId . ' via driver=' . $driver);
     } else {
+        $existing = getProductById($id);
         $stmt = $db->prepare('UPDATE products SET name=:name, description=:description, price=:price WHERE id=:id');
         $stmt->execute([
             ':id' => $id,
@@ -1070,6 +1073,9 @@ function saveProduct(array $data, ?int $id = null): void
             ':price' => (float)$data['price']
         ]);
         $rc = (int)$stmt->rowCount();
+        if ($existing && (string)$existing['name'] !== (string)$data['name']) {
+            renameProductImagesSku((string)$existing['name'], (string)$data['name'], $db);
+        }
         error_log('saveProduct: update id=' . $id . ' affected=' . $rc . ' via driver=' . $driver);
     }
     // Ensure subsequent reads reflect the new data immediately
@@ -1084,8 +1090,10 @@ function saveProduct(array $data, ?int $id = null): void
 function deleteProduct(int $id): void
 {
     $db = getDb();
+    $product = getProductById($id);
     $stmt = $db->prepare('DELETE FROM products WHERE id = :id');
     $stmt->execute([':id' => $id]);
+    if ($product) deleteAllProductImages((string)$product['name'], $db);
     // Invalidate product caches so UIs reflect the deletion
     invalidateProductsCache();
 }

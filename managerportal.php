@@ -259,12 +259,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try { $db->beginTransaction(); $inTx = true; } catch (Exception $_) {}
 
             $stmt = $db->prepare('UPDATE products SET name = :name, description = :description, price = :price WHERE id = :id');
+            $findCurrentName = $db->prepare('SELECT name FROM products WHERE id = :id');
             $updatedCount = 0;
             foreach ($updates as $id => $vals) {
                 $name = (string)($vals['name'] ?? '');
                 $desc = (string)($vals['description'] ?? '');
                 $price = (string)($vals['price'] ?? '0.00');
+                $findCurrentName->execute([':id' => (int)$id]);
+                $oldName = (string)($findCurrentName->fetchColumn() ?: '');
                 $stmt->execute([':id' => (int)$id, ':name' => $name, ':description' => $desc, ':price' => $price]);
+                if ($oldName !== '' && $oldName !== $name) renameProductImagesSku($oldName, $name, $db);
                 $updatedCount += (int)$stmt->rowCount();
             }
             if ($inTx) { try { $db->commit(); } catch (Exception $_) {} }
@@ -880,46 +884,20 @@ require_once __DIR__ . '/includes/header.php';
                     </td>
                     <td>
                         <?php
-                            // Resolve current image URL by trying extensions
                             $name = (string)($prod['name'] ?? '');
-                            $slug = strtolower(preg_replace('/[^a-z0-9]+/i', '-', $name));
-                            $slug = trim(preg_replace('/-+/', '-', $slug), '-');
-                            if ($slug === '') $slug = 'product';
-                            $base = '/assets/uploads/products/' . $slug;
-                            $exts = ['jpg','jpeg','png','webp','gif'];
-                            $imgUrl = '';
-                            $imgVersion = null;
-                            foreach ($exts as $e) {
-                                $path = __DIR__ . '/assets/uploads/products/' . $slug . '.' . $e;
-                                if (is_file($path)) {
-                                    $imgUrl = $base . '.' . $e;
-                                    $mtime = @filemtime($path);
-                                    if ($mtime !== false) {
-                                        $imgVersion = (string)$mtime;
-                                    }
-                                    break;
-                                }
-                            }
+                            $imgUrl = resolvePrimaryProductImage($name, true) ?? '';
                             $placeholder = '/assets/DaytonaSupplyDSlogo.png';
                             if (!is_file(__DIR__ . '/assets/DaytonaSupplyDSlogo.png')) {
-                                // fallback to existing logo path in assets/images
                                 $placeholder = '/assets/images/DaytonaSupplyDSlogo.png';
                             }
-                            if ($imgUrl !== '' && $imgVersion !== null) {
-                                $imgUrl .= '?v=' . rawurlencode($imgVersion);
-                            }
                         ?>
-                        <div class="manager-dropzone" data-product-id="<?= (int)$prod['id'] ?>" data-product-name="<?= htmlspecialchars($name) ?>" data-placeholder-url="<?= htmlspecialchars($placeholder) ?>">
-                            <div class="dz-preview">
-                                <img src="<?= htmlspecialchars($imgUrl ?: $placeholder) ?>" alt="Preview" />
-                            </div>
-                            <div class="dz-instructions">Drop image here or click to upload</div>
-                            <input type="file" accept="image/*" class="dz-file" style="display:none;" />
+                        <div class="manager-product-preview" data-product-preview="<?= (int)$prod['id'] ?>" data-placeholder-url="<?= htmlspecialchars($placeholder) ?>">
+                            <img src="<?= htmlspecialchars($imgUrl ?: $placeholder) ?>" alt="<?= htmlspecialchars($name) ?> primary image">
                         </div>
                     </td>
                     <td>
                         <a class="mgr-btn" href="?section=products&amp;toggle_deal=<?php echo (int)$prod['id']; ?>" style="background: <?php echo $isDeal ? '#dc3545' : '#198754'; ?>; color:#fff;" onclick="return confirm('<?php echo $isDeal ? 'Unset this deal?' : 'Mark this item as a Deal?'; ?>');"><?php echo $isDeal ? 'Unset' : 'Set'; ?> Deal</a>
-                        <button type="button" class="mgr-btn dz-remove" data-product-id="<?= (int)$prod['id'] ?>"<?php echo $imgUrl === '' ? ' disabled' : ''; ?>>Remove Picture</button>
+                        <button type="button" class="mgr-btn manager-images-button" data-product-id="<?= (int)$prod['id'] ?>" data-product-name="<?= htmlspecialchars($name) ?>">Images</button>
                         <a class="mgr-btn mgr-product-delete" href="?section=products&amp;delete_product=<?php echo (int)$prod['id']; ?>" onclick="return confirm('Delete this product?');">Delete</a>
                     </td>
                 </tr>
@@ -932,6 +910,24 @@ require_once __DIR__ . '/includes/header.php';
         <button type="submit" class="proceed-btn">Save Product Changes</button>
     </p>
     </form>
+    <dialog class="product-images-dialog" id="productImagesDialog" aria-labelledby="productImagesTitle">
+        <div class="product-images-dialog-head">
+            <div>
+                <h4 id="productImagesTitle">Product Images</h4>
+                <p id="productImagesSku"></p>
+            </div>
+            <button type="button" class="product-images-close" aria-label="Close image manager">&times;</button>
+        </div>
+        <div class="product-images-notice" id="productImagesNotice" role="status" aria-live="polite" hidden></div>
+        <label class="product-images-upload" id="productImagesUpload">
+            <input type="file" id="productImagesFiles" accept="image/jpeg,image/png,image/webp,image/gif" multiple>
+            <strong>Drop images here or click to upload</strong>
+            <span>JPEG, PNG, WebP, or GIF; up to 5 MB each</span>
+        </label>
+        <div class="product-images-summary"><span id="productImagesCount">0 of 9 images</span><span>All published images are 2000 &times; 2000 JPEGs.</span></div>
+        <div class="product-images-list" id="productImagesList"></div>
+        <div class="product-images-empty" id="productImagesEmpty" hidden>No product images have been uploaded.</div>
+    </dialog>
     <section class="inventory-manager" id="inventory-manager" aria-labelledby="inventory-manager-title">
         <div class="inventory-manager-heading">
             <div>
@@ -1042,78 +1038,72 @@ require_once __DIR__ . '/includes/header.php';
             }
         });
     })();
-    // Bind manager dropzones
+    // Product image gallery manager
     (function(){
-        function withCacheBuster(url){
-            if (!url) return url;
-            return url + (url.indexOf('?') >= 0 ? '&' : '?') + 'v=' + Date.now();
+        var dialog = document.getElementById('productImagesDialog');
+        var list = document.getElementById('productImagesList');
+        var empty = document.getElementById('productImagesEmpty');
+        var count = document.getElementById('productImagesCount');
+        var notice = document.getElementById('productImagesNotice');
+        var sku = document.getElementById('productImagesSku');
+        var upload = document.getElementById('productImagesUpload');
+        var files = document.getElementById('productImagesFiles');
+        if (!dialog || !list || !files) return;
+        var productId = 0;
+        var images = [];
+        var csrf = <?= json_encode((string)$_SESSION['manager_csrf']) ?>;
+        function showNotice(message, error){ notice.hidden = !message; notice.textContent = message || ''; notice.classList.toggle('is-error', !!error); }
+        function request(action, values){
+            var body = new FormData();
+            body.append('action', action); body.append('product_id', String(productId)); body.append('csrf_token', csrf);
+            Object.keys(values || {}).forEach(function(key){ body.append(key, values[key]); });
+            dialog.classList.add('is-busy');
+            return fetch('/ajax/manage_product_images.php', {method:'POST', body:body, credentials:'same-origin'})
+                .then(function(response){ return response.json().catch(function(){ return {}; }).then(function(json){ if (!response.ok || !json.success) throw new Error(json.error || 'Image request failed.'); return json; }); })
+                .finally(function(){ dialog.classList.remove('is-busy'); });
         }
-        function setRemoveButtonState(btn, enabled){
-            if (!btn) return;
-            btn.disabled = !enabled;
+        function refreshPreview(primaryUrl){
+            var preview = document.querySelector('[data-product-preview="' + productId + '"]');
+            if (!preview) return;
+            var image = preview.querySelector('img');
+            var placeholder = preview.getAttribute('data-placeholder-url') || '';
+            if (image) image.src = (primaryUrl || placeholder) + ((primaryUrl || placeholder).indexOf('?') >= 0 ? '&' : '?') + 'v=' + Date.now();
         }
-        function findRemoveButton(productId){
-            if (!productId) return null;
-            return document.querySelector('.dz-remove[data-product-id="' + String(productId) + '"]');
+        function apply(json){ images = json.images || []; count.textContent = images.length + ' of ' + Number(json.limit || 9) + ' images'; refreshPreview(json.primary_url || ''); render(); }
+        function mutate(action, values, successMessage){
+            showNotice('', false);
+            return request(action, values).then(function(json){ apply(json); showNotice(successMessage, false); }).catch(function(error){ showNotice(error.message, true); });
         }
-        function uploadFile(dz, file, name, id, removeBtn){
-            if (!file) return;
-            var fd = new FormData();
-            fd.append('image', file);
-            if (name) fd.append('product_name', name);
-            if (id) fd.append('product_id', String(id));
-            dz.classList.add('dz-uploading');
-            fetch('/ajax/upload_product_image.php', { method: 'POST', body: fd, credentials: 'same-origin' })
-                .then(function(r){ return r.json().catch(function(){ return {}; }); })
-                .then(function(json){
-                    dz.classList.remove('dz-uploading');
-                    if (!json || !json.success) { alert('Upload failed' + (json && json.error ? ': ' + json.error : '')); return; }
-                    var img = dz.querySelector('.dz-preview img');
-                    if (img) { img.src = withCacheBuster(json.url); }
-                    setRemoveButtonState(removeBtn, true);
-                })
-                .catch(function(){ dz.classList.remove('dz-uploading'); alert('Upload failed'); });
-        }
-        function removeImage(dz, name, id, removeBtn){
-            var fd = new FormData();
-            if (name) fd.append('product_name', name);
-            if (id) fd.append('product_id', String(id));
-            dz.classList.add('dz-uploading');
-            fetch('/ajax/remove_product_image.php', { method: 'POST', body: fd, credentials: 'same-origin' })
-                .then(function(r){ return r.json().catch(function(){ return {}; }); })
-                .then(function(json){
-                    dz.classList.remove('dz-uploading');
-                    if (!json || !json.success) { alert('Remove failed' + (json && json.error ? ': ' + json.error : '')); return; }
-                    var img = dz.querySelector('.dz-preview img');
-                    var placeholderUrl = dz.getAttribute('data-placeholder-url') || '';
-                    if (img && placeholderUrl) {
-                        img.src = withCacheBuster(placeholderUrl);
-                    }
-                    setRemoveButtonState(removeBtn, false);
-                })
-                .catch(function(){ dz.classList.remove('dz-uploading'); alert('Remove failed'); });
-        }
-        document.querySelectorAll('.manager-dropzone').forEach(function(dz){
-            var input = dz.querySelector('input.dz-file');
-            var name = dz.getAttribute('data-product-name') || '';
-            var id = parseInt(dz.getAttribute('data-product-id') || '0', 10) || 0;
-            var removeBtn = findRemoveButton(id);
-            dz.addEventListener('click', function(e){
-                if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON')) return;
-                if (input) input.click();
+        function render(){
+            list.innerHTML = ''; empty.hidden = images.length !== 0;
+            images.forEach(function(image, index){
+                var card = document.createElement('article'); card.className = 'product-image-card' + (image.is_primary ? ' is-primary' : ''); card.draggable = true; card.dataset.imageId = image.id;
+                var preview = document.createElement('img'); preview.src = image.url; preview.alt = sku.textContent + ' image ' + (index + 1); card.appendChild(preview);
+                var meta = document.createElement('div'); meta.className = 'product-image-card-meta'; meta.textContent = image.is_primary ? 'Primary image' : 'Image ' + (index + 1); card.appendChild(meta);
+                var actions = document.createElement('div'); actions.className = 'product-image-card-actions';
+                function button(label, title, disabled, handler){ var control=document.createElement('button'); control.type='button'; control.textContent=label; control.title=title; control.disabled=disabled; control.addEventListener('click', handler); actions.appendChild(control); }
+                button('Primary', 'Set as primary image', !!image.is_primary, function(){ mutate('set_primary', {image_id:image.id}, 'Primary image updated.'); });
+                button('\u2191', 'Move image up', index === 0, function(){ move(index, index - 1); });
+                button('\u2193', 'Move image down', index === images.length - 1, function(){ move(index, index + 1); });
+                button('Copy URL', 'Copy marketplace image URL', false, function(){ navigator.clipboard.writeText(image.absolute_url).then(function(){ showNotice('Marketplace URL copied.', false); }).catch(function(){ showNotice('Unable to copy the URL.', true); }); });
+                button('Delete', 'Delete image', false, function(){ if (confirm('Delete this product image?')) mutate('delete', {image_id:image.id}, 'Image deleted.'); });
+                card.appendChild(actions); list.appendChild(card);
             });
-            if (input) input.addEventListener('change', function(){ if (input.files && input.files[0]) uploadFile(dz, input.files[0], name, id, removeBtn); });
-            dz.addEventListener('dragover', function(e){ e.preventDefault(); dz.classList.add('dz-over'); });
-            dz.addEventListener('dragleave', function(e){ dz.classList.remove('dz-over'); });
-            dz.addEventListener('drop', function(e){ e.preventDefault(); dz.classList.remove('dz-over'); var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (f) uploadFile(dz, f, name, id, removeBtn); });
-            if (removeBtn) {
-                removeBtn.addEventListener('click', function(e){
-                    e.preventDefault();
-                    if (!confirm('Remove this product picture?')) return;
-                    removeImage(dz, name, id, removeBtn);
-                });
-            }
-        });
+        }
+        function move(from, to){ var next=images.slice(); var item=next.splice(from,1)[0]; next.splice(to,0,item); mutate('reorder', {image_ids:JSON.stringify(next.map(function(image){ return image.id; }))}, 'Image order updated.'); }
+        function uploadFiles(selected){
+            var queue = Array.prototype.slice.call(selected || []); if (!queue.length) return;
+            var chain = Promise.resolve();
+            queue.forEach(function(file){ chain = chain.then(function(){ showNotice('Uploading ' + file.name + '...', false); return request('upload', {image:file}).then(apply); }); });
+            chain.then(function(){ showNotice('Images uploaded.', false); files.value=''; }).catch(function(error){ showNotice(error.message, true); files.value=''; });
+        }
+        document.querySelectorAll('.manager-images-button').forEach(function(button){ button.addEventListener('click', function(){ productId=Number(button.dataset.productId); sku.textContent=button.dataset.productName || ''; showNotice('', false); dialog.showModal(); request('list',{}).then(apply).catch(function(error){ showNotice(error.message,true); }); }); });
+        dialog.querySelector('.product-images-close').addEventListener('click', function(){ dialog.close(); });
+        dialog.addEventListener('click', function(event){ if (event.target === dialog) dialog.close(); });
+        files.addEventListener('change', function(){ uploadFiles(files.files); });
+        ['dragenter','dragover'].forEach(function(name){ upload.addEventListener(name,function(event){ event.preventDefault(); upload.classList.add('is-dragging'); }); });
+        ['dragleave','drop'].forEach(function(name){ upload.addEventListener(name,function(event){ event.preventDefault(); upload.classList.remove('is-dragging'); }); });
+        upload.addEventListener('drop', function(event){ uploadFiles(event.dataTransfer && event.dataTransfer.files); });
     })();
     </script>
     <h4>Add Product</h4>

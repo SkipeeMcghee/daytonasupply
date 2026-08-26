@@ -17,6 +17,14 @@ if (empty($_SESSION['admin'])) {
     exit;
 }
 
+http_response_code(410);
+echo json_encode([
+    'success' => false,
+    'error' => 'This removal route has been replaced by the product image manager.',
+    'replacement' => '/ajax/manage_product_images.php',
+]);
+exit;
+
 function ds_slug(string $name): string {
     $s = strtolower($name);
     $s = preg_replace('/[^a-z0-9]+/i', '-', $s) ?? '';

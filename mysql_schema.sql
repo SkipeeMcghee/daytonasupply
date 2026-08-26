@@ -45,6 +45,19 @@ CREATE TABLE IF NOT EXISTS products (
     deal_price DECIMAL(10,2) NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Ordered marketplace-ready image galleries, associated by stable SKU/name.
+CREATE TABLE IF NOT EXISTS product_images (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    product_sku VARCHAR(190) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+    filename VARCHAR(255) NOT NULL,
+    sort_order INT NOT NULL DEFAULT 0,
+    is_primary TINYINT(1) NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_product_images_filename (filename),
+    KEY idx_product_images_gallery (product_sku, sort_order, id),
+    KEY idx_product_images_primary (product_sku, is_primary)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS orders (
     id INT AUTO_INCREMENT PRIMARY KEY,
     customer_id INT NOT NULL,

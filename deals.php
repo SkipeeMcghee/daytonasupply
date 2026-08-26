@@ -16,22 +16,9 @@ $categoryImagesBySku = getCategoryImageMapBySku();
 $placeholder = 'assets/images/DaytonaSupplyDSlogo.png';
 
 function resolveImageForProduct(array $p, array $categoryImagesBySku, string $placeholder): string {
-  // 1) Prefer uploaded per-product image from manager portal (assets/uploads/products/{slug}.{ext})
   $name = (string)($p['name'] ?? '');
-  if ($name !== '') {
-    $slug = strtolower(preg_replace('/[^a-z0-9]+/i', '-', $name));
-    $slug = trim(preg_replace('/-+/', '-', $slug), '-');
-    if ($slug === '') { $slug = 'product'; }
-    $uploadDir = __DIR__ . '/assets/uploads/products/';
-    $webUploadBase = 'assets/uploads/products/';
-    $exts = ['jpg','jpeg','png','webp','gif'];
-    foreach ($exts as $ext) {
-      $candidate = $uploadDir . $slug . '.' . $ext;
-      if (is_file($candidate) && is_readable($candidate)) {
-        return $webUploadBase . $slug . '.' . $ext;
-      }
-    }
-  }
+  $uploaded = $name !== '' ? resolvePrimaryProductImage($name, true) : null;
+  if ($uploaded !== null) return $uploaded;
   // 2) Next, try a product-specific image by conventional name variations in assets/images
   $baseDir = __DIR__ . '/assets/images/';
   $webBase = 'assets/images/';
