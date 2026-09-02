@@ -456,10 +456,15 @@ function ensureCategorySchema(PDO $db): void
         $db->exec("CREATE TABLE IF NOT EXISTS category_product_assignments (
             category_id INT NOT NULL,
             product_sku VARCHAR(190) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+            sort_order INT NOT NULL DEFAULT 0,
             PRIMARY KEY (category_id, product_sku),
             KEY idx_category_assignments_sku (product_sku),
             CONSTRAINT fk_category_assignments_category FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        $assignmentColumns = $db->query('SHOW COLUMNS FROM category_product_assignments')->fetchAll(PDO::FETCH_COLUMN);
+        if (!in_array('sort_order', $assignmentColumns, true)) {
+            $db->exec('ALTER TABLE category_product_assignments ADD COLUMN sort_order INT NOT NULL DEFAULT 0');
+        }
         return;
     }
 
@@ -485,9 +490,15 @@ function ensureCategorySchema(PDO $db): void
     $db->exec('CREATE TABLE IF NOT EXISTS category_product_assignments (
         category_id INTEGER NOT NULL,
         product_sku TEXT NOT NULL,
+        sort_order INTEGER NOT NULL DEFAULT 0,
         PRIMARY KEY (category_id, product_sku),
         FOREIGN KEY(category_id) REFERENCES categories(id) ON DELETE CASCADE
     )');
+    $assignmentColumns = $db->query('PRAGMA table_info(category_product_assignments)')->fetchAll(PDO::FETCH_ASSOC);
+    $assignmentColumnNames = array_map(function (array $column): string { return (string)$column['name']; }, $assignmentColumns);
+    if (!in_array('sort_order', $assignmentColumnNames, true)) {
+        $db->exec('ALTER TABLE category_product_assignments ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0');
+    }
     $db->exec('CREATE INDEX IF NOT EXISTS idx_category_groups_order ON category_groups(active, sort_order, id)');
     $db->exec('CREATE INDEX IF NOT EXISTS idx_categories_tree ON categories(group_id, parent_id, active, sort_order, id)');
     $db->exec('CREATE INDEX IF NOT EXISTS idx_category_assignments_sku ON category_product_assignments(product_sku)');

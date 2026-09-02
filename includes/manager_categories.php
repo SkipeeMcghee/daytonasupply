@@ -38,7 +38,10 @@
             <div class="category-assignment-editor" id="categoryAssignments" hidden>
                 <div class="category-assignment-head">
                     <div><h4>SKU Assignment</h4><span id="categoryAssignmentCount"></span></div>
-                    <button type="button" class="proceed-btn" id="categoryAssignmentsSave">Save Assignments</button>
+                    <div class="category-assignment-actions">
+                        <button type="button" class="mgr-btn" id="categoryProductsReorder">Reorder</button>
+                        <button type="button" class="proceed-btn" id="categoryAssignmentsSave">Save Assignments</button>
+                    </div>
                 </div>
                 <div class="category-assignment-filters">
                     <input type="search" id="categorySkuSearch" placeholder="Search SKU or description">
@@ -52,6 +55,20 @@
             </div>
         </div>
     </div>
+    <dialog class="category-reorder-dialog" id="categoryReorderDialog">
+        <div class="category-reorder-head">
+            <div>
+                <h4>Reorder Products</h4>
+                <p id="categoryReorderSummary"></p>
+            </div>
+            <button type="button" class="category-reorder-close" id="categoryReorderClose" aria-label="Close reorder dialog" title="Close">&times;</button>
+        </div>
+        <div class="category-reorder-list" id="categoryReorderList"></div>
+        <div class="category-reorder-actions">
+            <button type="button" class="mgr-btn" id="categoryReorderCancel">Cancel</button>
+            <button type="button" class="proceed-btn" id="categoryReorderSave">Save Order</button>
+        </div>
+    </dialog>
 </section>
 
 <script type="application/json" id="categoryManagerData"><?php echo json_encode($categoryManagerData, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?></script>
@@ -214,6 +231,45 @@
         });
         document.getElementById('categoryAssignmentCount').textContent = assigned.size + ' assigned · ' + shown + ' shown';
     }
+    function orderedLiveProducts(){
+        var productsBySku = new Map((data.products || []).map(function(product){ return [product.name, product]; }));
+        return ((data.assignments || {})[selectedId] || []).map(function(sku){ return productsBySku.get(sku); }).filter(Boolean);
+    }
+    function renderReorderList(products){
+        var list = document.getElementById('categoryReorderList');
+        list.innerHTML = '';
+        if (!products.length) {
+            var empty = document.createElement('p');
+            empty.className = 'category-reorder-empty';
+            empty.textContent = 'No live products are assigned to this category.';
+            list.appendChild(empty);
+        }
+        products.forEach(function(product, index){
+            var row = document.createElement('div');
+            row.className = 'category-reorder-row';
+            row.dataset.sku = product.name;
+            var details = document.createElement('span');
+            var name = document.createElement('strong'); name.textContent = product.name;
+            var description = document.createElement('small'); description.textContent = product.description;
+            details.appendChild(name); details.appendChild(description);
+            var controls = document.createElement('span');
+            controls.className = 'category-reorder-controls';
+            var up = document.createElement('button');
+            up.type = 'button'; up.dataset.direction = 'up'; up.textContent = '\u2191'; up.title = 'Move up'; up.setAttribute('aria-label', 'Move ' + product.name + ' up'); up.disabled = index === 0;
+            var down = document.createElement('button');
+            down.type = 'button'; down.dataset.direction = 'down'; down.textContent = '\u2193'; down.title = 'Move down'; down.setAttribute('aria-label', 'Move ' + product.name + ' down'); down.disabled = index === products.length - 1;
+            controls.appendChild(up); controls.appendChild(down); row.appendChild(details); row.appendChild(controls); list.appendChild(row);
+        });
+        document.getElementById('categoryReorderSave').disabled = products.length < 2;
+    }
+    function openReorderDialog(){
+        var category = byId(selectedId);
+        if (!category) return;
+        var products = orderedLiveProducts();
+        document.getElementById('categoryReorderSummary').textContent = category.name + ' · ' + products.length + ' live item' + (products.length === 1 ? '' : 's');
+        renderReorderList(products);
+        document.getElementById('categoryReorderDialog').showModal();
+    }
     function selectCategory(id){
         selectedId = Number(id) || 0;
         var category = byId(selectedId);
@@ -298,6 +354,26 @@
     document.getElementById('categoryDelete').addEventListener('click', function(){ if (selectedId && confirm('Delete this category, its subcategories, and all category assignments? Products will not be deleted.')) post('delete_category', {id:selectedId}).then(function(){ localStorage.removeItem('managerCategoryId'); reload(0); }).catch(function(error){ notice(error.message, true); }); });
     document.getElementById('categorySkuSearch').addEventListener('input', renderSkuList);
     document.getElementById('categorySkuView').addEventListener('change', renderSkuList);
+    document.getElementById('categoryProductsReorder').addEventListener('click', openReorderDialog);
+    document.getElementById('categoryReorderList').addEventListener('click', function(event){
+        var button = event.target.closest('[data-direction]');
+        var row = button && button.closest('.category-reorder-row');
+        if (!row) return;
+        var sibling = button.dataset.direction === 'up' ? row.previousElementSibling : row.nextElementSibling;
+        if (!sibling || !sibling.classList.contains('category-reorder-row')) return;
+        if (button.dataset.direction === 'up') row.parentNode.insertBefore(row, sibling);
+        else row.parentNode.insertBefore(sibling, row);
+        var skus = Array.prototype.map.call(document.querySelectorAll('#categoryReorderList .category-reorder-row'), function(item){ return item.dataset.sku; });
+        var productsBySku = new Map((data.products || []).map(function(product){ return [product.name, product]; }));
+        renderReorderList(skus.map(function(sku){ return productsBySku.get(sku); }).filter(Boolean));
+    });
+    function closeReorderDialog(){ document.getElementById('categoryReorderDialog').close(); }
+    document.getElementById('categoryReorderClose').addEventListener('click', closeReorderDialog);
+    document.getElementById('categoryReorderCancel').addEventListener('click', closeReorderDialog);
+    document.getElementById('categoryReorderSave').addEventListener('click', function(){
+        var skus = Array.prototype.map.call(document.querySelectorAll('#categoryReorderList .category-reorder-row'), function(row){ return row.dataset.sku; });
+        post('reorder_products', {id:selectedId, skus:JSON.stringify(skus)}).then(function(){ reload(selectedId); }).catch(function(error){ notice(error.message, true); });
+    });
     document.getElementById('categoryAssignmentsSave').addEventListener('click', function(){
         var skus = Array.prototype.map.call(document.querySelectorAll('#categorySkuList input:checked'), function(input){ return input.value; });
         if (document.getElementById('categorySkuView').value !== 'all' || document.getElementById('categorySkuSearch').value) {

@@ -40,6 +40,33 @@ assertCategoryTest($baseline['groups'] === 4, 'Baseline must contain four groups
 assertCategoryTest($baseline['categories'] === 27, 'Baseline must contain 27 categories.');
 assertCategoryTest($baseline['stale'] === 0, 'Baseline must not create stale assignments.');
 
+$reorderCategoryId = null;
+$originalProductOrder = [];
+foreach (getCategoryTree(false) as $group) {
+    foreach ($group['categories'] as $category) {
+        foreach (array_merge([$category], $category['children']) as $candidate) {
+            $candidateOrder = getCategoryAssignments((int)$candidate['id'], false);
+            if (count($candidateOrder) >= 2) {
+                $reorderCategoryId = (int)$candidate['id'];
+                $originalProductOrder = $candidateOrder;
+                break 3;
+            }
+        }
+    }
+}
+assertCategoryTest($reorderCategoryId !== null, 'Expected a category with at least two products for ordering tests.');
+$changedProductOrder = $originalProductOrder;
+[$changedProductOrder[0], $changedProductOrder[1]] = [$changedProductOrder[1], $changedProductOrder[0]];
+try {
+    reorderCategoryProducts($reorderCategoryId, $changedProductOrder);
+    assertCategoryTest(
+        getCategoryAssignments($reorderCategoryId, false) === $changedProductOrder,
+        'Category products must be returned in their saved order.'
+    );
+} finally {
+    reorderCategoryProducts($reorderCategoryId, $originalProductOrder);
+}
+
 $fallbackCategory = null;
 $fallbackSku = null;
 foreach ($groups as $group) {

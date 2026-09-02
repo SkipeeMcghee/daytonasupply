@@ -355,10 +355,14 @@ if ($onSaleOn) {
 
 if ($activeCategory) {
     $filterCategory = $activeSubcategory ?: $activeCategory;
-    $assignedSkus = array_fill_keys(getCategoryAssignments((int)$filterCategory['id'], !$activeSubcategory), true);
-    $products = array_values(array_filter($products, function($product) use ($assignedSkus) {
-        return isset($assignedSkus[(string)($product['name'] ?? '')]);
+    $categorySkus = getCategoryAssignments((int)$filterCategory['id'], !$activeSubcategory);
+    $categoryOrder = array_flip($categorySkus);
+    $products = array_values(array_filter($products, function($product) use ($categoryOrder) {
+        return isset($categoryOrder[(string)($product['name'] ?? '')]);
     }));
+    usort($products, function (array $left, array $right) use ($categoryOrder): int {
+        return $categoryOrder[(string)($left['name'] ?? '')] <=> $categoryOrder[(string)($right['name'] ?? '')];
+    });
 }
 
 include __DIR__ . '/includes/header.php';

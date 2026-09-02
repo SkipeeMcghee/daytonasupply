@@ -426,7 +426,7 @@ if ($managerSection === 'orders') {
         try {
             $categoryTree = getCategoryTree(true);
             $categoryStatus = getCategoryAssignmentStatus();
-            $assignmentRows = $db->query('SELECT category_id, product_sku FROM category_product_assignments ORDER BY category_id, product_sku')->fetchAll(PDO::FETCH_ASSOC);
+            $assignmentRows = $db->query('SELECT category_id, product_sku FROM category_product_assignments ORDER BY category_id, sort_order, product_sku')->fetchAll(PDO::FETCH_ASSOC);
         } catch (Throwable $e) {
             try { $categoryErrorRef = bin2hex(random_bytes(4)); } catch (Throwable $_) { $categoryErrorRef = substr(md5(uniqid('', true)), 0, 8); }
             error_log('managerportal category load error [' . $categoryErrorRef . ']: ' . $e->getMessage());

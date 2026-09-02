@@ -51,6 +51,10 @@ try {
         $decoded = json_decode((string)($_POST['skus'] ?? '[]'), true);
         if (!is_array($decoded)) throw new InvalidArgumentException('Invalid SKU selection.');
         replaceCategoryAssignments((int)($_POST['id'] ?? 0), $decoded);
+    } elseif ($action === 'reorder_products') {
+        $decoded = json_decode((string)($_POST['skus'] ?? '[]'), true);
+        if (!is_array($decoded)) throw new InvalidArgumentException('Invalid product order.');
+        reorderCategoryProducts((int)($_POST['id'] ?? 0), $decoded);
     } elseif ($action === 'restore_baseline') {
         if ((string)($_POST['confirmation'] ?? '') !== 'RESET CATEGORIES') {
             throw new InvalidArgumentException('Type RESET CATEGORIES exactly to confirm the baseline restore.');

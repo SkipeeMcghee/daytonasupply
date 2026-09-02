@@ -374,11 +374,48 @@ function replaceCategoryAssignments(int $categoryId, array $skus): void
         if ($sku !== '') $normalized[$sku] = true;
     }
     $db = getDb();
+    $existingStmt = $db->prepare('SELECT product_sku, sort_order FROM category_product_assignments WHERE category_id = :id');
+    $existingStmt->execute([':id' => $categoryId]);
+    $existingOrder = [];
+    foreach ($existingStmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $existingOrder[(string)$row['product_sku']] = (int)$row['sort_order'];
+    }
+    $nextOrder = $existingOrder ? max($existingOrder) + 1 : 0;
     $db->beginTransaction();
     try {
         $db->prepare('DELETE FROM category_product_assignments WHERE category_id = :id')->execute([':id' => $categoryId]);
-        $insert = $db->prepare('INSERT INTO category_product_assignments (category_id, product_sku) VALUES (:id, :sku)');
-        foreach (array_keys($normalized) as $sku) $insert->execute([':id' => $categoryId, ':sku' => $sku]);
+        $insert = $db->prepare('INSERT INTO category_product_assignments (category_id, product_sku, sort_order) VALUES (:id, :sku, :sort)');
+        foreach (array_keys($normalized) as $sku) {
+            $sortOrder = array_key_exists($sku, $existingOrder) ? $existingOrder[$sku] : $nextOrder++;
+            $insert->execute([':id' => $categoryId, ':sku' => $sku, ':sort' => $sortOrder]);
+        }
+        $db->commit();
+    } catch (Throwable $e) {
+        if ($db->inTransaction()) $db->rollBack();
+        throw $e;
+    }
+}
+
+function reorderCategoryProducts(int $categoryId, array $skus): void
+{
+    if (!getCategoryById($categoryId)) throw new InvalidArgumentException('Category does not exist.');
+    $normalized = [];
+    foreach ($skus as $sku) {
+        $sku = trim((string)$sku);
+        if ($sku === '' || isset($normalized[$sku])) throw new InvalidArgumentException('Invalid product order.');
+        $normalized[$sku] = count($normalized);
+    }
+    $assigned = array_fill_keys(getCategoryAssignments($categoryId, false), true);
+    foreach ($normalized as $sku => $sortOrder) {
+        if (!isset($assigned[$sku])) throw new InvalidArgumentException('Product is not assigned to this category.');
+    }
+    $db = getDb();
+    $db->beginTransaction();
+    try {
+        $update = $db->prepare('UPDATE category_product_assignments SET sort_order = :sort WHERE category_id = :id AND product_sku = :sku');
+        foreach ($normalized as $sku => $sortOrder) {
+            $update->execute([':sort' => $sortOrder, ':id' => $categoryId, ':sku' => $sku]);
+        }
         $db->commit();
     } catch (Throwable $e) {
         if ($db->inTransaction()) $db->rollBack();
@@ -390,10 +427,10 @@ function getCategoryAssignments(int $categoryId, bool $includeChildren = false):
 {
     $db = getDb();
     if ($includeChildren) {
-        $stmt = $db->prepare('SELECT DISTINCT a.product_sku FROM category_product_assignments a JOIN categories c ON c.id = a.category_id WHERE c.id = :category_id OR c.parent_id = :parent_id ORDER BY a.product_sku');
+        $stmt = $db->prepare('SELECT a.product_sku, MIN(a.sort_order) AS assignment_order FROM category_product_assignments a JOIN categories c ON c.id = a.category_id WHERE c.id = :category_id OR c.parent_id = :parent_id GROUP BY a.product_sku ORDER BY assignment_order, a.product_sku');
         $stmt->execute([':category_id' => $categoryId, ':parent_id' => $categoryId]);
     } else {
-        $stmt = $db->prepare('SELECT product_sku FROM category_product_assignments WHERE category_id = :id ORDER BY product_sku');
+        $stmt = $db->prepare('SELECT product_sku FROM category_product_assignments WHERE category_id = :id ORDER BY sort_order, product_sku');
         $stmt->execute([':id' => $categoryId]);
     }
     return array_map('strval', $stmt->fetchAll(PDO::FETCH_COLUMN));
