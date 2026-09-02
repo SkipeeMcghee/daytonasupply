@@ -2495,6 +2495,9 @@ html.theme-dark .inventory-manager-notice.is-error, body.theme-dark .inventory-m
 .category-editor-actions { display:flex; gap:8px; align-items:center; margin-top:14px; }
 .category-assignment-editor { margin-top:18px; padding-top:18px; border-top:1px solid rgba(11,34,56,.1); }
 .category-assignment-actions { display:flex; align-items:center; gap:8px; }
+#categoryProductsReorder { min-height:42px; margin-right:0; padding:8px 12px; border:2px solid #071a2d; background:#0b2239; color:#fff; font-size:.9rem; cursor:pointer; }
+#categoryProductsReorder:hover { border-color:#000; background:#000; color:#fff; }
+#categoryProductsReorder:focus-visible { outline:3px solid #f2b705; outline-offset:2px; box-shadow:none; }
 .category-assignment-filters { display:grid; grid-template-columns:1fr 190px; gap:8px; margin:12px 0; }
 .category-sku-list { max-height:480px; overflow:auto; border:1px solid rgba(11,34,56,.12); border-radius:6px; }
 .category-sku-row { display:grid; grid-template-columns:auto 1fr; gap:10px; align-items:start; padding:9px 10px; border-bottom:1px solid rgba(11,34,56,.07); cursor:pointer; }
@@ -2518,6 +2521,9 @@ html.theme-dark .inventory-manager-notice.is-error, body.theme-dark .inventory-m
 .category-reorder-controls button:disabled { opacity:.35; cursor:not-allowed; }
 .category-reorder-empty { margin:0; padding:28px; color:#5b6b7a; text-align:center; }
 .category-reorder-actions { display:flex; justify-content:flex-end; gap:8px; }
+#categoryReorderCancel { margin-right:0; padding:8px 12px; border:2px solid #8f1423; background:#b42332; color:#fff; cursor:pointer; }
+#categoryReorderCancel:hover { border-color:#670b16; background:#82121f; color:#fff; }
+#categoryReorderCancel:focus-visible { outline:3px solid #0b5ed7; outline-offset:2px; box-shadow:none; }
 html.theme-dark .category-manager-tree, body.theme-dark .category-manager-tree,
 html.theme-dark .category-manager-detail, body.theme-dark .category-manager-detail { border-color:rgba(255,255,255,.12); }
 html.theme-dark .category-tree-actions button, body.theme-dark .category-tree-actions button { background:#242424; color:#fff; border-color:rgba(255,255,255,.14); }
@@ -2542,6 +2548,12 @@ html.theme-dark .category-reorder-empty, body.theme-dark .category-reorder-empty
 html.theme-dark .category-reorder-list, body.theme-dark .category-reorder-list,
 html.theme-dark .category-reorder-close, body.theme-dark .category-reorder-close { border-color:rgba(255,255,255,.18); }
 html.theme-dark .category-reorder-controls button, body.theme-dark .category-reorder-controls button { border-color:#536274; background:#242b34; color:#f3f6fa; }
+html.theme-dark #categoryProductsReorder, body.theme-dark #categoryProductsReorder { border-color:#ffe082; background:#ffc107; color:#111; }
+html.theme-dark #categoryProductsReorder:hover, body.theme-dark #categoryProductsReorder:hover { border-color:#fff1b8; background:#ffda44; color:#000; }
+html.theme-dark #categoryProductsReorder:focus-visible, body.theme-dark #categoryProductsReorder:focus-visible { outline-color:#8ec5ff; }
+html.theme-dark #categoryReorderCancel, body.theme-dark #categoryReorderCancel { border-color:#ffadb5; background:#d93649; color:#fff; }
+html.theme-dark #categoryReorderCancel:hover, body.theme-dark #categoryReorderCancel:hover { border-color:#ffd1d6; background:#b42332; color:#fff; }
+html.theme-dark #categoryReorderCancel:focus-visible, body.theme-dark #categoryReorderCancel:focus-visible { outline-color:#8ec5ff; }
 @media (max-width:860px) {
   .inventory-manager-actions { grid-template-columns:1fr; }
   .inventory-restore-form { padding:16px 0 0; border-left:0; border-top:1px solid rgba(11,34,56,.12); }
