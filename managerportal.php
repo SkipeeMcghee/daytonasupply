@@ -206,17 +206,40 @@ if (isset($_GET['toggle_deal'])) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_visibility'])) {
+    $isAjax = strtolower((string)($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '')) === 'xmlhttprequest';
+    $respond = function (bool $success, array $data = [], int $status = 200) use ($isAjax): void {
+        if (!$isAjax) return;
+        http_response_code($status);
+        header('Content-Type: application/json');
+        echo json_encode(['success' => $success] + $data);
+        exit;
+    };
     $csrfToken = (string)($_POST['csrf_token'] ?? '');
     if (!hash_equals((string)$_SESSION['manager_csrf'], $csrfToken)) {
+        $respond(false, ['error' => 'Your session expired. Refresh the page and try again.'], 403);
         http_response_code(403);
         exit('Invalid request token.');
     }
     $productId = (int)$_POST['toggle_visibility'];
-    if ($productId > 0) {
+    if ($productId <= 0) {
+        $respond(false, ['error' => 'Invalid product.'], 422);
+    }
+    try {
         $db = getDb();
+        ensureProductVisibilitySchema($db);
         $stmt = $db->prepare('UPDATE products SET is_hidden = CASE WHEN is_hidden = 1 THEN 0 ELSE 1 END WHERE id = :id');
         $stmt->execute([':id' => $productId]);
+        $state = $db->prepare('SELECT is_hidden FROM products WHERE id = :id');
+        $state->execute([':id' => $productId]);
+        $isHidden = $state->fetchColumn();
+        if ($isHidden === false) {
+            $respond(false, ['error' => 'Product not found.'], 404);
+        }
         invalidateProductsCache();
+        $respond(true, ['is_hidden' => (bool)$isHidden]);
+    } catch (Throwable $error) {
+        error_log('toggle_visibility error: ' . $error->getMessage());
+        $respond(false, ['error' => 'Visibility could not be updated. Verify the products database schema and permissions.'], 500);
     }
     header('Location: ' . managerPortalUrl('products'));
     exit;
@@ -915,7 +938,7 @@ require_once __DIR__ . '/includes/header.php';
                     </td>
                     <td>
                         <?php $isHidden = !empty($prod['is_hidden']); ?>
-                        <button type="submit" class="mgr-btn mgr-visibility <?= $isHidden ? 'is-hidden' : 'is-visible' ?>" name="toggle_visibility" value="<?= (int)$prod['id'] ?>" title="<?= $isHidden ? 'Show this product on the storefront' : 'Hide this product from the storefront' ?>"><?= $isHidden ? 'Show' : 'Hide' ?></button>
+                        <button type="button" class="mgr-btn mgr-visibility <?= $isHidden ? 'is-hidden' : 'is-visible' ?>" data-product-id="<?= (int)$prod['id'] ?>" title="<?= $isHidden ? 'Show this product on the storefront' : 'Hide this product from the storefront' ?>"><?= $isHidden ? 'Show' : 'Hide' ?></button>
                         <a class="mgr-btn" href="?section=products&amp;toggle_deal=<?php echo (int)$prod['id']; ?>" style="background: <?php echo $isDeal ? '#dc3545' : '#198754'; ?>; color:#fff;" onclick="return confirm('<?php echo $isDeal ? 'Unset this deal?' : 'Mark this item as a Deal?'; ?>');"><?php echo $isDeal ? 'Unset' : 'Set'; ?> Deal</a>
                         <button type="button" class="mgr-btn manager-images-button" data-product-id="<?= (int)$prod['id'] ?>" data-product-name="<?= htmlspecialchars($name) ?>">Images</button>
                         <a class="mgr-btn mgr-product-delete" href="?section=products&amp;delete_product=<?php echo (int)$prod['id']; ?>" onclick="return confirm('Delete this product?');">Delete</a>
@@ -1056,6 +1079,42 @@ require_once __DIR__ . '/includes/header.php';
                 // If serialization fails, allow normal submission of individual inputs
                 console.error('products_json serialization failed', e);
             }
+        });
+    })();
+    (function(){
+        var form = document.getElementById('productsForm');
+        if (!form) return;
+        var csrf = form.querySelector('input[name="csrf_token"]');
+        form.querySelectorAll('.mgr-visibility').forEach(function(button){
+            button.addEventListener('click', function(){
+                if (button.disabled) return;
+                var body = new FormData();
+                body.append('section', 'products');
+                body.append('csrf_token', csrf ? csrf.value : '');
+                body.append('toggle_visibility', button.dataset.productId || '');
+                button.disabled = true;
+                fetch('managerportal.php', {
+                    method: 'POST',
+                    body: body,
+                    credentials: 'same-origin',
+                    headers: {'X-Requested-With': 'XMLHttpRequest'}
+                }).then(function(response){
+                    return response.json().catch(function(){ return {}; }).then(function(json){
+                        if (!response.ok || !json.success) throw new Error(json.error || 'Visibility could not be updated.');
+                        return json;
+                    });
+                }).then(function(json){
+                    var isHidden = !!json.is_hidden;
+                    button.textContent = isHidden ? 'Show' : 'Hide';
+                    button.classList.toggle('is-hidden', isHidden);
+                    button.classList.toggle('is-visible', !isHidden);
+                    button.title = isHidden ? 'Show this product on the storefront' : 'Hide this product from the storefront';
+                }).catch(function(error){
+                    alert(error.message);
+                }).finally(function(){
+                    button.disabled = false;
+                });
+            });
         });
     })();
     // Product image gallery manager

@@ -75,12 +75,16 @@ function getDb(): PDO
                 ensureMySQLOrderSnapshotSchema($db);
                 ensureMySQLFavoritesSchema($db);
                 ensureMySQLDealsSchema($db);
-                ensureProductVisibilitySchema($db);
                 ensureCategorySchema($db);
             } catch (Exception $schemaEx) {
                 // Log but allow connection to proceed; createOrder will fail if
                 // schema is not suitable. We log to help diagnostics.
                 error_log('ensureMySQLOrderSnapshotSchema error: ' . $schemaEx->getMessage());
+            }
+            try {
+                ensureProductVisibilitySchema($db);
+            } catch (Exception $schemaEx) {
+                error_log('ensureProductVisibilitySchema error: ' . $schemaEx->getMessage());
             }
             try {
                 ensureProductImageSchema($db);

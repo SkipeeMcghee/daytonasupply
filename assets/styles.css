@@ -1283,37 +1283,23 @@ body.theme-dark .admin-table input::placeholder {
 .mgr-btn:focus { outline:2px solid rgba(0,0,0,0.12); box-shadow:0 2px 6px rgba(0,0,0,0.08); }
 
 .mgr-visibility {
-  border: 2px solid currentColor;
+  border: 0;
   cursor: pointer;
-  min-width: 5.25em;
 }
 .mgr-visibility.is-visible {
-  background: #a61b1b;
+  background: #6f2da8;
   color: #fff;
-  border-color: #6f1010;
 }
 .mgr-visibility.is-hidden {
-  background: #08783e;
+  background: #9a3f00;
   color: #fff;
-  border-color: #04552b;
 }
 .mgr-visibility:hover { filter: brightness(0.88); }
+.mgr-visibility:disabled { cursor: wait; opacity: 0.7; }
 .mgr-visibility:focus-visible {
   outline: 3px solid #005fcc;
   outline-offset: 2px;
   box-shadow: 0 0 0 2px #fff;
-}
-html.theme-dark .mgr-visibility.is-visible,
-body.theme-dark .mgr-visibility.is-visible {
-  background: #ffb4ab;
-  color: #350707;
-  border-color: #ffdad6;
-}
-html.theme-dark .mgr-visibility.is-hidden,
-body.theme-dark .mgr-visibility.is-hidden {
-  background: #75e0a7;
-  color: #062d1a;
-  border-color: #b7f5d0;
 }
 html.theme-dark .mgr-visibility:hover,
 body.theme-dark .mgr-visibility:hover { filter: brightness(1.08); }
