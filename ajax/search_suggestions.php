@@ -16,7 +16,8 @@ try {
         exit;
     }
     // APCu cache for snappy results on repeated prefixes
-    $cacheKey = 'sugg_' . md5($q);
+    $cacheGeneration = function_exists('apcu_fetch') ? (int)@apcu_fetch('daytona_products_generation') : 0;
+    $cacheKey = 'sugg_' . $cacheGeneration . '_' . md5($q);
     $useApc = function_exists('apcu_fetch');
     $sugs = null;
     if ($useApc) {

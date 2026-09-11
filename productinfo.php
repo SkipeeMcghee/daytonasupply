@@ -9,6 +9,9 @@ $title = 'Product Details';
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $prod = $id > 0 ? getProductById($id) : null;
+if ($prod && !empty($prod['is_hidden'])) {
+    $prod = null;
+}
 if (!$prod) {
     http_response_code(404);
 }

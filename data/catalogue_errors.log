@@ -7889,3 +7889,21 @@
 #3 C:\xampp\htdocs\daytonasupply\includes\header.php(234): getCategoryTree(false)
 #4 C:\xampp\htdocs\daytonasupply\managerportal.php(44): require_once('C:\\xampp\\htdocs...')
 #5 {main}
+[2026-09-11T11:35:27-04:00] getDb mysql connection failed (f53e3248fc25): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\Users\STAFF\AppData\Local\Temp\daytona_behavior_2fefbbd55f834d72a928e476e6b38c8c.php(10): getDb()
+#2 {main}
+[2026-09-11T17:35:50+02:00] getDb mysql connection failed (f63c9d356bee): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\Users\STAFF\AppData\Local\Temp\daytona_schema_2d37fd03def64c2d828bace4981ed557.php(6): getDb()
+#2 {main}
+[2026-09-11T11:36:01-04:00] getDb mysql connection failed (598db1aecb64): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\Users\STAFF\AppData\Local\Temp\daytona_behavior_f335f888c716433084d02505d0dea19e.php(2): getDb()
+#2 {main}
+[2026-09-11T17:36:33+02:00] getDb mysql connection failed (1c232f68c865): SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it
+#0 C:\xampp\htdocs\daytonasupply\includes\db.php(64): PDO->__construct('mysql:host=loca...', 'brian', Object(SensitiveParameterValue))
+#1 C:\xampp\htdocs\daytonasupply\includes\categories.php(75): getDb()
+#2 C:\xampp\htdocs\daytonasupply\includes\categories.php(84): getCategoryGroups(false)
+#3 C:\xampp\htdocs\daytonasupply\tests\categories_smoke.php(11): getCategoryTree(false)
+#4 {main}

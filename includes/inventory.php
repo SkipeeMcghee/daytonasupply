@@ -119,7 +119,7 @@ function writeInventoryJson(string $path, array $items): void
 
 function snapshotCurrentInventory(PDO $db): array
 {
-    $statement = $db->query('SELECT name, description, price, deal, deal_price FROM products ORDER BY name');
+    $statement = $db->query('SELECT name, description, price, deal, deal_price, is_hidden FROM products ORDER BY name');
     return array_map(function (array $row): array {
         return [
             'name' => (string)$row['name'],
@@ -127,6 +127,7 @@ function snapshotCurrentInventory(PDO $db): array
             'price' => (float)$row['price'],
             'deal' => (int)($row['deal'] ?? 0),
             'deal_price' => $row['deal_price'] === null ? null : (float)$row['deal_price'],
+            'is_hidden' => (int)($row['is_hidden'] ?? 0),
         ];
     }, $statement->fetchAll(PDO::FETCH_ASSOC));
 }

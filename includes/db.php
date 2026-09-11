@@ -75,6 +75,7 @@ function getDb(): PDO
                 ensureMySQLOrderSnapshotSchema($db);
                 ensureMySQLFavoritesSchema($db);
                 ensureMySQLDealsSchema($db);
+                ensureProductVisibilitySchema($db);
                 ensureCategorySchema($db);
             } catch (Exception $schemaEx) {
                 // Log but allow connection to proceed; createOrder will fail if
@@ -131,6 +132,7 @@ function getDb(): PDO
     }
     // Best-effort ensure for SQLite-specific schema like new columns and favorites PK
     try { ensureSQLiteDealsSchema($db); } catch (Exception $_) {}
+    try { ensureProductVisibilitySchema($db); } catch (Exception $_) {}
     try { ensureSQLiteFavoritesSchema($db); } catch (Exception $_) {}
     try { ensureCategorySchema($db); } catch (Exception $e) { error_log('ensureCategorySchema error: ' . $e->getMessage()); }
     try { ensureProductImageSchema($db); } catch (Exception $e) { error_log('ensureProductImageSchema error: ' . $e->getMessage()); }
@@ -425,6 +427,37 @@ function ensureMySQLDealsSchema(PDO $db): void
     }
 }
 
+/** Ensure products can be hidden from customer-facing product lists. */
+function ensureProductVisibilitySchema(PDO $db): void
+{
+    $driver = strtolower((string)$db->getAttribute(PDO::ATTR_DRIVER_NAME));
+    $hasColumn = false;
+    if ($driver === 'mysql') {
+        $stmt = $db->query('SHOW COLUMNS FROM products');
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            if (strcasecmp((string)($row['Field'] ?? ''), 'is_hidden') === 0) {
+                $hasColumn = true;
+                break;
+            }
+        }
+        if (!$hasColumn) {
+            $db->exec('ALTER TABLE products ADD COLUMN is_hidden TINYINT(1) NOT NULL DEFAULT 0');
+        }
+        return;
+    }
+
+    $stmt = $db->query('PRAGMA table_info(products)');
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        if (strcasecmp((string)($row['name'] ?? ''), 'is_hidden') === 0) {
+            $hasColumn = true;
+            break;
+        }
+    }
+    if (!$hasColumn) {
+        $db->exec('ALTER TABLE products ADD COLUMN is_hidden INTEGER NOT NULL DEFAULT 0');
+    }
+}
+
 /** Ensure the editable category taxonomy exists for both supported databases. */
 function ensureCategorySchema(PDO $db): void
 {
@@ -568,7 +601,8 @@ function initDatabase(PDO $db): void
         description TEXT,
         price REAL NOT NULL,
         deal INTEGER DEFAULT 0,
-        deal_price REAL NULL
+        deal_price REAL NULL,
+        is_hidden INTEGER NOT NULL DEFAULT 0
     )');
     $db->exec('CREATE TABLE IF NOT EXISTS orders (
         id INTEGER PRIMARY KEY AUTOINCREMENT,

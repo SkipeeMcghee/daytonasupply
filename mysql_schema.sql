@@ -42,7 +42,8 @@ CREATE TABLE IF NOT EXISTS products (
     description TEXT,
     price DECIMAL(10,2) NOT NULL,
     deal TINYINT(1) DEFAULT 0,
-    deal_price DECIMAL(10,2) NULL
+    deal_price DECIMAL(10,2) NULL,
+    is_hidden TINYINT(1) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Ordered marketplace-ready image galleries, associated by stable SKU/name.

@@ -205,6 +205,23 @@ if (isset($_GET['toggle_deal'])) {
     exit;
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_visibility'])) {
+    $csrfToken = (string)($_POST['csrf_token'] ?? '');
+    if (!hash_equals((string)$_SESSION['manager_csrf'], $csrfToken)) {
+        http_response_code(403);
+        exit('Invalid request token.');
+    }
+    $productId = (int)$_POST['toggle_visibility'];
+    if ($productId > 0) {
+        $db = getDb();
+        $stmt = $db->prepare('UPDATE products SET is_hidden = CASE WHEN is_hidden = 1 THEN 0 ELSE 1 END WHERE id = :id');
+        $stmt->execute([':id' => $productId]);
+        invalidateProductsCache();
+    }
+    header('Location: ' . managerPortalUrl('products'));
+    exit;
+}
+
 // Handle POST actions for saving products, adding products, and saving customers
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Save products
@@ -866,6 +883,7 @@ require_once __DIR__ . '/includes/header.php';
         </form>
     <form method="post" action="" id="productsForm">
         <input type="hidden" name="section" value="products">
+        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars((string)$_SESSION['manager_csrf']) ?>">
         <input type="hidden" name="save_products" value="1">
         <input type="hidden" name="products_json" id="products_json" value="">
         <table class="admin-table">
@@ -896,6 +914,8 @@ require_once __DIR__ . '/includes/header.php';
                         </div>
                     </td>
                     <td>
+                        <?php $isHidden = !empty($prod['is_hidden']); ?>
+                        <button type="submit" class="mgr-btn mgr-visibility <?= $isHidden ? 'is-hidden' : 'is-visible' ?>" name="toggle_visibility" value="<?= (int)$prod['id'] ?>" title="<?= $isHidden ? 'Show this product on the storefront' : 'Hide this product from the storefront' ?>"><?= $isHidden ? 'Show' : 'Hide' ?></button>
                         <a class="mgr-btn" href="?section=products&amp;toggle_deal=<?php echo (int)$prod['id']; ?>" style="background: <?php echo $isDeal ? '#dc3545' : '#198754'; ?>; color:#fff;" onclick="return confirm('<?php echo $isDeal ? 'Unset this deal?' : 'Mark this item as a Deal?'; ?>');"><?php echo $isDeal ? 'Unset' : 'Set'; ?> Deal</a>
                         <button type="button" class="mgr-btn manager-images-button" data-product-id="<?= (int)$prod['id'] ?>" data-product-name="<?= htmlspecialchars($name) ?>">Images</button>
                         <a class="mgr-btn mgr-product-delete" href="?section=products&amp;delete_product=<?php echo (int)$prod['id']; ?>" onclick="return confirm('Delete this product?');">Delete</a>

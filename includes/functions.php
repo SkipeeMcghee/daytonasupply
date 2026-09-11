@@ -185,7 +185,7 @@ function getAllProducts(): array
     }
     $db = getDb();
     // Always return products ordered by name (our SKU) for consistent UI ordering
-    $stmt = $db->query('SELECT * FROM products ORDER BY name ASC');
+    $stmt = $db->query('SELECT * FROM products WHERE is_hidden = 0 ORDER BY name ASC');
     $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
     // Cache the result for subsequent requests
     if ($useApc) {
@@ -220,6 +220,13 @@ function invalidateProductsCache(): void
     $cacheKey = 'daytona_all_products_v1';
     if (function_exists('apcu_delete')) {
         @apcu_delete($cacheKey);
+        $generationUpdated = false;
+        if (function_exists('apcu_inc')) {
+            @apcu_inc('daytona_products_generation', 1, $generationUpdated);
+        }
+        if (!$generationUpdated && function_exists('apcu_store')) {
+            @apcu_store('daytona_products_generation', 1);
+        }
     }
     $cacheFile = __DIR__ . '/../data/cache_products.json';
     if (is_file($cacheFile)) {
@@ -1319,6 +1326,7 @@ function buildSuggestionsFromList(string $term, array $list, int $limit = 8): ar
     $upper = strtoupper($term);
     $out = [];
     foreach ($list as $p) {
+        if (!empty($p['is_hidden'])) continue;
         $name = (string)($p['name'] ?? '');
         $desc = (string)($p['description'] ?? '');
         $price = getProductPrice($p);
@@ -1387,10 +1395,11 @@ function getProductSuggestionsLimited(string $term, int $limit = 8, ?PDO $db = n
            "(CASE WHEN name LIKE :like ESCAPE '$escapeChar' OR description LIKE :like ESCAPE '$escapeChar' THEN 20 ELSE 0 END) + ".
            "(CASE WHEN $nName LIKE :nlike OR $nDesc LIKE :nlike THEN 10 ELSE 0 END) AS score ".
            "FROM products ".
-           "WHERE name LIKE :like ESCAPE '$escapeChar' ".
+           "WHERE is_hidden = 0 AND (".
+           "      name LIKE :like ESCAPE '$escapeChar' ".
            "   OR description LIKE :like ESCAPE '$escapeChar' ".
            "   OR $nName LIKE :nlike ".
-           "   OR $nDesc LIKE :nlike ".
+           "   OR $nDesc LIKE :nlike) ".
            "ORDER BY score DESC, name ASC ".
            "LIMIT $limit";
     $stmt = $db->prepare($sql);

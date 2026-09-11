@@ -56,10 +56,12 @@ try {
     // 2) Preserve the deals flag (products.deal) across rebuilds.
     $oldProducts = [];
     $oldDealsByName = [];
-    $stmtOld = $db->query('SELECT id, name, deal, deal_price FROM products');
+    $oldVisibilityByName = [];
+    $stmtOld = $db->query('SELECT id, name, deal, deal_price, is_hidden FROM products');
     while ($row = $stmtOld->fetch(PDO::FETCH_ASSOC)) {
         $oldProducts[$row['name']] = (int)$row['id'];
         $oldDealsByName[$row['name']] = (int)($row['deal'] ?? 0);
+        $oldVisibilityByName[$row['name']] = (int)($row['is_hidden'] ?? 0);
         // Preserve any existing deal_price by product name
         if (!array_key_exists('oldDealPricesByName', $GLOBALS)) { $GLOBALS['oldDealPricesByName'] = []; }
         $GLOBALS['oldDealPricesByName'][$row['name']] = isset($row['deal_price']) ? (float)$row['deal_price'] : null;
@@ -117,7 +119,7 @@ try {
     // After upserts, rebuild the products table in alphabetical order and
     // remap product IDs so they are sequential based on name order.
     // Build mapping of old_id -> name for all current products
-    $stmtAll = $db->query('SELECT id, name, description, price, deal, deal_price FROM products');
+    $stmtAll = $db->query('SELECT id, name, description, price, deal, deal_price, is_hidden FROM products');
     $all = $stmtAll->fetchAll(PDO::FETCH_ASSOC);
     $oldById = [];
     foreach ($all as $r) {
@@ -126,23 +128,24 @@ try {
     // Create a new products table and insert rows ordered by name so ids are sequential
     $driver = $db->getAttribute(PDO::ATTR_DRIVER_NAME);
     if ($driver === 'sqlite') {
-        $db->exec('CREATE TABLE IF NOT EXISTS products_new (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, description TEXT, price REAL NOT NULL, deal INTEGER DEFAULT 0, deal_price REAL NULL)');
+        $db->exec('CREATE TABLE IF NOT EXISTS products_new (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, description TEXT, price REAL NOT NULL, deal INTEGER DEFAULT 0, deal_price REAL NULL, is_hidden INTEGER NOT NULL DEFAULT 0)');
         // Clear any existing rows in products_new to ensure deterministic IDs
         $db->exec('DELETE FROM products_new');
     } else {
         // MySQL / MariaDB: ensure a compatible table definition
-        $db->exec('CREATE TABLE IF NOT EXISTS products_new (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255) NOT NULL, description TEXT, price DOUBLE NOT NULL, deal TINYINT(1) DEFAULT 0, deal_price DECIMAL(12,2) NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
+        $db->exec('CREATE TABLE IF NOT EXISTS products_new (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255) NOT NULL, description TEXT, price DOUBLE NOT NULL, deal TINYINT(1) DEFAULT 0, deal_price DECIMAL(12,2) NULL, is_hidden TINYINT(1) NOT NULL DEFAULT 0) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
         // Truncate to remove any existing rows
         $db->exec('TRUNCATE TABLE products_new');
     }
     // Insert rows from the inventory JSON in alphabetical order by name
     usort($items, function($a, $b) { return strcasecmp($a['name'] ?? '', $b['name'] ?? ''); });
-    $insNew = $db->prepare('INSERT INTO products_new(name, description, price, deal, deal_price) VALUES(:name, :description, :price, :deal, :deal_price)');
+    $insNew = $db->prepare('INSERT INTO products_new(name, description, price, deal, deal_price, is_hidden) VALUES(:name, :description, :price, :deal, :deal_price, :is_hidden)');
     foreach ($items as $it) {
         $n = $it['name'] ?? '';
         $d = $restoreInventory ? (int)($it['deal'] ?? 0) : ($oldDealsByName[$n] ?? 0);
         $dp = $restoreInventory ? ($it['deal_price'] ?? null) : ($GLOBALS['oldDealPricesByName'][$n] ?? null);
-        $insNew->execute([':name' => $n, ':description' => $it['description'] ?? '', ':price' => isset($it['price']) ? (float)$it['price'] : 0.0, ':deal' => (int)$d, ':deal_price' => $dp]);
+        $isHidden = $restoreInventory ? (int)($it['is_hidden'] ?? 0) : ($oldVisibilityByName[$n] ?? 0);
+        $insNew->execute([':name' => $n, ':description' => $it['description'] ?? '', ':price' => isset($it['price']) ? (float)$it['price'] : 0.0, ':deal' => (int)$d, ':deal_price' => $dp, ':is_hidden' => $isHidden]);
     }
     // Build mapping: name -> new_id
     $mapStmt = $db->query('SELECT id, name FROM products_new');
