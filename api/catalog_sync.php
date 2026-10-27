@@ -241,7 +241,18 @@ try {
         }
         $existing[$key] = $row;
     }
-    $insert = $db->prepare("INSERT INTO $table ($name, $price, $description) VALUES (?, ?, ?)");
+    $mysql = $db->getAttribute(PDO::ATTR_DRIVER_NAME) === 'mysql';
+    $columns = $db->query($mysql ? "SHOW COLUMNS FROM $table LIKE 'is_hidden'" : "PRAGMA table_info($table)");
+    $insertVisible = false;
+    foreach ($columns as $column) {
+        if (($mysql ? $column['Field'] : $column['name']) === 'is_hidden') {
+            $default = $mysql ? $column['Default'] : $column['dflt_value'];
+            $insertVisible = trim((string) $default, "()'\" \t\r\n") === '1';
+        }
+    }
+    $insert = $db->prepare($insertVisible
+        ? "INSERT INTO $table ($name, $price, $description, `is_hidden`) VALUES (?, ?, ?, 0)"
+        : "INSERT INTO $table ($name, $price, $description) VALUES (?, ?, ?)");
     $update = $db->prepare("UPDATE $table SET $price = ?, $description = ? WHERE $id = ?");
     $added = array();
     $updated = array();
@@ -299,6 +310,18 @@ try {
             }
             $db->commit();
             $catalogSyncCommitted = true;
+            try {
+                require_once __DIR__ . '/../includes/functions.php';
+                invalidateProductsCache(true);
+            } catch (Throwable $cacheError) {
+                catalogSyncLogFailure(get_class($cacheError), $cacheError->getFile(),
+                    $cacheError->getLine(), 'cache_invalidation');
+                $summary['db_committed'] = true;
+                $summary['warnings'] = array(array(
+                    'code' => 'sync_cache_invalidation_failed',
+                    'message' => 'Database changes committed, but product cache invalidation failed. Catalogue or suggestions may be stale. Check server logs; do not treat this as a rollback.',
+                ));
+            }
             if (!rename($stateTemp, $stateFile)) {
                 throw new RuntimeException('Cannot publish sync state.');
             }

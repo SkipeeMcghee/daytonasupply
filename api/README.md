@@ -9,7 +9,9 @@ Sync never falls back to SQLite when MySQL fails.
 ## Deployment
 
 This repository's root is the webroot: deploy `api/catalog_sync.php` as
-`httpdocs/api/catalog_sync.php`. Deploy the updated `includes/db.php` too.
+`httpdocs/api/catalog_sync.php`. Deploy the updated `includes/db.php` and
+`includes/functions.php` too; keep the existing `includes/product_images.php`
+dependency available.
 The canonical production endpoint is
 `https://www.daytona-supply.com/api/catalog_sync.php`; use it directly rather than
 relying on redirects to preserve authentication headers and POST bodies.
@@ -88,7 +90,9 @@ POST body:
 - Invalid rows appear in `skipped` with a zero-based `index`, optional `name`,
   and `reason`; the valid remainder is applied subject to the minimum guard.
 - Existing rows change only price/description, matched by their primary key.
-  New rows insert only name/price/description. Hidden flags, images, categories,
+  New rows insert name/price/description and preserve DB defaults, except that
+  when the connected table's `is_hidden` default is 1, new rows explicitly get
+  `is_hidden=0` so they are visible. Existing hidden flags, images, categories,
   IDs, sort order and all other fields are untouched. Nothing is deleted.
 - `counts.valid` counts unique valid names; `counts.received` counts raw input.
   `added` contains normalized new items. `updated` contains `name`, `changed`,
@@ -96,6 +100,19 @@ POST body:
   so a dry run reports the unchanged database count, not projected additions.
 - Dry runs return the same add/update lists as a live push against the same DB
   snapshot but do not write catalog rows, last-sync state, or the success log.
+- After every successful live commit, even an all-unchanged replay, the endpoint
+  calls `invalidateProductsCache(true)` in the serving web request. This deletes
+  APCu key `daytona_all_products_v1`, advances `daytona_products_generation` for
+  suggestions, and removes `<webroot>/data/cache_products.json`. Dry runs and
+  rollbacks do not invalidate caches. APCu invalidation must run in the same
+  serving pool; CLI execution is not a substitute.
+- If cache invalidation fails after commit, the response remains HTTP `200`
+  with `ok: true`, `db_committed: true`, and a `warnings` array containing
+  `code: "sync_cache_invalidation_failed"` and a message that catalogue or
+  suggestions may remain stale. Clients must inspect warnings, not just HTTP
+  status. Database work was committed, not rolled back; inspect the server log
+  for `stage=cache_invalidation` and repair the cache before declaring success.
+  Other post-commit state/log failures still return the explicit `500` below.
 - Successful live pushes atomically replace `config/.catalog_sync_state.json`
   and append timestamp, IP and counts to `config/catalog_sync.log`.
   Both paths are relative to the parent of the webroot. The lock is
@@ -123,6 +140,24 @@ server-level failures and syntax errors in the endpoint itself require host-leve
 JSON error handling.
 
 ## Verification
+
+The repository schema defines `products.is_hidden` as `NOT NULL DEFAULT 0`.
+This is not verification of the deployed schema. Check the actual production
+default read-only before changing insert behavior:
+
+```sql
+SELECT COLUMN_NAME, COLUMN_DEFAULT, IS_NULLABLE
+FROM information_schema.COLUMNS
+WHERE TABLE_SCHEMA = DATABASE()
+  AND TABLE_NAME = 'products'
+  AND COLUMN_NAME = 'is_hidden';
+```
+
+Run this on the site's actual database connection. No returned row means the
+column is absent, not default zero. Sync inspects the connected table's column
+metadata during pushes and explicitly inserts `is_hidden=0` only when that
+column defaults to 1. Tables without that column remain supported. Existing
+products' visibility is never updated.
 
 Run `php -l api/catalog_sync.php`, `php -l includes/db.php`, and
 `php tests/catalog_sync_test.php` using PHP 7.1.33 for the current production host.

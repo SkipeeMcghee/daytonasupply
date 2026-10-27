@@ -213,24 +213,40 @@ function getAllProductsFresh(): array
 /**
  * Invalidate the products cache used by getAllProducts(). This clears the APCu
  * entry when available and deletes the on-disk cache file. Safe to call even if
- * the cache does not exist.
+ * the cache does not exist. Strict callers receive failures instead of silently
+ * continuing with stale listings.
  */
-function invalidateProductsCache(): void
+function invalidateProductsCache(bool $strict = false): void
 {
+    $failures = [];
     $cacheKey = 'daytona_all_products_v1';
     if (function_exists('apcu_delete')) {
         @apcu_delete($cacheKey);
+        if ($strict) {
+            @apcu_fetch($cacheKey, $stillCached);
+            if ($stillCached) {
+                $failures[] = 'APCu product cache was not deleted.';
+            }
+        }
         $generationUpdated = false;
         if (function_exists('apcu_inc')) {
             @apcu_inc('daytona_products_generation', 1, $generationUpdated);
         }
         if (!$generationUpdated && function_exists('apcu_store')) {
-            @apcu_store('daytona_products_generation', 1);
+            $generationUpdated = @apcu_store('daytona_products_generation', 1);
+        }
+        if ($strict && !$generationUpdated) {
+            $failures[] = 'APCu suggestion generation was not updated.';
         }
     }
     $cacheFile = __DIR__ . '/../data/cache_products.json';
-    if (is_file($cacheFile)) {
-        @unlink($cacheFile);
+    if (file_exists($cacheFile) || is_link($cacheFile)) {
+        if (!@unlink($cacheFile)) {
+            $failures[] = 'Product cache file was not deleted.';
+        }
+    }
+    if ($strict && $failures) {
+        throw new RuntimeException(implode(' ', $failures));
     }
 }
 
