@@ -1,11 +1,19 @@
 <?php
-// This endpoint deliberately does not load the site's schema/bootstrap helpers.
+// Connect through the site bootstrap without running schema initialization.
 ob_start();
 ini_set('display_errors', '0');
 error_reporting(E_ALL);
 $catalogSyncResponded = false;
 $catalogSyncCommitted = false;
 $catalogSyncDb = null;
+$catalogSyncStage = 'bootstrap';
+
+function catalogSyncLogFailure($class, $file, $line, $stage)
+{
+    // Messages and traces can contain credentials, SQL values or request data.
+    error_log('Catalog sync failed: stage=' . $stage . ' class=' . $class
+        . ' at=' . basename($file) . ':' . $line);
+}
 
 function catalogSyncRespond($status, array $body)
 {
@@ -34,16 +42,19 @@ set_error_handler(function ($severity, $message, $file, $line) {
     return false;
 });
 register_shutdown_function(function () {
-    global $catalogSyncResponded, $catalogSyncDb, $catalogSyncCommitted;
+    global $catalogSyncResponded, $catalogSyncDb, $catalogSyncCommitted, $catalogSyncStage;
     $error = error_get_last();
     if (!$catalogSyncResponded && $error && in_array($error['type'], array(E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR), true)) {
         if ($catalogSyncDb instanceof PDO && $catalogSyncDb->inTransaction()) {
             $catalogSyncDb->rollBack();
         }
-        error_log('Catalog sync: fatal endpoint error.');
+        catalogSyncLogFailure('FatalError', $error['file'], $error['line'], $catalogSyncStage);
+        if ($catalogSyncStage === 'database') {
+            catalogSyncRespond(503, array('ok' => false, 'error' => 'sync_db_unreachable'));
+        }
         catalogSyncRespond(500, array('ok' => false, 'error' => $catalogSyncCommitted
             ? 'Database changes committed, but sync finalization failed. Check server logs and stats before retrying.'
-            : 'Catalog sync failed. Check server logs.'));
+            : 'sync_internal_error'));
     }
 });
 
@@ -57,33 +68,34 @@ function catalogSyncIdentifier($value)
 
 function catalogSyncDatabase()
 {
-    global $DB_DSN, $DB_USER, $DB_PASS, $catalogSyncDb;
-    if (!isset($DB_DSN, $DB_USER, $DB_PASS) || !is_string($DB_DSN)
-        || !is_string($DB_USER) || !is_string($DB_PASS)
-        || !preg_match('/^(mysql|sqlite):/', $DB_DSN)) {
-        throw new RuntimeException('Missing or unsupported database configuration.');
+    global $catalogSyncDb, $catalogSyncStage;
+    $catalogSyncStage = 'database';
+    try {
+        $bootstrap = __DIR__ . '/../includes/db.php';
+        if (!is_readable($bootstrap)) {
+            throw new RuntimeException('Database bootstrap is unavailable.');
+        }
+        require_once $bootstrap;
+        $catalogSyncDb = getDb(false);
+    } catch (Throwable $e) {
+        catalogSyncLogFailure(get_class($e), $e->getFile(), $e->getLine(), $catalogSyncStage);
+        catalogSyncRespond(503, array('ok' => false, 'error' => 'sync_db_unreachable'));
     }
-    $catalogSyncDb = new PDO($DB_DSN, $DB_USER, $DB_PASS, array(
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES => false,
-    ));
+    $catalogSyncStage = 'sync';
     return $catalogSyncDb;
 }
 
 try {
     $webroot = dirname(__DIR__);
     $privateRoot = dirname($webroot);
-    $configFile = $privateRoot . '/config/catalog_sync.php';
-    if (!is_file($configFile)) {
-        $configFile = $webroot . '/includes/catalog_sync_config.php';
+    $configFile = $webroot . '/includes/sync_config.php';
+    if (is_file($configFile)) {
+        require $configFile;
     }
-    if (!is_file($configFile)) {
-        throw new RuntimeException('Catalog sync configuration is missing.');
-    }
-    require $configFile;
-    if (!isset($SYNC_TOKEN) || !is_string($SYNC_TOKEN) || strlen($SYNC_TOKEN) < 32) {
-        throw new RuntimeException('Catalog sync token is not configured.');
+    $SYNC_TOKEN = getenv('SYNC_TOKEN');
+    if (!is_string($SYNC_TOKEN) || strlen($SYNC_TOKEN) < 32) {
+        error_log('Catalog sync failed: stage=bootstrap error=sync_token_not_configured');
+        catalogSyncRespond(503, array('ok' => false, 'error' => 'sync_token_not_configured'));
     }
 
     $method = isset($_SERVER['REQUEST_METHOD']) ? $_SERVER['REQUEST_METHOD'] : '';
@@ -106,7 +118,9 @@ try {
         catalogSyncRespond(403, array('ok' => false, 'error' => 'Invalid token.'));
     }
     if ($method === 'GET' && $action === 'ping') {
-        catalogSyncRespond(200, array('ok' => true, 'pong' => gmdate('c'), 'schema' => 1));
+        $time = gmdate('c');
+        catalogSyncRespond(200, array('ok' => true, 'php' => PHP_VERSION,
+            'service' => 'catalog_sync', 'time' => $time, 'pong' => $time, 'schema' => 1));
     }
     if ($method === 'POST' && $action !== '') {
         catalogSyncRespond(400, array('ok' => false, 'error' => 'POST does not accept an action.'));
@@ -117,7 +131,8 @@ try {
     $name = catalogSyncIdentifier(isset($CFG_COL_NAME) ? $CFG_COL_NAME : 'name');
     $price = catalogSyncIdentifier(isset($CFG_COL_PRICE) ? $CFG_COL_PRICE : 'price');
     $description = catalogSyncIdentifier(isset($CFG_COL_DESC) ? $CFG_COL_DESC : 'description');
-    $stateDir = dirname($configFile);
+    $catalogSyncStage = 'storage';
+    $stateDir = $privateRoot . '/config';
     $stateFile = $stateDir . '/.catalog_sync_state.json';
     $lock = fopen($stateDir . '/.catalog_sync.lock', 'c');
     if (!$lock) {
@@ -304,9 +319,8 @@ try {
     if ($catalogSyncDb instanceof PDO && $catalogSyncDb->inTransaction()) {
         $catalogSyncDb->rollBack();
     }
-    // Do not log request bodies, tokens, DSNs, or database exception messages.
-    error_log('Catalog sync failed (' . get_class($e) . ', endpoint line ' . $e->getLine() . ').');
+    catalogSyncLogFailure(get_class($e), $e->getFile(), $e->getLine(), $catalogSyncStage);
     catalogSyncRespond(500, array('ok' => false, 'error' => $catalogSyncCommitted
         ? 'Database changes committed, but sync finalization failed. Check server logs and stats before retrying.'
-        : 'Catalog sync failed. Check server configuration and logs.'));
+        : 'sync_internal_error'));
 }

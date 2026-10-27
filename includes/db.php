@@ -24,7 +24,8 @@
  *   product_id INTEGER, quantity INTEGER)
  * - admin(id INTEGER PRIMARY KEY AUTOINCREMENT, password_hash TEXT)
  */
-function getDb(): PDO
+// Sync passes false to connect without schema work, DB creation or fallback.
+function getDb(bool $initialize = true): PDO
 {
     static $db = null;
     // Global fallback reason recorded when MySQL is requested but fails.
@@ -68,6 +69,9 @@ function getDb(): PDO
             $db->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
             // Use associative arrays by default for consistency
             $db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+            if (!$initialize) {
+                return $db;
+            }
             // For MySQL we expect that the schema has been created ahead of time
             // Ensure order/order_items snapshot columns exist in MySQL so
             // historical order snapshots are recorded when creating orders.
@@ -93,6 +97,9 @@ function getDb(): PDO
             }
             return $db;
         } catch (Exception $e) {
+            if (!$initialize) {
+                throw $e;
+            }
             // Log the MySQL connection failure and record fallback reason.
             $errorRef = null;
             try { $errorRef = bin2hex(random_bytes(6)); } catch (Exception $_) { $errorRef = substr(md5(uniqid('', true)), 0, 12); }
@@ -118,6 +125,9 @@ function getDb(): PDO
     // Default: SQLite
     $dbFile = getenv('DB_PATH') ?: __DIR__ . '/../data/database.sqlite';
     $initNeeded = !file_exists($dbFile);
+    if (!$initialize && $initNeeded) {
+        throw new RuntimeException('Configured SQLite database does not exist.');
+    }
     $dsn = 'sqlite:' . $dbFile;
     $db = new PDO($dsn);
     // Ensure errors are raised as exceptions, prefer native prepares and
@@ -126,6 +136,9 @@ function getDb(): PDO
     $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $db->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
     $db->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+    if (!$initialize) {
+        return $db;
+    }
     if ($initNeeded) {
         // Ensure the data directory exists
         $dir = dirname($dbFile);

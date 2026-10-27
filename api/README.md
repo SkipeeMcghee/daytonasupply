@@ -1,27 +1,35 @@
 # Catalog sync
 
-`catalog_sync.php` is a standalone PHP 7.1+ / PDO endpoint. It does not load the
-site bootstrap, change the schema, or call the manager portal CSV importer.
-It supports MySQL (InnoDB required for rollback) and SQLite.
+`catalog_sync.php` is a PHP 7.1+ / PDO endpoint. It uses `includes/db.php` and
+`getDb(false)` to connect with the site's existing `DB_*` environment, without
+schema initialization, migrations, or the manager portal CSV importer.
+It supports MySQL (InnoDB required for rollback) and existing SQLite databases.
+Sync never falls back to SQLite when MySQL fails.
 
 ## Deployment
 
 This repository's root is the webroot: deploy `api/catalog_sync.php` as
-`httpdocs/api/catalog_sync.php`.
+`httpdocs/api/catalog_sync.php`. Deploy the updated `includes/db.php` too.
+The canonical production endpoint is
+`https://www.daytona-supply.com/api/catalog_sync.php`; use it directly rather than
+relying on redirects to preserve authentication headers and POST bodies.
 
 1. Create `config/` and `logs/` **beside**, not inside, `httpdocs/`.
    Give the web user ownership and directory permissions `775`. These must be
    persistent and writable by PHP. Restrict parent directory access to trusted
-   users; the token must not be web-accessible.
-2. Copy `config/catalog_sync.example.php` from this repository to
-   `../config/catalog_sync.php` relative to the webroot. Save as UTF-8 without BOM,
-   permission `640`. Set the real DB DSN/user/password. This connection must target
-   the same database as the site, including hidden rows. There is no SQLite
-   fallback on a failed MySQL connection.
-3. Generate a token using `php -r "echo bin2hex(random_bytes(32)), PHP_EOL;"`,
-   securely put it in `$SYNC_TOKEN` in the private config, and deliver it privately
-   to the gateway's user environment as `DSD_SYNC_TOKEN`. Never commit it, put it
-   in a command history, or print it in logs.
+   users. These directories hold state/locks and logs, not DB credentials.
+2. Keep the site's existing DB configuration. Apache `SetEnv DB_DRIVER`,
+   `DB_HOST`, `DB_NAME`, `DB_USER`, and `DB_PASS` must reach PHP. Sync also honors
+   the site's existing local overrides when connecting. Do not copy DB secrets
+   into a separate sync config.
+3. Provision a securely generated token of at least 32 characters (recommended:
+   32 random bytes encoded as 64 hex characters). Supply it to the web PHP process
+   as `SYNC_TOKEN`, and privately to the gateway process as `DSD_SYNC_TOKEN`.
+   Restart/reload the relevant processes after changing their environment.
+   Prefer a hosting-managed PHP-FPM environment setting. Apache `SetEnv` is an
+   Apache directive, not a PHP ini directive; do not paste it into Plesk's PHP
+   Additional configuration directives field. Do not put the token in the tracked
+   root `.htaccess`, source control, command history, or logs.
 4. Deploy the endpoint with permission `644`. If the host does not forward
    `Authorization` to PHP, use `X-Sync-Token` instead. Use HTTPS only.
 5. Authenticated `GET ?action=ping` must return `200` (no DB access).
@@ -30,12 +38,19 @@ This repository's root is the webroot: deploy `api/catalog_sync.php` as
 6. Preview the gateway's full payload with `dry_run=true`, compare counts, then
    send the real push. Do not force the first production push to bypass guards.
 
-If the outside-webroot config location is unavailable, the endpoint also accepts
-`includes/catalog_sync_config.php`. **Before creating that file**, deny HTTP access
-to `includes/` with Apache 2.4 `Require all denied` in `includes/.htaccess`, and
-verify denial on the actual host. For nginx, configure an equivalent server rule;
-`.htaccess` alone does not protect nginx. The endpoint then keeps its state/lock
-beside that fallback file; logs still go to `../logs/`.
+If the host cannot provision the PHP environment directly, copy
+`config/catalog_sync.example.php` to the ignored `includes/sync_config.php`
+(UTF-8 without BOM, permission `640`) and set the real token there using
+`putenv('SYNC_TOKEN=...');`. **Before provisioning that secret**, deny HTTP access
+to that file in the hosting/server configuration and verify `403` or `404` on the
+actual host. Account for nginx as well as Apache. A PHP file returning an empty
+`200` is not an access-control check. Do not commit the provisioned file.
+
+The old `../config/catalog_sync.php` and `includes/catalog_sync_config.php`
+configuration files are no longer loaded. Migrate their token to `SYNC_TOKEN`;
+remove obsolete duplicate credentials securely. Optional schema overrides
+(`$CFG_TABLE`, `$CFG_COL_ID`, `$CFG_COL_NAME`, `$CFG_COL_PRICE`, `$CFG_COL_DESC`)
+may still be set in `includes/sync_config.php`.
 
 ## Contract
 
@@ -89,16 +104,41 @@ POST body:
 
 Errors use `{ "ok": false, "error": "..." }`: `400` invalid contract/JSON, `403`
 invalid auth, `405` invalid method/action, `409` partial push/lock/ambiguous names,
-`413` oversized payload and `500` configuration/database/filesystem failures.
-Failures are logged without tokens, request bodies, DSNs or DB exception details.
+`413` oversized payload, `503` missing/short token (`sync_token_not_configured`)
+or DB bootstrap/connection failure (`sync_db_unreachable`), and `500` other
+configuration/filesystem/query failures (`sync_internal_error`). Post-commit
+failures retain the explicit warning that database changes committed.
+Failures are logged with stage, exception class, source basename and line number,
+without tokens, request bodies, DSNs, raw exception messages or traces. These can
+contain secrets or catalog values; `debug=1` does not expose them to clients.
 Fatal runtime errors also return JSON when PHP can execute the shutdown handler;
 server-level failures and syntax errors in the endpoint itself require host-level
 JSON error handling.
 
 ## Verification
 
-Run `php -l api/catalog_sync.php` and `php tests/catalog_sync_test.php`.
+Run `php -l api/catalog_sync.php`, `php -l includes/db.php`, and
+`php tests/catalog_sync_test.php` using PHP 7.1.33 for the current production host.
 The integration suite starts an isolated local PHP HTTP server with a temporary
-SQLite catalog and private config; it never writes the site's database. The
-endpoint uses PHP 7.1 syntax/APIs; run these checks under PHP 7.1 on hosts that
-require that runtime as well.
+SQLite catalog and the real DB bootstrap; it never writes the site's database.
+It verifies no schema initialization, no database creation/fallback, ping without
+the DB bootstrap or storage, both token sources, safe diagnostics, and existing
+upsert/rollback/dry-run protections.
+
+Production acceptance (do not send a live push until these pass):
+
+1. With the server token provisioned, unauthenticated `GET ?action=ping` returns
+   `403`; an authenticated request using `X-Sync-Token` returns `200` with
+   `ok`, `php`, `service: "catalog_sync"` and ISO-8601 `time`. Existing `pong` and
+   `schema` fields are retained for gateway compatibility. Ping needs neither a
+   DB connection nor writable state/log directories.
+2. Authenticated `GET ?action=stats` returns `200` and the real site count
+   (expected approximately 660; compare with the current catalogue).
+3. A full authenticated push with `dry_run: true` returns a diff and leaves
+   products and sync metadata unchanged.
+
+For `503` token errors, check token provisioning in the web PHP environment, not
+just the gateway shell. For DB errors, check the site's DB settings and PDO
+driver. For `500`, find `Catalog sync failed: stage=... class=... at=...` in
+Plesk's PHP error log; storage-stage failures commonly mean missing/unwritable
+`../config/` or `../logs/`. Never share tokens or unredacted credential files.

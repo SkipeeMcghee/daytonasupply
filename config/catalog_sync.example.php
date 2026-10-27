@@ -1,9 +1,9 @@
 <?php
-// Copy OUTSIDE the webroot to ../config/catalog_sync.php, UTF-8 without BOM.
-$SYNC_TOKEN = 'PASTE_64_HEX_CHARS_HERE';
-$DB_DSN = 'mysql:host=localhost;dbname=DBNAME;charset=utf8mb4';
-$DB_USER = 'DBUSER';
-$DB_PASS = 'DBPASS';
+// Optional: copy to includes/sync_config.php, UTF-8 without BOM.
+// Block HTTP access to that file before provisioning the real token.
+// Prefer setting SYNC_TOKEN in the server/PHP-FPM environment instead.
+putenv('SYNC_TOKEN=PASTE_64_HEX_CHARS_HERE');
+// Database settings come from the site's existing DB_* environment.
 
 // Optional schema overrides:
 // $CFG_TABLE = 'products'; $CFG_COL_ID = 'id';

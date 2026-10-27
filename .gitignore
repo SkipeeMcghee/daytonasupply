@@ -2,6 +2,7 @@
 # overrides such as SMTP credentials.
 includes/config.local.php
 includes/catalog_sync_config.php
+includes/sync_config.php
 config/catalog_sync.php
 config/.catalog_sync*
 

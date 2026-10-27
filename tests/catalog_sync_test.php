@@ -5,14 +5,15 @@ unlink($fixture);
 mkdir($fixture, 0700);
 mkdir($fixture . '/web');
 mkdir($fixture . '/web/api');
+mkdir($fixture . '/web/includes');
 mkdir($fixture . '/config', 0700);
 mkdir($fixture . '/logs', 0700);
 copy(__DIR__ . '/../api/catalog_sync.php', $fixture . '/web/api/catalog_sync.php');
+copy(__DIR__ . '/../includes/db.php', $fixture . '/web/includes/db.php');
 $token = bin2hex(random_bytes(32));
-$config = "<?php\n\$SYNC_TOKEN = " . var_export($token, true) . ";\n"
-    . '$DB_DSN = ' . var_export('sqlite:' . $fixture . '/catalog.sqlite', true) . ";\n"
-    . "\$DB_USER = '';\n\$DB_PASS = '';\n";
-file_put_contents($fixture . '/config/catalog_sync.php', $config);
+$configFile = $fixture . '/web/includes/sync_config.php';
+$config = "<?php\nputenv(" . var_export('SYNC_TOKEN=' . $token, true) . ");\n";
+file_put_contents($configFile, $config);
 $db = new PDO('sqlite:' . $fixture . '/catalog.sqlite');
 $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 $db->exec("CREATE TABLE products (
@@ -80,6 +81,7 @@ function syncRemoveFixture($path)
 
 $server = null;
 $heldLock = null;
+$schemaBefore = $db->query("SELECT type, name, sql FROM sqlite_master ORDER BY type, name")->fetchAll(PDO::FETCH_ASSOC);
 try {
     $socket = stream_socket_server('tcp://127.0.0.1:0', $errno, $error);
     syncAssert($socket !== false, 'Cannot reserve test server port.');
@@ -88,7 +90,9 @@ try {
     $baseUrl = 'http://' . $address . '/api/catalog_sync.php';
     $server = proc_open(escapeshellarg(PHP_BINARY) . ' -S ' . $address . ' -t ' . escapeshellarg($fixture . '/web'),
         array(0 => array('pipe', 'r'), 1 => array('file', $fixture . '/server.log', 'a'),
-            2 => array('file', $fixture . '/server.log', 'a')), $pipes, $fixture, null, array('bypass_shell' => true));
+            2 => array('file', $fixture . '/server.log', 'a')), $pipes, $fixture,
+        array_merge(getenv(), array('SYNC_TOKEN' => $token, 'DB_DRIVER' => 'sqlite',
+            'DB_PATH' => $fixture . '/catalog.sqlite')), array('bypass_shell' => true));
     syncAssert(is_resource($server), 'Cannot start PHP HTTP server.');
     fclose($pipes[0]);
     $ready = false;
@@ -105,6 +109,12 @@ try {
 
     list($status, $json) = syncRequest('GET', '?action=ping&token=' . $token, null, 'none');
     syncAssert($status === 200 && $json['schema'] === 1 && isset($json['pong']), 'Query-token ping failed.');
+    syncAssert($json['php'] === PHP_VERSION && $json['service'] === 'catalog_sync'
+        && isset($json['time']) && strtotime($json['time']) !== false, 'Ping diagnostics missing.');
+    list($status) = syncRequest('GET', '?action=ping', null, 'none');
+    syncAssert($status === 403, 'Unauthenticated ping was not rejected.');
+    list($status) = syncRequest('GET', '?action=ping', null, 'header');
+    syncAssert($status === 200, 'X-Sync-Token ping failed.');
     list($status) = syncRequest('GET', '?action=ping', null, 'bad');
     syncAssert($status === 403, 'Bad token was accepted.');
     list($status) = syncRequest('POST', '', syncPayload(array()), 'none');
@@ -117,6 +127,8 @@ try {
     syncAssert($status === 405, 'PUT was accepted.');
     list($status, $json) = syncRequest('GET', '?action=stats', null, 'header');
     syncAssert($status === 200 && $json['products'] === 3 && $json['last_sync'] === null, 'Initial stats incorrect.');
+    syncAssert($schemaBefore === $db->query("SELECT type, name, sql FROM sqlite_master ORDER BY type, name")->fetchAll(PDO::FETCH_ASSOC),
+        'Site bootstrap modified the database schema.');
     list($status) = syncRequest('POST', '', '{not json');
     syncAssert($status === 400, 'Malformed JSON was accepted.');
     list($status) = syncRequest('POST', '', array('schema' => 2, 'mode' => 'upsert', 'items' => array()));
@@ -232,41 +244,73 @@ try {
     syncAssert($status === 500, 'Corrupted state was silently ignored.');
     file_put_contents($fixture . '/config/.catalog_sync_state.json', $stateBefore);
 
-    file_put_contents($fixture . '/config/catalog_sync.php', "\xEF\xBB\xBF" . $config);
+    file_put_contents($configFile, "\xEF\xBB\xBF" . $config);
     list($status) = syncRequest('GET', '?action=stats');
     syncAssert($status === 200, 'BOM from included config corrupted JSON.');
-    file_put_contents($fixture . '/config/catalog_sync.php', $config . "\n\$DB_DSN = 'invalid:unavailable';\n");
+    $missingDb = $fixture . '/must-not-create.sqlite';
+    file_put_contents($configFile, $config . "\nputenv(" . var_export('DB_PATH=' . $missingDb, true) . ");\n");
     list($status) = syncRequest('GET', '?action=ping');
     syncAssert($status === 200, 'Ping accessed the database.');
-    list($status) = syncRequest('GET', '?action=stats');
-    syncAssert($status === 500, 'Bad database configuration was not surfaced.');
-    file_put_contents($fixture . '/config/catalog_sync.php', $config);
+    list($status, $json) = syncRequest('GET', '?action=stats');
+    syncAssert($status === 503 && $json['error'] === 'sync_db_unreachable', 'Bad database configuration was not surfaced.');
+    syncAssert(!file_exists($missingDb), 'Sync created a missing SQLite database.');
+    file_put_contents($configFile, $config . "\nputenv('DB_DRIVER=mysql'); putenv('DB_HOST=127.0.0.1');"
+        . " putenv('DB_NAME=sync_missing'); putenv('DB_USER=sync_missing'); putenv('DB_PASS=SYNC_TEST_SECRET');\n");
+    list($status, $json) = syncRequest('GET', '?action=stats');
+    syncAssert($status === 503 && $json['error'] === 'sync_db_unreachable', 'Failed MySQL connection fell back to SQLite.');
+    syncAssert(!is_dir($fixture . '/web/data'), 'Failed MySQL connection created fallback data or logs.');
+    file_put_contents($configFile, $config);
 
     $db->exec("INSERT INTO products (name, price, description) VALUES ('case-1', 1, 'Duplicate')");
     list($status) = syncRequest('POST', '', syncPayload($items));
     syncAssert($status === 409, 'Ambiguous database names were silently updated.');
     $db->exec("DELETE FROM products WHERE name='case-1'");
     $db->exec('CREATE TABLE custom_catalog (sku_id INTEGER PRIMARY KEY, sku TEXT, amount NUMERIC, details TEXT)');
-    file_put_contents($fixture . '/config/catalog_sync.php', $config
+    file_put_contents($configFile, $config
         . "\n\$CFG_TABLE='custom_catalog'; \$CFG_COL_ID='sku_id'; \$CFG_COL_NAME='sku'; \$CFG_COL_PRICE='amount'; \$CFG_COL_DESC='details';\n");
     list($status, $json) = syncRequest('POST', '', syncPayload(array($hidden), false, true));
     syncAssert($status === 200 && $json['counts']['added'] === 1
         && $db->query('SELECT sku FROM custom_catalog')->fetchColumn() === 'hidden-1', 'Schema overrides failed.');
-    file_put_contents($fixture . '/config/catalog_sync.php', $config . "\n\$CFG_TABLE='products; DROP TABLE products';\n");
+    file_put_contents($configFile, $config . "\n\$CFG_TABLE='products; DROP TABLE products';\n");
     list($status) = syncRequest('GET', '?action=stats');
     syncAssert($status === 500, 'Unsafe schema identifier was accepted.');
-    file_put_contents($fixture . '/config/catalog_sync.php', "<?php\nthis is not valid PHP;\n");
-    list($status) = syncRequest('GET', '?action=ping');
-    syncAssert($status === 500, 'Included config parse failure did not return JSON.');
-    unlink($fixture . '/config/catalog_sync.php');
-    mkdir($fixture . '/web/includes');
-    file_put_contents($fixture . '/web/includes/catalog_sync_config.php', $config);
+    file_put_contents($configFile, "<?php\nthis is not valid PHP;\n");
+    list($status, $json) = syncRequest('GET', '?action=ping');
+    syncAssert($status === 500 && $json['error'] === 'sync_internal_error', 'Included config parse failure did not return JSON.');
+    file_put_contents($configFile, "<?php\nputenv('SYNC_TOKEN=short');\n");
+    list($status, $json) = syncRequest('GET', '?action=ping');
+    syncAssert($status === 503 && $json['error'] === 'sync_token_not_configured', 'Short token did not return JSON 503.');
+    file_put_contents($configFile, "<?php\nputenv('SYNC_TOKEN=');\n");
+    list($status, $json) = syncRequest('GET', '?action=ping');
+    syncAssert($status === 503 && $json['error'] === 'sync_token_not_configured', 'Missing token did not return JSON 503.');
+    file_put_contents($configFile, $config);
+    rename($fixture . '/web/includes/db.php', $fixture . '/web/includes/db_unavailable.php');
+    rename($fixture . '/config', $fixture . '/config_unavailable');
+    list($status) = syncRequest('GET', '?action=ping', null, 'header');
+    syncAssert($status === 200, 'Ping depended on the DB bootstrap or storage directory.');
+    rename($fixture . '/config_unavailable', $fixture . '/config');
     list($status, $json) = syncRequest('GET', '?action=stats');
-    syncAssert($status === 200 && $json['products'] === 325, 'Protected fallback config path failed.');
-    unlink($fixture . '/web/includes/catalog_sync_config.php');
+    syncAssert($status === 503 && $json['error'] === 'sync_db_unreachable',
+        'Missing DB bootstrap was not diagnosed: ' . $status . ' ' . json_encode($json)
+        . ' ' . implode("\n", array_slice(preg_grep('/Catalog sync failed:/',
+            explode("\n", file_get_contents($fixture . '/server.log'))), -3)));
+    rename($fixture . '/web/includes/db_unavailable.php', $fixture . '/web/includes/db.php');
+    unlink($configFile);
     list($status) = syncRequest('GET', '?action=ping');
-    syncAssert($status === 500, 'Missing config did not return JSON.');
+    syncAssert($status === 200, 'Server environment token required an optional config file.');
+    file_put_contents($fixture . '/web/default_bootstrap.php', "<?php\n"
+        . 'putenv(' . var_export('DB_PATH=' . $fixture . '/normal.sqlite', true) . ");\n"
+        . "require __DIR__ . '/includes/db.php';\n"
+        . "\$db = getDb(); echo \$db->query('SELECT COUNT(*) FROM customers')->fetchColumn();\n");
+    $normalResponse = file_get_contents(str_replace('/api/catalog_sync.php', '/default_bootstrap.php', $baseUrl));
+    syncAssert($normalResponse === '0' && file_exists($fixture . '/normal.sqlite'),
+        'Default site bootstrap no longer initialized its database.');
     syncAssert(strpos(file_get_contents($fixture . '/logs/catalog_sync.log'), $token) === false, 'Success log leaked token.');
+    foreach (explode("\n", file_get_contents($fixture . '/server.log')) as $line) {
+        if (strpos($line, 'Catalog sync failed:') !== false) {
+            syncAssert(strpos($line, $token) === false && strpos($line, 'SYNC_TEST_SECRET') === false, 'Error log leaked credentials.');
+        }
+    }
     echo "Catalog sync HTTP integration tests passed (auth, validation, guards, dry run, upsert, replay, hidden/default fields, locks, rollback, stats, BOM, schema overrides).\n";
 } finally {
     if (is_resource($heldLock)) {
