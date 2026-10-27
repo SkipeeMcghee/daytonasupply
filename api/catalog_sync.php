@@ -283,7 +283,7 @@ try {
     if ($dryRun) {
         $db->rollBack();
     } else {
-        $log = fopen($privateRoot . '/logs/catalog_sync.log', 'ab');
+        $log = fopen($stateDir . '/catalog_sync.log', 'ab');
         if (!$log) {
             throw new RuntimeException('Cannot open sync log.');
         }

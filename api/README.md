@@ -14,10 +14,12 @@ The canonical production endpoint is
 `https://www.daytona-supply.com/api/catalog_sync.php`; use it directly rather than
 relying on redirects to preserve authentication headers and POST bodies.
 
-1. Create `config/` and `logs/` **beside**, not inside, `httpdocs/`.
+1. Create `config/` **beside**, not inside, `httpdocs/`.
    Give the web user ownership and directory permissions `775`. These must be
    persistent and writable by PHP. Restrict parent directory access to trusted
-   users. These directories hold state/locks and logs, not DB credentials.
+   users. This directory holds state, locks and the sync log, not DB credentials.
+   The endpoint creates files, not directories. It does not use Plesk's `logs/`.
+   Existing lock/log files must also permit PHP to open/write them.
 2. Keep the site's existing DB configuration. Apache `SetEnv DB_DRIVER`,
    `DB_HOST`, `DB_NAME`, `DB_USER`, and `DB_PASS` must reach PHP. Sync also honors
    the site's existing local overrides when connecting. Do not copy DB secrets
@@ -95,7 +97,12 @@ POST body:
 - Dry runs return the same add/update lists as a live push against the same DB
   snapshot but do not write catalog rows, last-sync state, or the success log.
 - Successful live pushes atomically replace `config/.catalog_sync_state.json`
-  and append timestamp, IP and counts to `logs/catalog_sync.log`.
+  and append timestamp, IP and counts to `config/catalog_sync.log`.
+  Both paths are relative to the parent of the webroot. The lock is
+  `config/.catalog_sync.lock`. For a webroot `/var/www/vhosts/DOMAIN/httpdocs`,
+  all three files are in `/var/www/vhosts/DOMAIN/config/`.
+  Earlier releases wrote to `../logs/catalog_sync.log`; leave any old audit log
+  intact or archive it privately. New entries go only to the config directory.
   Stats returns `{ok, products, last_sync}`; `last_sync` is null before a live push.
 - Concurrent pushes return `409`. Writes use one transaction and roll back on DB
   failure. A failure publishing state/log **after** commit returns an explicit
@@ -141,4 +148,10 @@ For `503` token errors, check token provisioning in the web PHP environment, not
 just the gateway shell. For DB errors, check the site's DB settings and PDO
 driver. For `500`, find `Catalog sync failed: stage=... class=... at=...` in
 Plesk's PHP error log; storage-stage failures commonly mean missing/unwritable
-`../config/` or `../logs/`. Never share tokens or unredacted credential files.
+`../config/` or inaccessible existing lock files. Stats never opens the sync log:
+after acquiring the lock it connects to the DB, counts products and reads any
+existing state JSON. A stats `500` alone does not establish a storage failure;
+query errors or corrupt/unreadable state can also cause it. A root-owned log
+directory is not inherently unwritable (permissions/ACLs matter), but denied
+log creation/append would fail a live push, not stats. Never share tokens or
+unredacted credential files.

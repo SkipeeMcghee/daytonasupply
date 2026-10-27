@@ -7,7 +7,6 @@ mkdir($fixture . '/web');
 mkdir($fixture . '/web/api');
 mkdir($fixture . '/web/includes');
 mkdir($fixture . '/config', 0700);
-mkdir($fixture . '/logs', 0700);
 copy(__DIR__ . '/../api/catalog_sync.php', $fixture . '/web/api/catalog_sync.php');
 copy(__DIR__ . '/../includes/db.php', $fixture . '/web/includes/db.php');
 $token = bin2hex(random_bytes(32));
@@ -161,7 +160,7 @@ try {
     syncAssert($dry['added'][0]['description'] === '14" x 18", bundle' && $dry['added'][0]['price'] === 6.46, 'Normalization incorrect.');
     syncAssert((int) $db->query('SELECT COUNT(*) FROM products')->fetchColumn() === 3
         && !is_file($fixture . '/config/.catalog_sync_state.json')
-        && !is_file($fixture . '/logs/catalog_sync.log'), 'Dry run wrote persistent data.');
+        && !is_file($fixture . '/config/catalog_sync.log'), 'Dry run wrote persistent data.');
     list($status, $live) = syncRequest('POST', '', syncPayload($items), 'header');
     syncAssert($status === 200 && $live['counts'] === $dry['counts'] && $live['added'] === $dry['added']
         && $live['updated'] === $dry['updated'] && $live['total_rows'] === 324, 'Live run did not match preview.');
@@ -173,10 +172,10 @@ try {
     list($status, $stats) = syncRequest('GET', '?action=stats');
     syncAssert($status === 200 && $stats['products'] === 324 && $stats['last_sync']['counts'] === $replay['counts'], 'Stats did not reflect last push.');
     $savedState = file_get_contents($fixture . '/config/.catalog_sync_state.json');
-    $savedLog = file_get_contents($fixture . '/logs/catalog_sync.log');
+    $savedLog = file_get_contents($fixture . '/config/catalog_sync.log');
     list($status) = syncRequest('POST', '', syncPayload($items, true));
     syncAssert($status === 200 && file_get_contents($fixture . '/config/.catalog_sync_state.json') === $savedState
-        && file_get_contents($fixture . '/logs/catalog_sync.log') === $savedLog, 'Dry run overwrote prior live sync metadata.');
+        && file_get_contents($fixture . '/config/catalog_sync.log') === $savedLog, 'Dry run overwrote prior live sync metadata.');
 
     $hidden = array('name' => 'hidden-1', 'price' => 0, 'description' => 'Changed hidden description');
     list($status) = syncRequest('POST', '', syncPayload(array($hidden)));
@@ -221,7 +220,7 @@ try {
     $heldLock = null;
 
     $stateBefore = file_get_contents($fixture . '/config/.catalog_sync_state.json');
-    $logBefore = file_get_contents($fixture . '/logs/catalog_sync.log');
+    $logBefore = file_get_contents($fixture . '/config/catalog_sync.log');
     $db->exec("CREATE TRIGGER fail_sync BEFORE UPDATE ON products WHEN NEW.description='ROLLBACK'
         BEGIN SELECT RAISE(ABORT, 'deliberate test failure'); END");
     list($status, $json) = syncRequest('POST', '', syncPayload(array(
@@ -231,14 +230,16 @@ try {
     syncAssert($status === 500 && $json['ok'] === false, 'Database failure was not JSON 500.');
     syncAssert((int) $db->query("SELECT COUNT(*) FROM products WHERE name='MUST-ROLL-BACK'")->fetchColumn() === 0, 'Failed batch did not roll back inserts.');
     syncAssert(file_get_contents($fixture . '/config/.catalog_sync_state.json') === $stateBefore
-        && file_get_contents($fixture . '/logs/catalog_sync.log') === $logBefore, 'Failed batch changed sync state or success log.');
+        && file_get_contents($fixture . '/config/catalog_sync.log') === $logBefore, 'Failed batch changed sync state or success log.');
     $db->exec('DROP TRIGGER fail_sync');
-    rename($fixture . '/logs', $fixture . '/logs_unavailable');
+    rename($fixture . '/config/catalog_sync.log', $fixture . '/config/catalog_sync.saved.log');
+    mkdir($fixture . '/config/catalog_sync.log');
     list($status) = syncRequest('POST', '', syncPayload(array(
         array('name' => 'NO-LOG-NO-COMMIT', 'price' => 1, 'description' => 'Must roll back'),
     ), false, true));
     syncAssert($status === 500 && (int) $db->query("SELECT COUNT(*) FROM products WHERE name='NO-LOG-NO-COMMIT'")->fetchColumn() === 0, 'Unavailable success log did not roll back writes.');
-    rename($fixture . '/logs_unavailable', $fixture . '/logs');
+    rmdir($fixture . '/config/catalog_sync.log');
+    rename($fixture . '/config/catalog_sync.saved.log', $fixture . '/config/catalog_sync.log');
     file_put_contents($fixture . '/config/.catalog_sync_state.json', 'broken state');
     list($status) = syncRequest('GET', '?action=stats');
     syncAssert($status === 500, 'Corrupted state was silently ignored.');
@@ -288,6 +289,9 @@ try {
     rename($fixture . '/config', $fixture . '/config_unavailable');
     list($status) = syncRequest('GET', '?action=ping', null, 'header');
     syncAssert($status === 200, 'Ping depended on the DB bootstrap or storage directory.');
+    list($status, $json) = syncRequest('GET', '?action=stats');
+    syncAssert($status === 500 && $json['error'] === 'sync_internal_error' && !is_dir($fixture . '/config'),
+        'Stats did not surface missing lock storage or created the directory itself.');
     rename($fixture . '/config_unavailable', $fixture . '/config');
     list($status, $json) = syncRequest('GET', '?action=stats');
     syncAssert($status === 503 && $json['error'] === 'sync_db_unreachable',
@@ -305,7 +309,8 @@ try {
     $normalResponse = file_get_contents(str_replace('/api/catalog_sync.php', '/default_bootstrap.php', $baseUrl));
     syncAssert($normalResponse === '0' && file_exists($fixture . '/normal.sqlite'),
         'Default site bootstrap no longer initialized its database.');
-    syncAssert(strpos(file_get_contents($fixture . '/logs/catalog_sync.log'), $token) === false, 'Success log leaked token.');
+    syncAssert(strpos(file_get_contents($fixture . '/config/catalog_sync.log'), $token) === false, 'Success log leaked token.');
+    syncAssert(!file_exists($fixture . '/logs'), 'Sync required or created a separate logs directory.');
     foreach (explode("\n", file_get_contents($fixture . '/server.log')) as $line) {
         if (strpos($line, 'Catalog sync failed:') !== false) {
             syncAssert(strpos($line, $token) === false && strpos($line, 'SYNC_TEST_SECRET') === false, 'Error log leaked credentials.');
