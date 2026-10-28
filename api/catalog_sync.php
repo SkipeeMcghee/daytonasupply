@@ -5,7 +5,6 @@ ini_set('display_errors', '0');
 error_reporting(E_ALL);
 const SCHEMA_VERSION = 2;
 const SCHEMA_VERSION_MIN = 1;
-require_once __DIR__ . '/../includes/inventory_display.php';
 $catalogSyncResponded = false;
 $catalogSyncCommitted = false;
 $catalogSyncDb = null;
@@ -69,7 +68,7 @@ function catalogSyncIdentifier($value)
     return '`' . $value . '`';
 }
 
-function catalogSyncDatabase()
+function catalogSyncDatabase($respondOnFailure = true)
 {
     global $catalogSyncDb, $catalogSyncStage;
     $catalogSyncStage = 'database';
@@ -81,6 +80,9 @@ function catalogSyncDatabase()
         require_once $bootstrap;
         $catalogSyncDb = getDb(false);
     } catch (Throwable $e) {
+        if (!$respondOnFailure) {
+            throw $e;
+        }
         catalogSyncLogFailure(get_class($e), $e->getFile(), $e->getLine(), $catalogSyncStage);
         catalogSyncRespond(503, array('ok' => false, 'error' => 'sync_db_unreachable'));
     }
@@ -128,6 +130,13 @@ try {
     if ($method === 'POST' && $action !== '') {
         catalogSyncRespond(400, array('ok' => false, 'error' => 'POST does not accept an action.'));
     }
+    $section = 'all';
+    if ($method === 'GET' && $action === 'stats') {
+        $section = isset($_GET['section']) ? $_GET['section'] : 'all';
+        if (!is_string($section) || !in_array($section, array('all', 'counts', 'qty', 'sync'), true)) {
+            catalogSyncRespond(400, array('ok' => false, 'error' => 'section must be all, counts, qty or sync.'));
+        }
+    }
 
     $table = catalogSyncIdentifier(isset($CFG_TABLE) ? $CFG_TABLE : 'products');
     $id = catalogSyncIdentifier(isset($CFG_COL_ID) ? $CFG_COL_ID : 'id');
@@ -147,23 +156,44 @@ try {
     }
 
     if ($method === 'GET') {
-        $db = catalogSyncDatabase();
-        $total = (int) $db->query("SELECT COUNT(*) FROM $table")->fetchColumn();
-        $stock = $db->query("SELECT COUNT(qty) AS tracked,
-            COUNT(CASE WHEN qty <= 0 THEN 1 END) AS out,
-            COUNT(CASE WHEN qty > 0 AND qty < " . LOW_STOCK_MAX . " THEN 1 END) AS low,
-            MAX(qty_updated_at) AS last_update FROM $table")->fetch(PDO::FETCH_ASSOC);
-        $stock = array('tracked' => (int) $stock['tracked'], 'out' => (int) $stock['out'],
-            'low' => (int) $stock['low'], 'last_update' => $stock['last_update'] === null ? null
-                : (new DateTimeImmutable($stock['last_update'], new DateTimeZone('UTC')))->format('c'));
-        $lastSync = null;
-        if (is_file($stateFile)) {
-            $lastSync = json_decode(file_get_contents($stateFile), true);
-            if (!is_array($lastSync) || json_last_error() !== JSON_ERROR_NONE) {
-                throw new RuntimeException('Invalid sync state file.');
+        $out = array('ok' => true);
+        $db = null;
+        $sections = $section === 'all' ? array('counts', 'qty', 'sync') : array($section);
+        foreach ($sections as $statsSection) {
+            $catalogSyncStage = 'stats_' . $statsSection;
+            try {
+                if ($statsSection !== 'sync' && !($db instanceof PDO)) {
+                    $db = catalogSyncDatabase(false);
+                    $catalogSyncStage = 'stats_' . $statsSection;
+                }
+                if ($statsSection === 'counts') {
+                    $out['products'] = (int) $db->query("SELECT COUNT(*) FROM $table")->fetchColumn();
+                } elseif ($statsSection === 'qty') {
+                    $stock = $db->query("SELECT COUNT(qty) AS tracked,
+                        COUNT(CASE WHEN qty <= 0 THEN 1 END) AS stock_out,
+                        COUNT(CASE WHEN qty > 0 AND qty < 25 THEN 1 END) AS low,
+                        MAX(qty_updated_at) AS last_update FROM $table")->fetch(PDO::FETCH_ASSOC);
+                    $out['qty'] = array('tracked' => (int) $stock['tracked'], 'out' => (int) $stock['stock_out'],
+                        'low' => (int) $stock['low'], 'last_update' => $stock['last_update'] === null ? null
+                            : (new DateTimeImmutable($stock['last_update'], new DateTimeZone('UTC')))->format('c'));
+                } else {
+                    $lastSync = null;
+                    if (is_file($stateFile)) {
+                        $lastSync = json_decode(file_get_contents($stateFile), true);
+                        if (!is_array($lastSync) || json_last_error() !== JSON_ERROR_NONE) {
+                            throw new RuntimeException('Invalid sync state file.');
+                        }
+                    }
+                    $out['last_sync'] = $lastSync;
+                }
+            } catch (Throwable $e) {
+                catalogSyncLogFailure(get_class($e), $e->getFile(), $e->getLine(), 'stats_' . $statsSection);
+                $out['partial'] = true;
+                $out['warnings'][] = array('code' => 'sync_stats_section_failed', 'section' => $statsSection,
+                    'message' => 'Stats section unavailable. Check server logs.');
             }
         }
-        catalogSyncRespond(200, array('ok' => true, 'products' => $total, 'qty' => $stock, 'last_sync' => $lastSync));
+        catalogSyncRespond(200, $out);
     }
 
     $maxBytes = 8 * 1024 * 1024;

@@ -175,6 +175,34 @@ POST body:
   is null before a live push. The authenticated-only `qty` block contains
   `tracked` (non-NULL), `out` (<= 0), `low` (1..24), and `last_update` (maximum
   quantity timestamp as ISO-8601 UTC, or null).
+- Stats accepts `section=all` (default), `counts`, `qty`, or `sync`.
+  `counts` returns `products` only; `qty` returns the inventory block only;
+  `sync` returns `last_sync` only and does not connect to the database.
+  Invalid sections return `400` after authentication.
+- Each stats section is isolated. Query, DB connection, timestamp-conversion
+  and state-file read/decode errors return HTTP `200` with the successful
+  sections, `partial: true`, and structured `warnings`. Failed fields are
+  **omitted**, not fabricated as zero or null. A missing state file normally
+  returns `last_sync: null` without a warning. Example with broken state JSON:
+
+  ```json
+  {
+    "ok": true,
+    "products": 675,
+    "qty": {"tracked": 670, "out": 401, "low": 159, "last_update": "2026-10-28T20:38:09+00:00"},
+    "partial": true,
+    "warnings": [
+      {"code": "sync_stats_section_failed", "section": "sync", "message": "Stats section unavailable. Check server logs."}
+    ]
+  }
+  ```
+
+  Clients must inspect `partial`/`warnings`; HTTP `200` alone does not establish
+  a healthy sync. Healthy responses retain the original shape without these
+  extra fields. Failures are logged as `stage=stats_counts`, `stats_qty`, or
+  `stats_sync`, with exception class and source location, never raw exception
+  messages, SQL values or credentials. Auth, configuration and lock acquisition
+  still run first and retain their existing error statuses.
 - Concurrent pushes return `409`. Writes use one transaction and roll back on DB
   failure. A failure publishing state/log **after** commit returns an explicit
   JSON `500` saying the DB changes committed; inspect stats/logs before retrying.
@@ -183,8 +211,9 @@ POST body:
 Errors use `{ "ok": false, "error": "..." }`: `400` invalid contract/JSON, `403`
 invalid auth, `405` invalid method/action, `409` partial push/lock/ambiguous names,
 `413` oversized payload, `503` missing/short token (`sync_token_not_configured`)
-or DB bootstrap/connection failure (`sync_db_unreachable`), and `500` other
-configuration/filesystem/query failures (`sync_internal_error`). Post-commit
+or POST DB bootstrap/connection failure (`sync_db_unreachable`), and `500` other
+configuration/filesystem/query failures outside isolated stats sections
+(`sync_internal_error`). Stats DB failures use partial responses above. Post-commit
 failures retain the explicit warning that database changes committed.
 Failures are logged with stage, exception class, source basename and line number,
 without tokens, request bodies, DSNs, raw exception messages or traces. These can
@@ -220,6 +249,29 @@ php tests/catalog_sync_test.php
 php tests/inventory_display_test.php
 php tests/inventory_storefront_test.php
 ```
+
+For native MySQL/MariaDB coverage, run the API suite against a **disposable
+loopback database server**, using a root account with no password:
+
+```powershell
+$env:CATALOG_SYNC_TEST_MYSQL_PORT = '49177'
+php tests\catalog_sync_test.php
+Remove-Item Env:\CATALOG_SYNC_TEST_MYSQL_PORT
+```
+
+The optional test creates and drops its own randomly named test database, never
+uses the site's DB configuration, and seeds 675 rows to verify 670 tracked,
+401 out, 159 low and 110 in stock. It checks healthy full/section stats and live
+qty update/replay over HTTP with native PDO prepares. The normal SQLite suite
+also covers partial SQL/state/timestamp/DB failures, section independence,
+sanitized warnings, stage logging and the API running without UI helpers.
+
+The 2026-10-28 stats-only `500` was reproduced on MariaDB: the old aggregate used
+`AS out`, but `OUT` is a reserved SQL keyword (error 1064 / SQLSTATE 42000).
+The query now uses `AS stock_out` internally while keeping the JSON key `out`.
+SQLite accepted the old alias, so SQLite-only testing could not catch this.
+This fix requires redeploying the endpoint, not another database migration.
+The low-stock cutoff remains 25; the API no longer loads storefront display code.
 
 The storefront suite uses a temporary SQLite database and real HTTP pages,
 customer sessions, and checkout. It verifies that an order larger than the
@@ -296,8 +348,9 @@ Production acceptance (do not send a live push until these pass):
    `ok`, `php`, `service: "catalog_sync"` and ISO-8601 `time`. Existing `pong` and
    `schema` fields are retained for gateway compatibility. Ping needs neither a
    DB connection nor writable state/log directories.
-2. Authenticated `GET ?action=stats` returns `200` and the real site count
-   (expected approximately 675; compare with the current catalogue).
+2. Authenticated `GET ?action=stats` returns `200`, no `partial`/`warnings`, and
+   the real site count (expected approximately 675; compare with the current
+   catalogue). Verify `section=counts`, `section=qty` and `section=sync` too.
 3. A full authenticated push with `dry_run: true` returns a diff and leaves
    products and sync metadata unchanged.
 
@@ -306,9 +359,12 @@ just the gateway shell. For DB errors, check the site's DB settings and PDO
 driver. For `500`, find `Catalog sync failed: stage=... class=... at=...` in
 Plesk's PHP error log; storage-stage failures commonly mean missing/unwritable
 `../config/` or inaccessible existing lock files. Stats never opens the sync log:
-after acquiring the lock it connects to the DB, counts products and reads any
-existing state JSON. A stats `500` alone does not establish a storage failure;
-query errors or corrupt/unreadable state can also cause it. A root-owned log
+after acquiring the shared lock it builds only the requested sections. DB/query
+or corrupt/unreadable state failures now return explicit section warnings,
+with `stage=stats_counts`, `stats_qty`, or `stats_sync` in the PHP error log.
+A stats `500` indicates a failure outside those isolated sections, such as
+configuration or lock setup; `debug`, `verbose` and `trace` do not expose
+exception details. A root-owned log
 directory is not inherently unwritable (permissions/ACLs matter), but denied
 log creation/append would fail a live push, not stats. Never share tokens or
 unredacted credential files.

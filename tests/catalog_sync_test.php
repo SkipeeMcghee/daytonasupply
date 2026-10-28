@@ -12,7 +12,6 @@ copy(__DIR__ . '/../api/catalog_sync.php', $fixture . '/web/api/catalog_sync.php
 copy(__DIR__ . '/../includes/db.php', $fixture . '/web/includes/db.php');
 copy(__DIR__ . '/../includes/functions.php', $fixture . '/web/includes/functions.php');
 copy(__DIR__ . '/../includes/product_images.php', $fixture . '/web/includes/product_images.php');
-copy(__DIR__ . '/../includes/inventory_display.php', $fixture . '/web/includes/inventory_display.php');
 $token = bin2hex(random_bytes(32));
 $configFile = $fixture . '/web/includes/sync_config.php';
 $config = "<?php\nputenv(" . var_export('SYNC_TOKEN=' . $token, true) . ");\n";
@@ -84,6 +83,8 @@ function syncRemoveFixture($path)
 
 $server = null;
 $heldLock = null;
+$mysqlAdmin = null;
+$mysqlDatabase = null;
 $schemaBefore = $db->query("SELECT type, name, sql FROM sqlite_master ORDER BY type, name")->fetchAll(PDO::FETCH_ASSOC);
 try {
     $socket = stream_socket_server('tcp://127.0.0.1:0', $errno, $error);
@@ -126,10 +127,26 @@ try {
     syncAssert($status === 403, 'Query token authorized a write.');
     list($status) = syncRequest('GET');
     syncAssert($status === 405, 'GET without a read-only action was accepted.');
+    list($status) = syncRequest('GET', '?action=status');
+    syncAssert($status === 405, 'Unknown action was accepted.');
     list($status) = syncRequest('PUT', '', syncPayload(array()));
     syncAssert($status === 405, 'PUT was accepted.');
     list($status, $json) = syncRequest('GET', '?action=stats', null, 'header');
     syncAssert($status === 200 && $json['products'] === 3 && $json['last_sync'] === null, 'Initial stats incorrect.');
+    syncAssert($json['qty'] === array('tracked' => 0, 'out' => 0, 'low' => 0, 'last_update' => null)
+        && !isset($json['warnings'], $json['partial']), 'Initial inventory stats incorrect.');
+    foreach (array('counts' => array('products' => 3), 'qty' => array('qty' => $json['qty']),
+        'sync' => array('last_sync' => null), 'all' => array_slice($json, 1)) as $section => $expected) {
+        list($status, $selected) = syncRequest('GET', '?action=stats&section=' . $section);
+        syncAssert($status === 200 && $selected === array_merge(array('ok' => true), $expected),
+            'Stats section selection failed: ' . $section);
+    }
+    foreach (array('bad', '', 'counts&section[]=qty') as $section) {
+        list($status) = syncRequest('GET', '?action=stats&section=' . $section);
+        syncAssert($status === 400, 'Invalid stats section was accepted.');
+    }
+    list($status) = syncRequest('GET', '?action=stats&section=bad', null, 'none');
+    syncAssert($status === 403, 'Stats section validation ran before authentication.');
     syncAssert($schemaBefore === $db->query("SELECT type, name, sql FROM sqlite_master ORDER BY type, name")->fetchAll(PDO::FETCH_ASSOC),
         'Site bootstrap modified the database schema.');
     list($status) = syncRequest('POST', '', '{not json');
@@ -408,8 +425,45 @@ PHP;
     rmdir($fixture . '/config/catalog_sync.log');
     rename($fixture . '/config/catalog_sync.saved.log', $fixture . '/config/catalog_sync.log');
     file_put_contents($fixture . '/config/.catalog_sync_state.json', 'broken state');
-    list($status) = syncRequest('GET', '?action=stats');
-    syncAssert($status === 500, 'Corrupted state was silently ignored.');
+    list($status, $partial) = syncRequest('GET', '?action=stats');
+    syncAssert($status === 200 && $partial['partial'] === true && isset($partial['products'], $partial['qty'])
+        && !array_key_exists('last_sync', $partial)
+        && $partial['warnings'] === array(array('code' => 'sync_stats_section_failed', 'section' => 'sync',
+            'message' => 'Stats section unavailable. Check server logs.')), 'Corrupt sync state did not return explicit partial stats.');
+    list($status, $selected) = syncRequest('GET', '?action=stats&section=counts');
+    syncAssert($status === 200 && $selected === array('ok' => true, 'products' => $partial['products']),
+        'Counts section read broken sync state.');
+
+    $db->exec('CREATE TABLE stats_no_qty (id INTEGER PRIMARY KEY)');
+    $db->exec('INSERT INTO stats_no_qty VALUES (1), (2)');
+    file_put_contents($configFile, $config . "\n\$CFG_TABLE='stats_no_qty';\n");
+    list($status, $partial) = syncRequest('GET', '?action=stats');
+    syncAssert($status === 200 && $partial['partial'] === true && $partial['products'] === 2
+        && !array_key_exists('qty', $partial) && !array_key_exists('last_sync', $partial)
+        && array_column($partial['warnings'], 'section') === array('qty', 'sync'), 'Independent stats failures did not aggregate warnings.');
+    file_put_contents($fixture . '/config/.catalog_sync_state.json', $stateBefore);
+    list($status, $partial) = syncRequest('GET', '?action=stats');
+    syncAssert($status === 200 && $partial['partial'] === true && $partial['products'] === 2
+        && isset($partial['last_sync']) && !array_key_exists('qty', $partial)
+        && array_column($partial['warnings'], 'section') === array('qty'), 'Qty failure hid healthy counts or sync state.');
+    list($status, $selected) = syncRequest('GET', '?action=stats&section=sync');
+    syncAssert($status === 200 && $selected === array('ok' => true, 'last_sync' => json_decode($stateBefore, true)),
+        'Sync-only section depended on inventory schema.');
+    file_put_contents($configFile, $config . "\n\$CFG_TABLE='stats_missing_table';\n");
+    list($status, $partial) = syncRequest('GET', '?action=stats');
+    syncAssert($status === 200 && $partial['partial'] === true && isset($partial['last_sync'])
+        && !array_key_exists('products', $partial) && !array_key_exists('qty', $partial)
+        && array_column($partial['warnings'], 'section') === array('counts', 'qty'), 'SQL failures fabricated counts or killed stats.');
+    syncAssert(strpos(json_encode($partial), 'SQLSTATE') === false
+        && strpos(json_encode($partial), 'stats_missing_table') === false, 'Partial stats leaked exception details.');
+    $db->exec('CREATE TABLE stats_bad_date (qty INTEGER, qty_updated_at TEXT)');
+    $db->exec("INSERT INTO stats_bad_date VALUES (1, 'not-a-date')");
+    file_put_contents($configFile, $config . "\n\$CFG_TABLE='stats_bad_date';\n");
+    list($status, $partial) = syncRequest('GET', '?action=stats');
+    syncAssert($status === 200 && $partial['partial'] === true && $partial['products'] === 1
+        && !array_key_exists('qty', $partial) && $partial['warnings'][0]['section'] === 'qty',
+        'Invalid inventory timestamp killed all stats.');
+    file_put_contents($configFile, $config);
     file_put_contents($fixture . '/config/.catalog_sync_state.json', $stateBefore);
 
     file_put_contents($configFile, "\xEF\xBB\xBF" . $config);
@@ -420,15 +474,62 @@ PHP;
     list($status) = syncRequest('GET', '?action=ping');
     syncAssert($status === 200, 'Ping accessed the database.');
     list($status, $json) = syncRequest('GET', '?action=stats');
-    syncAssert($status === 503 && $json['error'] === 'sync_db_unreachable', 'Bad database configuration was not surfaced.');
+    syncAssert($status === 200 && $json['partial'] === true && isset($json['last_sync'])
+        && array_column($json['warnings'], 'section') === array('counts', 'qty'), 'Bad database configuration was not surfaced in stats.');
+    list($status, $selected) = syncRequest('GET', '?action=stats&section=sync');
+    syncAssert($status === 200 && !isset($selected['warnings']), 'Sync-only stats accessed an unavailable DB.');
+    list($status, $json) = syncRequest('POST', '', syncPayload(array($hidden), false, true));
+    syncAssert($status === 503 && $json['error'] === 'sync_db_unreachable', 'POST database failure semantics changed.');
     syncAssert(!file_exists($missingDb), 'Sync created a missing SQLite database.');
     file_put_contents($configFile, $config . "\nputenv('DB_DRIVER=mysql'); putenv('DB_HOST=127.0.0.1');"
         . " putenv('DB_NAME=sync_missing'); putenv('DB_USER=sync_missing'); putenv('DB_PASS=SYNC_TEST_SECRET');\n");
     list($status, $json) = syncRequest('GET', '?action=stats');
-    syncAssert($status === 503 && $json['error'] === 'sync_db_unreachable', 'Failed MySQL connection fell back to SQLite.');
+    syncAssert($status === 200 && $json['partial'] === true
+        && array_column($json['warnings'], 'section') === array('counts', 'qty'), 'Failed MySQL connection was not an explicit partial result.');
     syncAssert(!file_exists($fixture . '/web/data/database.sqlite')
         && !file_exists($fixture . '/web/data/catalogue_errors.log'), 'Failed MySQL connection created fallback data or logs.');
     file_put_contents($configFile, $config);
+
+    $mysqlPort = getenv('CATALOG_SYNC_TEST_MYSQL_PORT');
+    if ($mysqlPort !== false && $mysqlPort !== '') {
+        syncAssert(ctype_digit($mysqlPort) && (int) $mysqlPort > 0 && (int) $mysqlPort <= 65535, 'Invalid isolated MySQL test port.');
+        $mysqlAdmin = new PDO('mysql:host=127.0.0.1;port=' . $mysqlPort, 'root', '',
+            array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_EMULATE_PREPARES => false));
+        $mysqlDatabase = 'catalog_sync_test_' . bin2hex(random_bytes(6));
+        $mysqlAdmin->exec('CREATE DATABASE `' . $mysqlDatabase . '`');
+        $mysqlAdmin->exec('USE `' . $mysqlDatabase . '`');
+        $mysqlAdmin->exec('CREATE TABLE products (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(100) UNIQUE,
+            price DECIMAL(10,2), description TEXT, qty INT NULL, qty_updated_at DATETIME NULL,
+            is_hidden TINYINT NOT NULL DEFAULT 0) ENGINE=InnoDB');
+        $seed = $mysqlAdmin->prepare('INSERT INTO products(name, price, description, qty, qty_updated_at) VALUES (?, 1, ?, ?, ?)');
+        $mysqlAdmin->beginTransaction();
+        for ($i = 0; $i < 675; $i++) {
+            $qty = $i < 401 ? ($i === 0 ? -3 : 0) : ($i < 560 ? 24 : ($i < 670 ? 25 : null));
+            $seed->execute(array('MYSQL-' . $i, 'Fixture', $qty, $qty === null ? null : '2026-10-28 20:38:09'));
+        }
+        $mysqlAdmin->commit();
+        $mysqlConfig = $config . "\nputenv('DB_DRIVER=mysql'); putenv('DB_HOST=127.0.0.1;port=" . $mysqlPort . "');\n"
+            . 'putenv(' . var_export('DB_NAME=' . $mysqlDatabase, true) . "); putenv('DB_USER=root'); putenv('DB_PASS=');\n";
+        file_put_contents($configFile, $mysqlConfig);
+        list($status, $mysqlStats) = syncRequest('GET', '?action=stats');
+        syncAssert($status === 200 && !isset($mysqlStats['warnings']) && $mysqlStats['products'] === 675
+            && $mysqlStats['qty'] === array('tracked' => 670, 'out' => 401, 'low' => 159,
+                'last_update' => '2026-10-28T20:38:09+00:00') && isset($mysqlStats['last_sync']),
+            'Native MySQL stats failed: ' . json_encode($mysqlStats));
+        foreach (array('counts' => 'products', 'qty' => 'qty', 'sync' => 'last_sync') as $section => $key) {
+            list($status, $selected) = syncRequest('GET', '?action=stats&section=' . $section);
+            syncAssert($status === 200 && $selected === array('ok' => true, $key => $mysqlStats[$key]), 'MySQL section selection failed.');
+        }
+        $mysqlItem = array('name' => 'MYSQL-0', 'price' => 1, 'description' => 'Fixture', 'qty' => -4);
+        list($status, $changed) = syncRequest('POST', '', syncPayload(array($mysqlItem), false, true, 2));
+        syncAssert($status === 200 && $changed['updated'][0]['changed'] === array('qty'), 'Native MySQL qty update failed.');
+        list($status, $replay) = syncRequest('POST', '', syncPayload(array($mysqlItem), false, true, 2));
+        syncAssert($status === 200 && $replay['counts']['updated'] === 0 && $replay['counts']['unchanged'] === 1,
+            'Native MySQL replay was not idempotent.');
+        $seed = null;
+        file_put_contents($configFile, $config);
+        echo "Native MySQL stats tests passed (675 rows, 670 tracked, 401 out, 159 low, section selectors, qty update/replay).\n";
+    }
 
     $db->exec("INSERT INTO products (name, price, description) VALUES ('case-1', 1, 'Duplicate')");
     list($status) = syncRequest('POST', '', syncPayload($items));
@@ -476,7 +577,8 @@ PHP;
         'Stats did not surface missing lock storage or created the directory itself.');
     rename($fixture . '/config_unavailable', $fixture . '/config');
     list($status, $json) = syncRequest('GET', '?action=stats');
-    syncAssert($status === 503 && $json['error'] === 'sync_db_unreachable',
+    syncAssert($status === 200 && $json['partial'] === true
+        && array_column($json['warnings'], 'section') === array('counts', 'qty'),
         'Missing DB bootstrap was not diagnosed: ' . $status . ' ' . json_encode($json)
         . ' ' . implode("\n", array_slice(preg_grep('/Catalog sync failed:/',
             explode("\n", file_get_contents($fixture . '/server.log'))), -3)));
@@ -498,6 +600,9 @@ PHP;
             syncAssert(strpos($line, $token) === false && strpos($line, 'SYNC_TEST_SECRET') === false, 'Error log leaked credentials.');
         }
     }
+    foreach (array('stats_counts', 'stats_qty', 'stats_sync') as $stage) {
+        syncAssert(strpos(file_get_contents($fixture . '/server.log'), 'stage=' . $stage) !== false, 'Missing stats failure stage: ' . $stage);
+    }
     echo "Catalog sync HTTP integration tests passed (auth, validation, guards, dry run, upsert, replay, hidden/default fields, locks, rollback, stats, BOM, schema overrides).\n";
 } finally {
     if (is_resource($heldLock)) {
@@ -508,6 +613,10 @@ PHP;
         proc_terminate($server);
         proc_close($server);
     }
+    if ($mysqlAdmin instanceof PDO && $mysqlDatabase !== null) {
+        $mysqlAdmin->exec('DROP DATABASE `' . $mysqlDatabase . '`');
+    }
+    $mysqlAdmin = null;
     $db = null;
     syncRemoveFixture($fixture);
 }
