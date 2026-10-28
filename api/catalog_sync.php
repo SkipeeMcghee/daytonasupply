@@ -3,6 +3,9 @@
 ob_start();
 ini_set('display_errors', '0');
 error_reporting(E_ALL);
+const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION_MIN = 1;
+require_once __DIR__ . '/../includes/inventory_display.php';
 $catalogSyncResponded = false;
 $catalogSyncCommitted = false;
 $catalogSyncDb = null;
@@ -120,7 +123,7 @@ try {
     if ($method === 'GET' && $action === 'ping') {
         $time = gmdate('c');
         catalogSyncRespond(200, array('ok' => true, 'php' => PHP_VERSION,
-            'service' => 'catalog_sync', 'time' => $time, 'pong' => $time, 'schema' => 1));
+            'service' => 'catalog_sync', 'time' => $time, 'pong' => $time, 'schema' => SCHEMA_VERSION));
     }
     if ($method === 'POST' && $action !== '') {
         catalogSyncRespond(400, array('ok' => false, 'error' => 'POST does not accept an action.'));
@@ -146,6 +149,13 @@ try {
     if ($method === 'GET') {
         $db = catalogSyncDatabase();
         $total = (int) $db->query("SELECT COUNT(*) FROM $table")->fetchColumn();
+        $stock = $db->query("SELECT COUNT(qty) AS tracked,
+            COUNT(CASE WHEN qty <= 0 THEN 1 END) AS out,
+            COUNT(CASE WHEN qty > 0 AND qty < " . LOW_STOCK_MAX . " THEN 1 END) AS low,
+            MAX(qty_updated_at) AS last_update FROM $table")->fetch(PDO::FETCH_ASSOC);
+        $stock = array('tracked' => (int) $stock['tracked'], 'out' => (int) $stock['out'],
+            'low' => (int) $stock['low'], 'last_update' => $stock['last_update'] === null ? null
+                : (new DateTimeImmutable($stock['last_update'], new DateTimeZone('UTC')))->format('c'));
         $lastSync = null;
         if (is_file($stateFile)) {
             $lastSync = json_decode(file_get_contents($stateFile), true);
@@ -153,7 +163,7 @@ try {
                 throw new RuntimeException('Invalid sync state file.');
             }
         }
-        catalogSyncRespond(200, array('ok' => true, 'products' => $total, 'last_sync' => $lastSync));
+        catalogSyncRespond(200, array('ok' => true, 'products' => $total, 'qty' => $stock, 'last_sync' => $lastSync));
     }
 
     $maxBytes = 8 * 1024 * 1024;
@@ -170,9 +180,10 @@ try {
     if (json_last_error() !== JSON_ERROR_NONE || !($payload instanceof stdClass)) {
         catalogSyncRespond(400, array('ok' => false, 'error' => 'Expected a JSON object.'));
     }
-    if (!isset($payload->schema, $payload->mode, $payload->items) || $payload->schema !== 1
+    if (!isset($payload->schema, $payload->mode, $payload->items) || !is_int($payload->schema)
+        || $payload->schema < SCHEMA_VERSION_MIN || $payload->schema > SCHEMA_VERSION
         || $payload->mode !== 'upsert' || !is_array($payload->items)) {
-        catalogSyncRespond(400, array('ok' => false, 'error' => 'Expected schema=1, mode=upsert and an items array.'));
+        catalogSyncRespond(400, array('ok' => false, 'error' => 'Expected schema=1 or 2, mode=upsert and an items array.'));
     }
     foreach (array('dry_run', 'force') as $flag) {
         if (property_exists($payload, $flag) && !is_bool($payload->$flag)) {
@@ -192,6 +203,7 @@ try {
     $skipped = array();
     foreach ($payload->items as $index => $row) {
         $reason = null;
+        $qtyPresent = $payload->schema >= 2 && $row instanceof stdClass && property_exists($row, 'qty');
         if (!($row instanceof stdClass) || !isset($row->name) || !is_string($row->name)
             || !preg_match('/^[\x20-\x7E]{1,100}$/D', $row->name) || trim($row->name) === '') {
             $reason = 'Name must be printable ASCII, nonblank and at most 100 characters.';
@@ -201,6 +213,10 @@ try {
             $reason = 'Price must be numeric and between 0 and 100000.';
         } elseif (property_exists($row, 'description') && !is_string($row->description)) {
             $reason = 'Description must be a string.';
+        } elseif ($qtyPresent && $row->qty !== null && !is_int($row->qty)) {
+            $reason = 'qty not an integer';
+        } elseif ($qtyPresent && $row->qty !== null && ($row->qty < -99999 || $row->qty > 999999)) {
+            $reason = 'qty out of range';
         } else {
             $desc = isset($row->description) ? preg_replace('/\p{Cc}/u', '', $row->description) : '';
             if (preg_match_all('/./us', $desc) > 500) {
@@ -217,6 +233,8 @@ try {
         }
         $sku = trim($row->name);
         $items[strtolower($sku)] = array('name' => $sku, 'price' => round((float) $row->price, 2), 'description' => $desc);
+        $items[strtolower($sku)]['qty_present'] = $qtyPresent;
+        $items[strtolower($sku)]['qty'] = $qtyPresent ? $row->qty : null;
     }
     // Guard the usable, deduplicated catalog too, not just the raw array length.
     if (!$force && ($received < 300 || count($items) < 300)) {
@@ -233,8 +251,8 @@ try {
     }
     $db->beginTransaction();
     $existing = array();
-    foreach ($db->query("SELECT $id AS sync_id, $name AS sync_name, $price AS sync_price, $description AS sync_description FROM $table") as $row) {
-        $key = strtolower($row['sync_name']);
+    foreach ($db->query("SELECT $id AS sync_id, $name AS sync_name, $price AS sync_price, $description AS sync_description, qty AS sync_qty FROM $table") as $row) {
+        $key = strtolower(trim($row['sync_name']));
         if (isset($existing[$key])) {
             $db->rollBack();
             catalogSyncRespond(409, array('ok' => false, 'error' => 'Catalog contains duplicate case-insensitive names. Resolve them before syncing.'));
@@ -254,25 +272,47 @@ try {
         ? "INSERT INTO $table ($name, $price, $description, `is_hidden`) VALUES (?, ?, ?, 0)"
         : "INSERT INTO $table ($name, $price, $description) VALUES (?, ?, ?)");
     $update = $db->prepare("UPDATE $table SET $price = ?, $description = ? WHERE $id = ?");
+    $insertQty = $db->prepare($insertVisible
+        ? "INSERT INTO $table ($name, $price, $description, qty, qty_updated_at, `is_hidden`) VALUES (?, ?, ?, ?, ?, 0)"
+        : "INSERT INTO $table ($name, $price, $description, qty, qty_updated_at) VALUES (?, ?, ?, ?, ?)");
+    $updateQty = $db->prepare("UPDATE $table SET $price = ?, $description = ?, qty = ?, qty_updated_at = ? WHERE $id = ?");
+    $qtyChanges = 0;
+    $qtyUpdatedAt = gmdate('Y-m-d H:i:s');
     $added = array();
     $updated = array();
     $unchanged = 0;
     foreach ($items as $key => $item) {
         if (!isset($existing[$key])) {
-            $added[] = $item;
+            $new = array('name' => $item['name'], 'price' => $item['price'], 'description' => $item['description']);
+            if ($item['qty_present']) {
+                $new['qty'] = $item['qty'];
+                if ($item['qty'] !== null) $qtyChanges++;
+            }
+            $added[] = $new;
             if (!$dryRun) {
-                $insert->execute(array($item['name'], $item['price'], $item['description']));
+                if ($item['qty_present']) {
+                    $insertQty->execute(array($item['name'], $item['price'], $item['description'], $item['qty'], $qtyUpdatedAt));
+                } else {
+                    $insert->execute(array($item['name'], $item['price'], $item['description']));
+                }
             }
             continue;
         }
         $old = $existing[$key];
-        $from = array('price' => round((float) $old['sync_price'], 2), 'description' => (string) $old['sync_description']);
-        $to = array('price' => $item['price'], 'description' => $item['description']);
+        $oldQty = $old['sync_qty'] === null ? null : (int) $old['sync_qty'];
+        $from = array('price' => round((float) $old['sync_price'], 2), 'description' => (string) $old['sync_description'], 'qty' => $oldQty);
+        $to = array('price' => $item['price'], 'description' => $item['description'],
+            'qty' => $item['qty_present'] ? $item['qty'] : $oldQty);
         $changed = array();
         foreach (array('price', 'description') as $field) {
             if ($from[$field] !== $to[$field]) {
                 $changed[] = $field;
             }
+        }
+        $qtyChanged = $item['qty_present'] && $oldQty !== $item['qty'];
+        if ($qtyChanged) {
+            $changed[] = 'qty';
+            $qtyChanges++;
         }
         if (!$changed) {
             $unchanged++;
@@ -280,12 +320,16 @@ try {
         }
         $updated[] = array('name' => $item['name'], 'changed' => $changed, 'from' => $from, 'to' => $to);
         if (!$dryRun) {
-            $update->execute(array($item['price'], $item['description'], $old['sync_id']));
+            if ($qtyChanged) {
+                $updateQty->execute(array($item['price'], $item['description'], $item['qty'], $qtyUpdatedAt, $old['sync_id']));
+            } else {
+                $update->execute(array($item['price'], $item['description'], $old['sync_id']));
+            }
         }
     }
     $total = (int) $db->query("SELECT COUNT(*) FROM $table")->fetchColumn();
     $summary = array(
-        'ok' => true, 'schema' => 1, 'mode' => 'upsert', 'dry_run' => $dryRun,
+        'ok' => true, 'schema' => $payload->schema, 'mode' => 'upsert', 'dry_run' => $dryRun,
         'finished_at' => gmdate('c'),
         'counts' => array('received' => $received, 'valid' => count($items), 'added' => count($added),
             'updated' => count($updated), 'unchanged' => $unchanged, 'skipped' => count($skipped)),
@@ -326,7 +370,7 @@ try {
                 throw new RuntimeException('Cannot publish sync state.');
             }
             $ip = isset($_SERVER['REMOTE_ADDR']) ? preg_replace('/[^a-fA-F0-9:.]/', '', $_SERVER['REMOTE_ADDR']) : '';
-            $line = $summary['finished_at'] . ' IP=' . $ip . ' ' . json_encode($summary['counts']) . "\n";
+            $line = $summary['finished_at'] . ' IP=' . $ip . ' ' . json_encode($summary['counts']) . ' qty=' . $qtyChanges . "\n";
             if (fwrite($log, $line) !== strlen($line) || !fflush($log)) {
                 throw new RuntimeException('Cannot write sync log.');
             }

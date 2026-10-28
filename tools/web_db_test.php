@@ -28,7 +28,7 @@ try {
     echo "Total products: $count\n";
     
     // Look for the SBO product
-    $stmt = $db->prepare('SELECT * FROM products WHERE name LIKE ?');
+    $stmt = $db->prepare('SELECT id, name, description, price, deal, deal_price, is_hidden FROM products WHERE name LIKE ?');
     $stmt->execute(['%SBO%6765%']);
     $sboProducts = $stmt->fetchAll(PDO::FETCH_ASSOC);
     

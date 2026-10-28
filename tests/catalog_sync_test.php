@@ -12,6 +12,7 @@ copy(__DIR__ . '/../api/catalog_sync.php', $fixture . '/web/api/catalog_sync.php
 copy(__DIR__ . '/../includes/db.php', $fixture . '/web/includes/db.php');
 copy(__DIR__ . '/../includes/functions.php', $fixture . '/web/includes/functions.php');
 copy(__DIR__ . '/../includes/product_images.php', $fixture . '/web/includes/product_images.php');
+copy(__DIR__ . '/../includes/inventory_display.php', $fixture . '/web/includes/inventory_display.php');
 $token = bin2hex(random_bytes(32));
 $configFile = $fixture . '/web/includes/sync_config.php';
 $config = "<?php\nputenv(" . var_export('SYNC_TOKEN=' . $token, true) . ");\n";
@@ -20,7 +21,7 @@ $db = new PDO('sqlite:' . $fixture . '/catalog.sqlite');
 $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 $db->exec("CREATE TABLE products (
     id INTEGER PRIMARY KEY, name TEXT NOT NULL UNIQUE, price NUMERIC NOT NULL,
-    description TEXT, is_hidden INTEGER NOT NULL DEFAULT 0,
+    description TEXT, qty INTEGER DEFAULT NULL, qty_updated_at DATETIME DEFAULT NULL, is_hidden INTEGER NOT NULL DEFAULT 0,
     image TEXT DEFAULT 'default.jpg', category TEXT DEFAULT 'existing', sort_order INTEGER DEFAULT 7
 )");
 $db->exec("INSERT INTO products (name, price, description, is_hidden) VALUES
@@ -59,9 +60,9 @@ function syncRequest($method, $query = '', $payload = null, $auth = 'bearer')
     return array((int) $match[1], $json);
 }
 
-function syncPayload(array $items, $dryRun = false, $force = false)
+function syncPayload(array $items, $dryRun = false, $force = false, $schema = 1)
 {
-    return array('schema' => 1, 'mode' => 'upsert', 'dry_run' => $dryRun, 'force' => $force, 'items' => $items);
+    return array('schema' => $schema, 'mode' => 'upsert', 'dry_run' => $dryRun, 'force' => $force, 'items' => $items);
 }
 
 function syncRemoveFixture($path)
@@ -110,7 +111,7 @@ try {
     syncAssert($ready && proc_get_status($server)['running'], 'PHP HTTP server did not become ready.');
 
     list($status, $json) = syncRequest('GET', '?action=ping&token=' . $token, null, 'none');
-    syncAssert($status === 200 && $json['schema'] === 1 && isset($json['pong']), 'Query-token ping failed.');
+    syncAssert($status === 200 && $json['schema'] === 2 && isset($json['pong']), 'Query-token ping failed.');
     syncAssert($json['php'] === PHP_VERSION && $json['service'] === 'catalog_sync'
         && isset($json['time']) && strtotime($json['time']) !== false, 'Ping diagnostics missing.');
     list($status) = syncRequest('GET', '?action=ping', null, 'none');
@@ -133,7 +134,7 @@ try {
         'Site bootstrap modified the database schema.');
     list($status) = syncRequest('POST', '', '{not json');
     syncAssert($status === 400, 'Malformed JSON was accepted.');
-    list($status) = syncRequest('POST', '', array('schema' => 2, 'mode' => 'upsert', 'items' => array()));
+    list($status) = syncRequest('POST', '', array('schema' => 3, 'mode' => 'upsert', 'items' => array()));
     syncAssert($status === 400, 'Unknown schema was accepted.');
     list($status) = syncRequest('POST', '', array('schema' => 1, 'mode' => 'delete', 'items' => array()));
     syncAssert($status === 400, 'Delete mode was accepted.');
@@ -162,8 +163,8 @@ try {
     syncAssert($status === 200 && $dry['counts'] === array('received' => 324, 'valid' => 324,
         'added' => 321, 'updated' => 1, 'unchanged' => 2, 'skipped' => 0), 'Dry-run counts incorrect.');
     syncAssert($dry['updated'][0]['changed'] === array('price', 'description')
-        && $dry['updated'][0]['from'] === array('price' => 1, 'description' => 'Old')
-        && $dry['updated'][0]['to'] === array('price' => 2, 'description' => 'New'), 'Change details incorrect.');
+        && $dry['updated'][0]['from'] === array('price' => 1, 'description' => 'Old', 'qty' => null)
+        && $dry['updated'][0]['to'] === array('price' => 2, 'description' => 'New', 'qty' => null), 'Change details incorrect.');
     syncAssert($dry['added'][0]['description'] === '14" x 18", bundle' && $dry['added'][0]['price'] === 6.46, 'Normalization incorrect.');
     syncAssert((int) $db->query('SELECT COUNT(*) FROM products')->fetchColumn() === 3
         && !is_file($fixture . '/config/.catalog_sync_state.json')
@@ -292,9 +293,89 @@ PHP;
     list($status, $json) = syncRequest('POST', '', syncPayload(array_merge($items, $invalid)));
     syncAssert($status === 200 && $json['counts']['skipped'] === count($invalid), 'Invalid rows failed the valid remainder of a batch.');
 
+    $inventoryItems = array(
+        array('name' => 'CASE-1', 'price' => 2, 'description' => 'New', 'qty' => 120),
+        array('name' => 'HIDDEN-1', 'price' => 5, 'description' => 'Hidden', 'qty' => -3),
+        array('name' => 'FREE-1', 'price' => 0, 'description' => 'Free', 'qty' => 24),
+        array('name' => 'NEW-0', 'price' => 6.46, 'description' => '14" x 18", bundle', 'qty' => 0),
+        array('name' => 'QTY-MIN', 'price' => 1, 'qty' => -99999),
+        array('name' => 'QTY-MAX', 'price' => 1, 'qty' => 999999),
+        array('name' => 'QTY-NULL', 'price' => 0, 'qty' => null),
+        array('name' => 'QTY-ABSENT', 'price' => 0),
+    );
+    list($status, $qtyDry) = syncRequest('POST', '', syncPayload($inventoryItems, true, true, 2));
+    syncAssert($status === 200 && count($qtyDry['updated']) === 4, 'Qty dry run failed.');
+    foreach ($qtyDry['updated'] as $entry) {
+        syncAssert($entry['changed'] === array('qty') && $entry['from']['qty'] === null,
+            'Qty diff did not distinguish NULL: ' . json_encode($entry));
+    }
+    syncAssert((int) $db->query('SELECT COUNT(*) FROM products WHERE qty_updated_at IS NOT NULL')->fetchColumn() === 0,
+        'Qty dry run wrote timestamps.');
+    list($status, $qtyLive) = syncRequest('POST', '', syncPayload($inventoryItems, false, true, 2));
+    syncAssert($status === 200 && $qtyLive['updated'] === $qtyDry['updated'] && $qtyLive['added'] === $qtyDry['added'],
+        'Qty live run differs from dry run.');
+    $qtySnapshot = $db->query('SELECT id, qty, qty_updated_at FROM products ORDER BY id')->fetchAll(PDO::FETCH_ASSOC);
+    syncAssert($db->query("SELECT qty_updated_at FROM products WHERE name='QTY-NULL'")->fetchColumn() !== null
+        && $db->query("SELECT qty_updated_at FROM products WHERE name='QTY-ABSENT'")->fetchColumn() === null,
+        'Explicit NULL insert and absent qty timestamps are incorrect.');
+    $db->exec("UPDATE products SET qty_updated_at='2000-01-01 00:00:00' WHERE qty_updated_at IS NOT NULL");
+    $qtySnapshot = $db->query('SELECT id, qty, qty_updated_at FROM products ORDER BY id')->fetchAll(PDO::FETCH_ASSOC);
+    list($status, $qtyReplay) = syncRequest('POST', '', syncPayload($inventoryItems, false, true, 2));
+    syncAssert($status === 200 && $qtyReplay['counts']['updated'] === 0 && $qtyReplay['counts']['unchanged'] === 8,
+        'Qty replay churned (including zero).');
+    syncAssert($qtySnapshot === $db->query('SELECT id, qty, qty_updated_at FROM products ORDER BY id')->fetchAll(PDO::FETCH_ASSOC),
+        'Qty replay changed timestamps.');
+    list($status) = syncRequest('POST', '', syncPayload($items));
+    syncAssert($status === 200 && $qtySnapshot === $db->query('SELECT id, qty, qty_updated_at FROM products ORDER BY id')->fetchAll(PDO::FETCH_ASSOC),
+        'Schema 1 cleared inventory.');
+    $schemaOneQty = array('name' => 'CASE-1', 'price' => 2, 'description' => 'New', 'qty' => 'ignored in schema 1');
+    list($status) = syncRequest('POST', '', syncPayload(array($schemaOneQty), false, true));
+    syncAssert($status === 200 && (int) $db->query("SELECT qty FROM products WHERE name='CASE-1'")->fetchColumn() === 120,
+        'Schema 1 must ignore qty.');
+    $withoutQty = array('name' => 'CASE-1', 'price' => 2, 'description' => 'Price/description only');
+    list($status, $json) = syncRequest('POST', '', syncPayload(array($withoutQty), false, true, 2));
+    syncAssert($status === 200 && $json['updated'][0]['changed'] === array('description')
+        && (int) $db->query("SELECT qty FROM products WHERE name='CASE-1'")->fetchColumn() === 120,
+        'Schema 2 absent qty changed inventory.');
+    syncAssert($qtySnapshot === $db->query('SELECT id, qty, qty_updated_at FROM products ORDER BY id')->fetchAll(PDO::FETCH_ASSOC),
+        'Description-only update stamped inventory.');
+    $clear = array('name' => 'CASE-1', 'price' => 2, 'description' => 'New', 'qty' => null);
+    $db->exec("UPDATE products SET qty_updated_at='2000-01-01 00:00:00' WHERE name='CASE-1'");
+    list($status, $json) = syncRequest('POST', '', syncPayload(array($clear), false, true, 2));
+    $cleared = $db->query("SELECT qty, qty_updated_at FROM products WHERE name='CASE-1'")->fetch(PDO::FETCH_ASSOC);
+    syncAssert($status === 200 && $cleared['qty'] === null && $cleared['qty_updated_at'] !== '2000-01-01 00:00:00'
+        && in_array('qty', $json['updated'][0]['changed'], true), 'Explicit NULL did not clear and stamp.');
+    $zeroClear = $inventoryItems[3];
+    $zeroClear['qty'] = null;
+    list($status, $json) = syncRequest('POST', '', syncPayload(array($zeroClear), false, true, 2));
+    syncAssert($status === 200 && $json['updated'][0]['from']['qty'] === 0
+        && $json['updated'][0]['to']['qty'] === null && $json['updated'][0]['changed'] === array('qty'),
+        'Zero to NULL was treated as unchanged.');
+    list($status, $json) = syncRequest('POST', '', syncPayload(array($inventoryItems[3]), false, true, 2));
+    syncAssert($status === 200 && $json['updated'][0]['from']['qty'] === null
+        && $json['updated'][0]['to']['qty'] === 0, 'NULL to zero was treated as unchanged.');
+    $badQty = array(4.7, '4', true, false, new stdClass(), array(), -100000, 1000000);
+    $qtyRows = array();
+    foreach ($badQty as $i => $value) {
+        $qtyRows[] = array('name' => 'BAD-QTY-' . $i, 'price' => 1, 'qty' => $value);
+    }
+    $qtyRows[] = array('name' => 'QTY-ONE', 'price' => 0, 'qty' => 1);
+    $qtyRows[] = array('name' => 'QTY-25', 'price' => 1, 'qty' => 25);
+    list($status, $json) = syncRequest('POST', '', syncPayload($qtyRows, false, true, 2));
+    syncAssert($status === 200 && $json['counts']['skipped'] === 8 && $json['counts']['added'] === 2,
+        'Malformed qty failed the valid remainder.');
+    foreach ($json['skipped'] as $i => $entry) {
+        syncAssert($entry['reason'] === ($i < 6 ? 'qty not an integer' : 'qty out of range'), 'Wrong qty rejection reason.');
+    }
+    list($status, $stats) = syncRequest('GET', '?action=stats');
+    syncAssert($status === 200 && $stats['qty']['tracked'] === 7 && $stats['qty']['out'] === 3
+        && $stats['qty']['low'] === 2 && strtotime($stats['qty']['last_update']) !== false, 'Inventory stats incorrect.');
+    syncAssert(strpos(file_get_contents($fixture . '/config/catalog_sync.log'), ' qty=6') !== false,
+        'Inventory audit count missing.');
+
     $heldLock = fopen($fixture . '/config/.catalog_sync.lock', 'c');
     syncAssert(flock($heldLock, LOCK_EX | LOCK_NB), 'Could not acquire test lock.');
-    list($status) = syncRequest('POST', '', syncPayload($items));
+    list($status) = syncRequest('POST', '', syncPayload($inventoryItems, false, true, 2));
     syncAssert($status === 409, 'Concurrent push was not rejected.');
     flock($heldLock, LOCK_UN);
     fclose($heldLock);
@@ -302,15 +383,18 @@ PHP;
 
     $stateBefore = file_get_contents($fixture . '/config/.catalog_sync_state.json');
     $logBefore = file_get_contents($fixture . '/config/catalog_sync.log');
+    $qtyBeforeRollback = $db->query('SELECT id, qty, qty_updated_at FROM products ORDER BY id')->fetchAll(PDO::FETCH_ASSOC);
     $db->exec("CREATE TRIGGER fail_sync BEFORE UPDATE ON products WHEN NEW.description='ROLLBACK'
         BEGIN SELECT RAISE(ABORT, 'deliberate test failure'); END");
     file_put_contents($cacheFile, $staleCache);
     list($status, $json) = syncRequest('POST', '', syncPayload(array(
-        array('name' => 'MUST-ROLL-BACK', 'price' => 1, 'description' => 'Inserted first'),
-        array('name' => 'HIDDEN-1', 'price' => 9, 'description' => 'ROLLBACK'),
-    ), false, true));
+        array('name' => 'MUST-ROLL-BACK', 'price' => 1, 'description' => 'Inserted first', 'qty' => 42),
+        array('name' => 'HIDDEN-1', 'price' => 9, 'description' => 'ROLLBACK', 'qty' => 99),
+    ), false, true, 2));
     syncAssert($status === 500 && $json['ok'] === false, 'Database failure was not JSON 500.');
     syncAssert((int) $db->query("SELECT COUNT(*) FROM products WHERE name='MUST-ROLL-BACK'")->fetchColumn() === 0, 'Failed batch did not roll back inserts.');
+    syncAssert($qtyBeforeRollback === $db->query('SELECT id, qty, qty_updated_at FROM products ORDER BY id')->fetchAll(PDO::FETCH_ASSOC),
+        'Failed batch did not roll back inventory.');
     syncAssert(file_get_contents($cacheFile) === $staleCache, 'Rolled-back push invalidated the cache.');
     syncAssert(file_get_contents($fixture . '/config/.catalog_sync_state.json') === $stateBefore
         && file_get_contents($fixture . '/config/catalog_sync.log') === $logBefore, 'Failed batch changed sync state or success log.');
@@ -352,7 +436,7 @@ PHP;
     $db->exec("DELETE FROM products WHERE name='case-1'");
     $db->exec('CREATE TABLE hidden_default_catalog (
         id INTEGER PRIMARY KEY, name TEXT UNIQUE, price NUMERIC, description TEXT,
-        is_hidden INTEGER NOT NULL DEFAULT 1
+        is_hidden INTEGER NOT NULL DEFAULT 1, qty INTEGER, qty_updated_at DATETIME
     )');
     $db->exec("INSERT INTO hidden_default_catalog (name, price, description) VALUES ('STAY-HIDDEN', 1, 'Old')");
     file_put_contents($configFile, $config . "\n\$CFG_TABLE='hidden_default_catalog';\n");
@@ -364,7 +448,7 @@ PHP;
         && (int) $db->query("SELECT is_hidden FROM hidden_default_catalog WHERE name='VISIBLE-NEW'")->fetchColumn() === 0
         && (int) $db->query("SELECT is_hidden FROM hidden_default_catalog WHERE name='STAY-HIDDEN'")->fetchColumn() === 1,
         'Default-1 schema hid a new item or changed existing visibility.');
-    $db->exec('CREATE TABLE custom_catalog (sku_id INTEGER PRIMARY KEY, sku TEXT, amount NUMERIC, details TEXT)');
+    $db->exec('CREATE TABLE custom_catalog (sku_id INTEGER PRIMARY KEY, sku TEXT, amount NUMERIC, details TEXT, qty INTEGER, qty_updated_at DATETIME)');
     file_put_contents($configFile, $config
         . "\n\$CFG_TABLE='custom_catalog'; \$CFG_COL_ID='sku_id'; \$CFG_COL_NAME='sku'; \$CFG_COL_PRICE='amount'; \$CFG_COL_DESC='details';\n");
     list($status, $json) = syncRequest('POST', '', syncPayload(array($hidden), false, true));

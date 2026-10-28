@@ -21,7 +21,7 @@ try {
     }
     
     // Get first product
-    $stmt = $db->query('SELECT * FROM products LIMIT 1');
+    $stmt = $db->query('SELECT id, name, description, price, deal, deal_price, is_hidden FROM products LIMIT 1');
     $product = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if (!$product) {

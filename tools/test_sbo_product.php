@@ -15,7 +15,7 @@ try {
     echo "Database driver: $driver\n";
     
     // Look for the SBO product
-    $stmt = $db->prepare('SELECT * FROM products WHERE name LIKE ?');
+    $stmt = $db->prepare('SELECT id, name, description, price, deal, deal_price, is_hidden FROM products WHERE name LIKE ?');
     $stmt->execute(['%SBO%6765%']);
     $sboProducts = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
@@ -26,7 +26,7 @@ try {
     
     if (empty($sboProducts)) {
         // Look for any SBO products
-        $stmt = $db->prepare('SELECT * FROM products WHERE name LIKE ? LIMIT 5');
+        $stmt = $db->prepare('SELECT id, name, description, price, deal, deal_price, is_hidden FROM products WHERE name LIKE ? LIMIT 5');
         $stmt->execute(['%SBO%']);
         $allSbo = $stmt->fetchAll(PDO::FETCH_ASSOC);
         echo "\nAll SBO products (first 5):\n";
@@ -61,7 +61,7 @@ try {
         echo "Called saveProduct...\n";
         
         // Check if it saved
-        $stmt = $db->prepare('SELECT * FROM products WHERE id = ?');
+        $stmt = $db->prepare('SELECT id, name, description, price, deal, deal_price, is_hidden FROM products WHERE id = ?');
         $stmt->execute([$id]);
         $updated = $stmt->fetch(PDO::FETCH_ASSOC);
         

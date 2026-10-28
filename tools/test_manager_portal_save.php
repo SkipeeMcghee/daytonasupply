@@ -25,7 +25,7 @@ echo "  price_392 = '{$_POST['price_392']}'\n";
 
 // Get original product state
 $db = getDb();
-$stmt = $db->prepare('SELECT * FROM products WHERE id = ?');
+$stmt = $db->prepare('SELECT id, name, description, price, deal, deal_price, is_hidden FROM products WHERE id = ?');
 $stmt->execute([392]);
 $originalProduct = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -118,7 +118,7 @@ $output = ob_get_clean();
 echo $output;
 
 // Check final state
-$stmt = $db->prepare('SELECT * FROM products WHERE id = ?');
+$stmt = $db->prepare('SELECT id, name, description, price, deal, deal_price, is_hidden FROM products WHERE id = ?');
 $stmt->execute([392]);
 $finalProduct = $stmt->fetch(PDO::FETCH_ASSOC);
 

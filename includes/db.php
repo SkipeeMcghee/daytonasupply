@@ -616,6 +616,8 @@ function initDatabase(PDO $db): void
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         description TEXT,
+        qty INTEGER DEFAULT NULL,
+        qty_updated_at DATETIME DEFAULT NULL,
         price REAL NOT NULL,
         deal INTEGER DEFAULT 0,
         deal_price REAL NULL,

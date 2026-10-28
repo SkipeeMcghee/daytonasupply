@@ -4,11 +4,13 @@
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
 require __DIR__ . '/includes/db.php';
 require __DIR__ . '/includes/functions.php';
+require_once __DIR__ . '/includes/inventory_display.php';
 
 $title = 'Product Details';
+$detailLoggedIn = !empty($_SESSION['customer']['id']);
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-$prod = $id > 0 ? getProductById($id) : null;
+$prod = $id > 0 ? getProductById($id, $detailLoggedIn) : null;
 if ($prod && !empty($prod['is_hidden'])) {
     $prod = null;
 }
@@ -37,6 +39,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['favorite_prod
 
 include __DIR__ . '/includes/header.php';
 ?>
+<?php if ($detailLoggedIn): ?>
+<link rel="stylesheet" href="assets/inventory.css">
+<?php endif; ?>
 <div class="container"><div class="form-card">
 <?php if (!$prod): ?>
     <h1>Product not found</h1>
@@ -88,7 +93,10 @@ include __DIR__ . '/includes/header.php';
             <div style="font-weight:400; opacity:0.95; font-size:1rem; margin-bottom:10px;">
                 <?= htmlspecialchars($dispName) ?>
             </div>
-            <?php $detailLoggedIn = !empty($_SESSION['customer']['id']); ?>
+            <?php if ($detailLoggedIn && isset($prod['qty'])): ?>
+                <div class="cat-stock-detail"><?= stock_badge_html($prod['qty'], $detailLoggedIn) ?></div>
+                <?= stock_updated_html($prod['qty'], $prod['qty_updated_at'], $detailLoggedIn) ?>
+            <?php endif; ?>
             <?php if ($detailLoggedIn): ?>
                 <p style="font-size:1.2rem;font-weight:800;margin:10px 0;display:flex;align-items:center;gap:8px;">
                     <span>$<?= number_format($price, 2) ?></span>

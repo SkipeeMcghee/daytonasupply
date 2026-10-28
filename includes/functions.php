@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/product_images.php';
+const PRODUCT_PUBLIC_COLUMNS = 'id, name, description, price, deal, deal_price, is_hidden';
 
 /**
  * Set customer verification status and send notification email.
@@ -168,8 +169,12 @@ function updateCustomer(int $id, array $data)
  *
  * @return array An array of associative arrays describing products.
  */
-function getAllProducts(): array
+function getAllProducts(bool $includeInventory = false): array
 {
+    if ($includeInventory) {
+        return getDb()->query('SELECT ' . PRODUCT_PUBLIC_COLUMNS . ', qty, qty_updated_at FROM products WHERE is_hidden = 0 ORDER BY name ASC')
+            ->fetchAll(PDO::FETCH_ASSOC);
+    }
     $cacheKey = 'daytona_all_products_v1';
     $useApc = function_exists('apcu_fetch');
     if ($useApc) {
@@ -185,7 +190,7 @@ function getAllProducts(): array
     }
     $db = getDb();
     // Always return products ordered by name (our SKU) for consistent UI ordering
-    $stmt = $db->query('SELECT * FROM products WHERE is_hidden = 0 ORDER BY name ASC');
+    $stmt = $db->query('SELECT ' . PRODUCT_PUBLIC_COLUMNS . ' FROM products WHERE is_hidden = 0 ORDER BY name ASC');
     $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
     // Cache the result for subsequent requests
     if ($useApc) {
@@ -206,7 +211,7 @@ function getAllProducts(): array
 function getAllProductsFresh(): array
 {
     $db = getDb();
-    $stmt = $db->query('SELECT * FROM products ORDER BY name ASC');
+    $stmt = $db->query('SELECT ' . PRODUCT_PUBLIC_COLUMNS . ' FROM products ORDER BY name ASC');
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
@@ -326,10 +331,11 @@ function normalizeScalar($value, int $maxLen = 255, ?string $default = null): ?s
  * @param int $id Product ID
  * @return array|null Associative array describing the product or null if not found.
  */
-function getProductById(int $id): ?array
+function getProductById(int $id, bool $includeInventory = false): ?array
 {
     $db = getDb();
-    $stmt = $db->prepare('SELECT * FROM products WHERE id = :id');
+    $columns = PRODUCT_PUBLIC_COLUMNS . ($includeInventory ? ', qty, qty_updated_at' : '');
+    $stmt = $db->prepare('SELECT ' . $columns . ' FROM products WHERE id = :id');
     $stmt->execute([':id' => $id]);
     $prod = $stmt->fetch(PDO::FETCH_ASSOC);
     if ($prod) return $prod;
@@ -1239,7 +1245,7 @@ function getProductsBySearch(string $term, ?PDO $db = null): array
     // Build SQL with a relevance score for better ordering
     $nName = $norm('name');
     $nDesc = $norm('description');
-    $sql = "SELECT *, ".
+    $sql = "SELECT " . PRODUCT_PUBLIC_COLUMNS . ", ".
            "(CASE WHEN UPPER(name) LIKE :prefix THEN 120 ELSE 0 END) + ".
            "(CASE WHEN $nName LIKE :nprefix THEN 100 ELSE 0 END) + ".
            "(CASE WHEN UPPER(description) LIKE :prefix THEN 60 ELSE 0 END) + ".

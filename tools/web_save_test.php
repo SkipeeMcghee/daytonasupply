@@ -17,7 +17,7 @@ try {
     echo "Database driver: $driver\n";
     
     // Find the SBO product (ID 392 in MySQL)
-    $stmt = $db->prepare('SELECT * FROM products WHERE id = ?');
+    $stmt = $db->prepare('SELECT id, name, description, price, deal, deal_price, is_hidden FROM products WHERE id = ?');
     $stmt->execute([392]);
     $product = $stmt->fetch(PDO::FETCH_ASSOC);
     
@@ -60,7 +60,7 @@ try {
     echo "Cache was " . ($cacheAfter !== $cacheBefore ? 'CHANGED' : 'NOT CHANGED') . "\n";
     
     // Direct DB check
-    $stmt = $db->prepare('SELECT * FROM products WHERE id = ?');
+    $stmt = $db->prepare('SELECT id, name, description, price, deal, deal_price, is_hidden FROM products WHERE id = ?');
     $stmt->execute([392]);
     $updated = $stmt->fetch(PDO::FETCH_ASSOC);
     

@@ -46,6 +46,7 @@ try {
     require __DIR__ . '/includes/db.php';
     require __DIR__ . '/includes/functions.php';
     require __DIR__ . '/includes/categories.php';
+    require_once __DIR__ . '/includes/inventory_display.php';
 } catch (Exception $e) {
     $errorRef = bin2hex(random_bytes(6));
     $msg = '[' . date('c') . '] catalogue.php bootstrap error (' . $errorRef . '): ' . $e->getMessage() . "\n" . $e->getTraceAsString() . "\n";
@@ -66,6 +67,7 @@ try {
 }
 
 $title = 'Catalog';
+$catalogueLoggedIn = !empty($_SESSION['customer']);
 
 // Toggle favorite handler (AJAX-aware, DB-backed). Requires login.
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['favorite_product_id'])) {
@@ -264,7 +266,7 @@ if ($activeCategory && $subParam !== '') {
 // avoids environment-specific database search differences on hosts.
 try {
     // Load all products first (consistent with "Show All")
-    $products = getAllProducts();
+    $products = getAllProducts($catalogueLoggedIn);
     // If a search term was provided, filter the loaded products in PHP.
     if ($search !== '') {
         $term = $search; // already normalized (trim/length) by normalizeScalar
@@ -367,6 +369,9 @@ if ($activeCategory) {
 
 include __DIR__ . '/includes/header.php';
 ?>
+<?php if ($catalogueLoggedIn): ?>
+<link rel="stylesheet" href="assets/inventory.css">
+<?php endif; ?>
 <style>
 /* Inline actions row: keep Add and star side-by-side */
 .actions-inline { display: inline-flex; align-items: center; gap: 8px; }
@@ -593,7 +598,6 @@ body.theme-dark .catalogue-table tr.sale-row td { background: transparent !impor
 <?php if (empty($products)): ?>
     <p>No products found.</p>
 <?php else: ?>
-<?php $catalogueLoggedIn = !empty($_SESSION['customer']); ?>
 <table class="catalogue-table">
     <tr>
         <th>Item</th>
@@ -602,6 +606,7 @@ body.theme-dark .catalogue-table tr.sale-row td { background: transparent !impor
             <th>Actions</th>
         <?php else: ?>
             <!-- No 'Account' heading per request; second column intentionally left without a visible heading -->
+            <th></th>
             <th></th>
         <?php endif; ?>
     </tr>
@@ -621,9 +626,10 @@ body.theme-dark .catalogue-table tr.sale-row td { background: transparent !impor
             <td>
                 <a href="<?= htmlspecialchars($infoUrl) ?>" style="display:flex;align-items:flex-start;gap:10px;color:inherit;text-decoration:none;">
                     <img src="<?= htmlspecialchars($thumb) ?>" alt="" style="width:54px;height:54px;object-fit:contain;border-radius:6px;border:1px solid rgba(11,34,56,0.06);background:#fff;flex:0 0 auto;">
-                    <span>
+                    <span style="min-width:0;">
                         <strong class="cat-desc-clip" style="font-weight:800;"><?= htmlspecialchars($p['description']) ?></strong><br>
                         <span class="cat-name" style="font-weight:400;"><?= htmlspecialchars($p['name']) ?></span>
+                        <?= stock_badge_html($p['qty'] ?? null, $catalogueLoggedIn) ?>
                         <?php if ($onSale): ?><span class="on-sale-badge">On Sale!</span><?php endif; ?>
                     </span>
                 </a>
@@ -684,6 +690,8 @@ body.theme-dark .catalogue-table tr.sale-row td { background: transparent !impor
                     </div>
                 </form>
             </td>
+            <?php else: ?>
+            <td></td>
             <?php endif; ?>
         </tr>
     <?php endforeach; ?>

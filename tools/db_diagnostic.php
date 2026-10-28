@@ -35,7 +35,7 @@ try {
     echo "Current products in database: $productCount\n";
     
     // Try to get a sample product to test update
-    $stmt = $db->query('SELECT * FROM products LIMIT 1');
+    $stmt = $db->query('SELECT id, name, description, price, deal, deal_price, is_hidden FROM products LIMIT 1');
     $sampleProduct = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if ($sampleProduct) {
@@ -94,7 +94,7 @@ try {
         saveProduct($testData, $testId);
         
         // Check result
-        $checkStmt = $db->prepare('SELECT * FROM products WHERE id = :id');
+        $checkStmt = $db->prepare('SELECT id, name, description, price, deal, deal_price, is_hidden FROM products WHERE id = :id');
         $checkStmt->execute([':id' => $testId]);
         $updatedProduct = $checkStmt->fetch(PDO::FETCH_ASSOC);
         
